@@ -1,9 +1,8 @@
 import { createApi } from '@reduxjs/toolkit/query/react';
 
 import { axiosBaseQuery } from '../services/httpService';
-import { type } from 'os';
 
-const baseApiPath = '/api';
+const baseApiPath = 'https://192.168.1.164/cws/app01/api';
 
 const apiSlice = createApi({
   baseQuery: axiosBaseQuery({ baseUrl: baseApiPath }),
@@ -47,6 +46,15 @@ const apiSlice = createApi({
 
   }),
 });
+
+export const {
+  useGetVersionsQuery,
+  useGetDevicesQuery,
+  useGetTypesQuery,
+  useGetDevicePropertiesQuery,
+  useGetDeviceMethodsQuery,
+} = apiSlice;
+
 
 export const oneSliceToRuleThemAll = {
   apiSlice,
