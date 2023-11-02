@@ -2,7 +2,7 @@ import { createApi } from '@reduxjs/toolkit/query/react';
 
 import { axiosBaseQuery } from '../services/httpService';
 
-const baseApiPath = 'https://192.168.1.164/cws/app01/api';
+const baseApiPath = '/cws/app01/api';
 
 const apiSlice = createApi({
   baseQuery: axiosBaseQuery({ baseUrl: baseApiPath }),
@@ -65,35 +65,35 @@ export const oneSliceToRuleThemAll = {
 
 
 export interface Type {
-  type: string;
-  description: string;
-  cType: string;
+  Type: string;
+  Description: string;
+  CType: string;
 }
 
 export interface Version {
-  name: string;
-  version: string;
+  Name: string;
+  Version: string;
 }
 
 export interface IKeyed {
-  key: string;
-  name: string;
+  Key: string;
+  Name: string;
 }
 
 export interface DeviceProperties {
-  name: string;
-  type: string;
-  value: string;
-  canRead: boolean;
+  Name: string;
+  Type: string;
+  Value: string;
+  CanRead: boolean;
   canWrite: boolean;
 }
 
 export interface DeviceMethods {
-  name: string;
-  params: MethodParam[];
+  Name: string;
+  Params: MethodParam[];
 }
 
 interface MethodParam {
-  name: string;
-  type: string;
+  Name: string;
+  Type: string;
 }

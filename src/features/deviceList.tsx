@@ -10,13 +10,12 @@ const DeviceList = () => {
   return (
     <>
       {devices &&
-        devices?.map(({ name, key }) => (
-          <div className="d-flex">
-            <h2>{name}</h2>
-            <p>{key}</p>
+        devices?.map(({ Name, Key }) => (
+          <div className="d-flex" key={Key}>
+            <h2>{Name}</h2>
+            <p>{Key}</p>
           </div>
         ))}
-      ;
     </>
   );
 };
