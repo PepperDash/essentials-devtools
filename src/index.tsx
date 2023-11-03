@@ -1,10 +1,22 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
-import "./index.css";
+import { Provider } from "react-redux";
+import { Navigate, RouterProvider, createBrowserRouter } from 'react-router-dom';
 import App from "./App";
+import ErrorBox from './features/ErrorBox';
 import reportWebVitals from "./reportWebVitals";
 import { store } from "./store/store";
-import { Provider } from "react-redux";
+import "./styles.scss";
+
+const router = createBrowserRouter(
+  [
+    { path: '/', element: <Navigate to="/home" replace /> },
+    { path: '*', Component: App, errorElement: <ErrorBox /> },
+  ],
+  {
+    basename: '/debug',
+  }
+);
 
 const root = ReactDOM.createRoot(
   document.getElementById("root") as HTMLElement
@@ -12,7 +24,8 @@ const root = ReactDOM.createRoot(
 root.render(
   <React.StrictMode>
     <Provider store={store}>
-      <App />
+      <RouterProvider router={router} />
+      {/* <App /> */}
     </Provider>
   </React.StrictMode>
 );

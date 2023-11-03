@@ -1,0 +1,130 @@
+{
+	// Place your portal-frontend workspace snippets here. Each snippet is defined under a snippet name and has a scope, prefix, body and 
+	// description. Add comma separated ids of the languages where the snippet is applicable in the scope field. If scope 
+	// is left empty or omitted, the snippet gets applied to all languages. The prefix is what is 
+	// used to trigger the snippet and the body will be expanded and inserted. Possible variables are: 
+	// $1, $2 for tab stops, $0 for the final cursor position, and ${1:label}, ${2:another} for placeholders. 
+	// Placeholders with the same ids are connected.
+	// Example:
+	// "Print to console": {
+	// 	"scope": "javascript,typescript",
+	// 	"prefix": "log",
+	// 	"body": [
+	// 		"console.info('$1');",
+	// 		"$2"
+	// 	],
+	// 	"description": "Log output to console"
+	// }
+	"Effects Comment": {
+		"prefix": "*eff",
+		"body": [
+			"/* EFFECTS *********************************************************/$0"
+		],
+		"description": "Adds EFFECTS comment"
+	},
+	"Functions Comment": {
+		"prefix": "*fun",
+		"body": [
+			"/* FUNCTIONS *******************************************************/$0"
+		],
+		"description": "Adds FUNCTIONS comment"
+	},
+	"Hooks Comment": {
+		"prefix": "*hoo",
+		"body": [
+			"/* HOOKS ***********************************************************/$0"
+		],
+		"description": "Adds HOOKS comment"
+	},
+	"Render Comment": {
+		"prefix": "*ren",
+		"body": [
+			"/* RENDER **********************************************************/$0"
+		],
+		"description": "Adds RENDER comment"
+	},
+	"State Comment": {
+		"prefix": "*state",
+		"body": [
+			"/* STATE ***********************************************************/$0"
+		],
+		"description": "Adds STATE comment"
+	},
+	"Create Function Component": {
+		"prefix": "cfc",
+		"body": [
+			"import React from 'react';",
+			"",
+			"const ${1:$TM_FILENAME_BASE} = () => {",
+			"  return <></>;",
+			"}",
+			"",
+			"export default $1;"
+		],
+		"description": "Adds boilerplate for a function component without props",
+		"scope": "typescriptreact"
+	},
+	"Create Function Component With Props": {
+		"prefix": "cfcp",
+		"body": [
+			"import React from 'react';",
+			"",
+			"const ${1:$TM_FILENAME_BASE} = ({}: $1Props) => {",
+			"  return <></>;",
+			"}",
+			"",
+			"export default $1;",
+			"",
+			"interface ${1}Props {",
+			"",
+			"}"
+		],
+		"description": "Adds boilerplate for a function component with props and interface",
+		"scope": "typescriptreact"
+	},
+	"Create Props for Function Component": {
+		"prefix": "cprops",
+		"body": [
+			"interface ${1:$TM_FILENAME_BASE}Props {",
+			"  $0",
+			"}"
+		],
+		"description": "Adds props interface to existing component",
+		"scope": "typescriptreact"
+	},
+	"useAppTitle Hook": {
+		"prefix": "useapptitle",
+		"body": "const setTitle = useAppTitle$0();",
+		"description": "Adds useAppTitle hook",
+		"scope": "typescriptreact"
+	},
+	"useAppTitleRight Hook": {
+		"prefix": "useapptitleright",
+		"body": "const setTitleRight = useAppTitleRight$0();",
+		"description": "Adds useAppTitleRight hook",
+		"scope": "typescriptreact"
+	},
+	"useSearchParams Hook": {
+		"prefix": "usesearchparams",
+		"body": "const [searchParams, setSearchParams] = useSearchParams$0();",
+		"description": "Adds useSearchParams hook",
+		"scope": "typescriptreact"
+	},
+	"useState Hook": {
+		"prefix": "usestate",
+		"body": [
+			"const [$1, set${1/(.)/${1:/capitalize}/}] = useState$2($3);"
+		],
+		"description": "Adds useState hook",
+		"scope": "typescriptreact"
+	},
+	"useEffect Hook": {
+		"prefix":"useeffect",
+		"body": ["useEffect$0(() => {",
+			"  ",
+			"}, [$1]);"
+		],
+		"description": "Adds useEffect hook",
+		"scope": "typescriptreact"
+	}
+}

@@ -1,0 +1,886 @@
+//* Bootstrap Customizations
+
+// Customize variables
+$font-size-base: 0.875rem; // from 1rem (16px -> 14px)
+
+$grid-columns: 24;
+$enable-caret: false;
+$enable-negative-margins: true;
+$offcanvas-horizontal-width: 50%;
+
+// Customize bootstrap base colors
+$primary: #4466a2;
+$secondary: #7f7f7f;
+$success: #00b5aa;
+$warning: #ff9400;
+$danger: #d90169; // New Danger
+$dark: #000000;
+$light: #e9edf3;
+$muted: #7f7f7f;
+$body-color: #7f7f7f !default;
+$body-bg: #e9edf3;
+
+// additional colors
+$action-items: #fc1c6d;
+$device: #00ccc0;
+$device-template: #068cfb;
+$dark-gray: #7f7f7f;
+$file: #72d0e4;
+// $list-hover: #f2f5f8;
+$milestone: #ff6f42;
+$process: #e9b500;
+$project: #9746ff;
+$system-template: #01d6ad;
+$punchlist: #fc1c6d;
+$severity-high: #d90169;
+$severity-med: #f4500a;
+$severity-low: #ff9400;
+$system: #058eff;
+$very-light: #f5f5f5;
+$questions: #69cd67;
+$user: #7292e4;
+
+$dashboard: #ff29c3;
+$compliance-line: #ff29c3;
+$uptime-line: #058eff;
+
+$pd-green: #00c978;
+
+$positive: #00ccc0;
+$med-gray: #b9b9b9; // Same as secondary!!!
+$light-gray-25: #f3f5f8;
+$banners-and-headers: #f6f9fb;
+
+$alert-bg-scale: 0;
+$alert-color-scale: 0;
+
+// Pagination
+// $pagination-bg: none;
+$pagination-color: $secondary;
+
+// Doughnut Colors
+$doughnut1: #ff29c3;
+$doughnut2: #9746ff;
+$doughnut3: #058eff;
+$doughnut4: #00ccc0;
+$doughnut5: #e9b500;
+$doughnut6: #e6ebf8;
+
+// Modal customization (remove :horizontal lines)
+$modal-header-border-width: 0;
+$modal-footer-border-width: 0;
+
+// Form controls
+$input-bg: white;
+$input-placeholder-color: $med-gray;
+// $form-select-bg: transparent;
+// $form-select-border-width: 0;
+$form-select-indicator-color: $secondary;
+$input-border-color: $secondary;
+$input-focus-border-color: #0000ff;
+$input-btn-focus-width: 1px;
+
+.form-switch {
+  .form-check-input {
+    height: 1.5em;
+  }
+}
+$form-switch-width: 2.75em; // from 2 default
+
+$nav-link-color: $body-color;
+$dropdown-link-color: $body-color;
+
+// Links
+$link-decoration: none;
+$link-hover-decoration: underline;
+
+// Width of company title
+$left-width: 12rem;
+
+// Button focus is stupid
+$input-btn-focus-width: 0.1rem !default;
+$input-btn-focus-color-opacity: 0.1;
+
+$form-label-margin-bottom: 0.25rem;
+$form-label-font-size: small;
+
+// Keep bootstrap variable overrides before these imports
+@import '~bootstrap/scss/bootstrap.scss';
+@import 'bootstrap/scss/functions';
+@import 'bootstrap/scss/variables';
+@import 'bootstrap/scss/utilities';
+
+// Used to merge custom colors into bootstrap
+$custom-colors: (
+  'action-items': $action-items,
+  'banners-and-headers': $banners-and-headers,
+  'dark-gray': $dark-gray,
+  'dashboard': $dashboard,
+  'device': $device,
+  'device-template': $device-template,
+  'file': $file,
+  'milestone': $milestone,
+  'pd-green': $pd-green,
+  'process': $process,
+  'project': $project,
+  'punchlist': $punchlist,
+  'system': $system,
+  'system-template': $system-template,
+  'severity-high': $severity-high,
+  'severity-med': $severity-med,
+  'severity-low': $severity-low,
+  'questions': $questions,
+  'very-light': $very-light,
+  'white': $white,
+  'compliance-line': $compliance-line,
+  'uptime-line': $uptime-line,
+  'med-gray': $med-gray,
+  'positive': $positive,
+  'doughnut1': $doughnut1,
+  'doughnut2': $doughnut2,
+  'doughnut3': $doughnut3,
+  'doughnut4': $doughnut4,
+  'doughnut5': $doughnut5,
+  'doughnut6': $doughnut6,
+  'light': $light,
+  'body-bg': $body-bg,
+  'user': $user,
+  'light-gray-25': $light-gray-25,
+);
+
+$h7-font-size: ($font-size-base * 0.75);
+
+/*
+$custom-font-sizes: (
+  7: $h7-font-size,
+);
+
+$font-sizes: map-merge($font-sizes, $custom-font-sizes);
+*/
+// added because logic above doesn't work for some reason
+.fs-7 {
+  font-size: $h7-font-size;
+}
+
+// Buttons
+.btn-outline-primary {
+  --bs-btn-color: $body-color;
+  --bs-btn-active-color: white;
+}
+
+.btn-outline-success {
+  --bs-btn-color: $body-color;
+  --bs-btn-active-color: white;
+}
+
+.btn-outline-danger {
+  --bs-btn-color: $body-color;
+  --bs-btn-active-color: white;
+}
+
+.btn-outline-secondary {
+  --bs-btn-color: $body-color;
+  --bs-btn-active-color: white;
+}
+
+.text-bg-success {
+  color: white !important;
+}
+
+.text-bg-secondary {
+  color: white !important;
+}
+
+.btn-light {
+  color: $muted;
+}
+
+.btn-white {
+  @include button-variant($white, $white, $body-color);
+}
+
+.btn-light-gray-25 {
+  @include button-variant(
+    $light-gray-25,
+    $light-gray-25,
+    $body-color,
+    $active-background: $primary
+  );
+}
+// merge custom colors in theme colors
+$theme-colors: map-merge($theme-colors, $custom-colors);
+
+// generate "bg-[colorName]" utility classes
+$utilities: map-merge(
+  $utilities,
+  (
+    'background-color':
+      map-merge(
+        map-get($utilities, 'background-color'),
+        (
+          values:
+            map-merge(
+              map-get(map-get($utilities, 'background-color'), 'values'),
+              ($theme-colors)
+            ),
+        )
+      ),
+    'border-color':
+      map-merge(
+        map-get($utilities, 'border-color'),
+        (
+          values:
+            map-merge(
+              map-get(map-get($utilities, 'border-color'), 'values'),
+              ($theme-colors)
+            ),
+        )
+      ),
+    'color':
+      map-merge(
+        map-get($utilities, 'color'),
+        (
+          values:
+            map-merge(
+              map-get(map-get($utilities, 'color'), 'values'),
+              ($theme-colors)
+            ),
+        )
+      ),
+  )
+);
+
+// // generate "text-[color]" utility classes
+// $utilities: map-merge(
+//   $utilities,
+//   (
+//     "color": map-merge(
+//       map-get($utilities, "color"),
+//       (
+//         values: map-merge(
+//           map-get(map-get($utilities, "color"), "values"),
+//           (
+//             $theme-colors
+//             ),
+//             ),
+//         ),
+//      ),
+//    ),
+//  );
+
+@import 'bootstrap/scss/utilities/api';
+
+html,
+body,
+#root {
+  height: 100vh;
+  max-height: 100vh;
+  margin: 0;
+  padding: 0;
+  font-family: Roboto, 'Helvetica Neue', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  // background-color: $body-color;
+  // background-color: lightgreen;
+}
+
+// * {
+//   border: 1px solid red;
+// }
+
+// ::-webkit-scrollbar {
+//   display: none;
+// }
+
+// #main-layout-container {
+//   -ms-overflow-style: none; /* IE and Edge */
+//   scrollbar-width: none; /* Firefox */
+// }
+
+a {
+  cursor: pointer;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+.dropzone-border {
+  border-width: 3px;
+  border-color: $light;
+  border-style: dashed;
+}
+
+.dropzone-drag-active {
+  background-color: #{rgba(shade-color($body-bg, 10%), 0.25)} !important;
+}
+
+.btn-white-toggle {
+  // --bs-btn-font-weight: 600;
+  --bs-btn-color: var(--bs-primary);
+  --bs-btn-bg: var(--bs-white);
+  --bs-btn-border-color: transparent;
+  --bs-btn-hover-color: #{shade-color($primary, 20%)};
+  --bs-btn-hover-bg: #{shade-color($white, 10%)};
+  // --bs-btn-hover-border-color: transparent;
+  // --bs-btn-focus-shadow-rgb: var(--bd-violet-rgb);
+  // --bs-btn-active-color: var(--bs-primary);
+  --bs-btn-active-bg: #{shade-color($white, 20%)};
+  // --bs-btn-active-border-color: transparent;
+}
+
+.hover:hover {
+  background-color: #{rgba(shade-color($body-bg, 10%), 0.25)} !important;
+}
+
+.list-selected {
+  background-color: $white !important;
+}
+
+.hover.list-selected:hover {
+  background-color: $white !important;
+}
+
+.list-white-selected {
+  background-color: $primary !important;
+  color: $white !important;
+}
+
+.hover.bg-white:hover {
+  background-color: #{rgba(shade-color($white, 3%), 1)} !important;
+}
+
+.hover.list-white-selected:hover {
+  background-color: $primary !important;
+  color: $white !important;
+}
+
+.list-selected-primary {
+  background-color: $primary !important;
+  color: $white !important;
+}
+
+.hover.list-selected-primary:hover {
+  background-color: $primary !important;
+  color: $white !important;
+}
+
+.fs-x-small {
+  font-size: x-small;
+}
+
+.fs-small {
+  font-size: small;
+}
+
+.lh-0 {
+  line-height: 0;
+}
+
+.cursor-pointer {
+  cursor: pointer;
+}
+
+.cursor-not-allowed {
+  cursor: not-allowed;
+}
+
+.cursor-text {
+  cursor: text;
+}
+
+.filter-card {
+  // height: 5rem;
+  // width: 10rem;
+
+  min-height: 5rem;
+  min-width: 10rem;
+  max-height: 5rem;
+  max-width: 15rem;
+}
+
+.text-very-light {
+  color: $very-light;
+}
+
+.bg-body {
+  background-color: $body-bg;
+}
+
+.bg-very-light {
+  background-color: $very-light;
+}
+
+.bg-sub-table {
+  --bs-bg-opacity: 1;
+  background-color: $white !important;
+}
+
+.bg-table-collapse {
+  background-color: $banners-and-headers !important;
+}
+
+.right-drawer {
+  // width: 50%;
+  max-width: 45rem;
+  top: 3.6rem !important;
+  // bottom: 0rem;
+  // right: 0.5rem;
+}
+
+.icon {
+  // width: 1rem;
+  // height: 1rem;
+  line-height: 0 !important;
+  text-shadow: 0px 0px 1px;
+}
+
+.min-input-width {
+  min-width: 15rem;
+}
+
+.company-title-width {
+  width: $left-width;
+  max-width: $left-width;
+}
+
+// // Overrides BS form-label
+// .form-label {
+//   margin-bottom: 0.25rem;
+//   // font-size: 0.875em;
+// }
+
+.left-nav-width {
+  width: 10rem;
+  min-width: 10rem;
+}
+
+.min-dropdown-width {
+  width: 10rem;
+}
+
+.user-avatar-initials {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 2rem;
+  aspect-ratio: 1 / 1;
+  border-radius: 50%;
+}
+
+.icon-breadcrumb {
+  width: 1rem;
+  height: 1rem;
+}
+
+.icon-list {
+  width: 0.6rem;
+  min-width: 0.6rem;
+  height: 0.6rem;
+  min-height: 0.6rem;
+}
+
+.icon-dashboard-title {
+  width: 0.75rem;
+  min-width: 0.75rem;
+  height: 0.75rem;
+  min-height: 0.75rem;
+}
+
+.icon-normal {
+  width: 1rem;
+  min-width: 1rem;
+  height: 1rem;
+  min-height: 1rem;
+}
+
+.icon-system-status {
+  width: 1.2rem;
+  min-width: 1.2rem;
+  height: 1.2rem;
+  min-height: 1.2rem;
+}
+
+.icon-med {
+  width: 1.3rem;
+  min-width: 1.3rem;
+  height: 1.3rem;
+  min-height: 1.3rem;
+}
+
+.icon-fixed {
+  width: 24px;
+  height: 24px;
+  min-width: 24px;
+  min-height: 24px;
+}
+
+.drawer-title-icon > svg {
+  width: 1.3rem;
+  min-width: 1.3rem;
+  height: 1.3rem;
+  min-height: 1.3rem;
+}
+
+// ?????????
+.icon-med * > .icon-med {
+  width: 1.3rem;
+  min-width: 1.3rem;
+  height: 1.3rem;
+  min-height: 1.3rem;
+}
+
+.icon-15 {
+  width: 1.5rem;
+  height: 1.5rem;
+  min-width: 1.5rem;
+  min-height: 1.5rem;
+}
+
+.icon-nav {
+  width: 1.8rem;
+  height: 1.8rem;
+  min-width: 1.8rem;
+}
+
+.icon-title {
+  width: 1.7rem;
+  height: 1.7rem;
+  min-width: 1.7rem;
+}
+
+.icon-modal-header {
+  width: 3rem;
+  height: 3rem;
+}
+
+.hiding-input {
+  border: 2px solid rgba(0, 0, 0, 0);
+  background-color: transparent !important;
+  // cursor: pointer;
+}
+
+.hiding-input:focus,
+.hiding-input-error {
+  background: white;
+  border: 2px solid $light;
+  cursor: text;
+  font-weight: normal !important;
+  // color: $dark !important;
+}
+
+.hiding-input:hover {
+  border: 2px solid $light;
+}
+
+.hiding-input:invalid {
+  border: 2px solid red;
+  background: white;
+}
+
+.mw-0 {
+  min-width: 0;
+}
+
+.ms-1px {
+  margin-left: 1px;
+}
+
+.process-step-box {
+  width: 2rem;
+  min-width: 2rem;
+}
+
+.process-status {
+  text-wrap: nowrap;
+  min-width: 6rem;
+  width: 6rem;
+}
+
+.rotate-90-cw {
+  transform: rotate(90deg);
+}
+
+.top-nav-menu {
+  // width: 30rem;
+  min-width: 15rem;
+  max-width: 25rem;
+}
+
+.top-nav-device-list {
+  width: 25rem;
+  // min-width: 20rem;
+  max-width: 30rem;
+}
+
+.tab-active {
+  height: 2rem;
+  color: $primary !important;
+  text-decoration: underline;
+}
+
+.tab-inactive {
+  height: 2em;
+  background-color: $light;
+}
+
+.z-index-modal {
+  z-index: $zindex-modal;
+}
+
+.z-index-top-nav {
+  z-index: $zindex-fixed; // This gets it above stickies
+}
+
+.vh-20r {
+  height: 20rem;
+}
+
+.vh-50 {
+  height: 50vh;
+  min-height: 50vh;
+  max-height: 50vh;
+}
+
+.vh-75 {
+  height: 75vh;
+  min-height: 75vh;
+}
+
+.vh-90 {
+  height: 90vh;
+  min-height: 90vh;
+  max-height: 90vh;
+}
+
+.calendar {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  // column-gap: -1px;
+  // row-gap: -1px;
+
+  > button {
+    border: 0px;
+    width: 2rem;
+    height: 2rem;
+    outline: 1px solid $light;
+  }
+}
+
+.rotate-180 {
+  transform: rotate(180deg);
+}
+
+.text-very-light {
+  color: $very-light;
+}
+
+.text-compliance {
+  color: $dashboard;
+}
+
+.text-uptime {
+  color: $uptime-line;
+}
+
+.modal-message-body {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 8rem;
+}
+
+// .modal-content {
+//   height: 35vh;
+// }
+
+.modal-h-50 > .modal-content {
+  height: 50vh;
+}
+
+.modal-h-75 > .modal-content {
+  height: 75vh;
+}
+
+.dropdown-60vh {
+  max-height: 60vh;
+}
+
+.scroll-dropdown {
+  height: auto;
+  max-height: calc(60vh);
+  overflow-y: scroll;
+}
+
+.scroll-dropdown-nav {
+  height: auto;
+  max-height: calc(100vh - 60px);
+  overflow-y: scroll;
+}
+
+// .dashboard-15rem {
+//   height: 15rem;
+//   max-height: 15rem;
+//   overflow: auto ;
+// }
+
+// .dashboard-20rem {
+//   height: 20rem;
+//   max-height: 20rem;
+//   overflow: auto ;
+// }
+
+.height-1 {
+  height: 1rem;
+  max-height: 1rem;
+}
+
+.height-2 {
+  height: 2rem;
+  max-height: 2rem;
+}
+
+.height-2-5 {
+  height: 2.5rem;
+  max-height: 2.5rem;
+}
+
+.height-20 {
+  height: 20rem;
+  max-height: 20rem;
+}
+
+.w-15r {
+  width: 15rem;
+  min-width: 15rem;
+}
+
+.w-20r {
+  width: 20rem;
+  min-width: 20rem;
+}
+
+.height-30 {
+  height: 30rem;
+  max-height: 30rem;
+}
+
+.overflow-y-scroll {
+  overflow-y: scroll;
+}
+
+.color-picker-row > div {
+  padding: 4px;
+  border-radius: 5px;
+}
+
+.color-picker-row > div:hover {
+  background-color: $light;
+}
+
+.color-picker-row > div > button {
+  height: 20px;
+  width: 20px;
+  padding: 0px;
+  border-radius: 0px;
+  border: 1px solid white;
+}
+
+.color-picker-row > div > button:focus {
+  outline: 0px solid white;
+  border: 1px solid white;
+}
+
+.icon-picker-row > div {
+  padding: 4px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.icon-picker-row > div:hover {
+  background-color: $light;
+}
+
+.table-col-collapse {
+  visibility: collapse;
+}
+
+.table-sm-py-tight > :not(caption) > * > * {
+  padding-top: 0.1rem !important;
+  padding-bottom: 0.1rem !important;
+}
+
+.spacer-2px {
+  display: inline-block;
+  align-self: stretch;
+  width: 2px;
+  min-height: 1em;
+  opacity: 0.25;
+}
+
+textarea {
+  resize: none;
+}
+
+textarea:hover {
+  resize: vertical;
+}
+
+// This prevents edge from showing a password eye - because we will
+::-ms-reveal {
+  display: none;
+}
+
+// .cell-highlight-top-left {
+//   border-top-left-radius: 6px;
+// }
+
+// .cell-highlight-top-right {
+//   border-top-right-radius: 6px;
+// }
+
+// .table-blah tbody tr:last-child .cell-highlight-bottom-left {
+//   border-bottom-left-radius: 6px;
+// }
+
+// .table-blah tbody tr:last-child .cell-highlight-bottom-right {
+//   border-bottom-right-radius: 6px;
+// }
+
+// HV - These are causing more issues than they are solving (20230308)
+
+// // This class restrains the children of cols in a row to a fixed height
+// .dashboard-row-12 > div > * {
+//   height: 12rem;
+//   max-height: 12rem;
+//   overflow: hidden ;
+// }
+
+// .dashboard-row-15 > div > * {
+//   height: 15rem;
+//   max-height: 15rem;
+//   overflow: hidden ;
+// }
+
+// .dashboard-row-17 > div > * {
+//   height: 17rem;
+//   max-height: 17rem;
+//   overflow: hidden ;
+// }
+
+// .dashboard-row-20 > div > * {
+//   height: 20rem;
+//   max-height: 20rem;
+//   overflow: hidden ;
+// }
+
+// .dashboard-row-23 > div > * {
+//   height: 23rem;
+//   max-height: 23rem;
+//   overflow: hidden ;
+// }
+
+// .dashboard-row-25 > div > * {
+//   height: 25rem;
+//   max-height: 25rem;
+//   overflow: hidden ;
+// }

@@ -1,3 +1,4 @@
+import { Col, Container, Row } from "react-bootstrap";
 import { useGetDevicesQuery } from "../store/apiSlice";
 
 const DeviceList = () => {
@@ -9,13 +10,18 @@ const DeviceList = () => {
 
   return (
     <>
-      {devices &&
-        devices?.map(({ Name, Key }) => (
-          <div className="d-flex" key={Key}>
-            <h2>{Name}</h2>
-            <p>{Key}</p>
-          </div>
-        ))}
+      <Container fluid>
+        <Row>
+          <Col md={12}>
+            {devices?.map(({ Name, Key }) => (
+              <div className="d-flex" key={Key}>
+                {Name}[{Key}]
+              </div>
+            ))}
+          </Col>
+          <Col md={9}></Col>
+        </Row>
+      </Container>
     </>
   );
 };
