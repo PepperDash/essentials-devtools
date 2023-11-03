@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import { Route, Routes } from "react-router-dom";
+import ConfigFile from './features/ConfigFile';
 import DeviceList from "./features/DeviceList";
 import TopNav from "./features/TopNav";
 import Types from "./features/Types";
@@ -14,6 +15,7 @@ function App() {
           <Routes>
             <Route path="/home" element={<h1>Home</h1>} />
             <Route path="/versions" element={<Versions />} />
+            <Route path="/config" element={<ConfigFile />} />
             <Route path="/devices" element={<DeviceList />} />
             <Route path="/types" element={<Types />} />
             <Route path="/console" element={<h1>Debug</h1>} />

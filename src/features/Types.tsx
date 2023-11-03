@@ -23,13 +23,22 @@ const Types = () => {
   return (
     <>
     <h2>The type names supported by the currently loaded plugins</h2>
-      <div className="d-flex flex-column">
+    <thead>
+      <tr>
+        <th>Type Name</th>
+        <th>Class Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody >
         {sorted?.map((i) => (
-          <div className="d-flex" key={i.Type}>
-            {i.Type} : {i.Description} : {i.CType}
-          </div>
+          <tr key={i.Type}>
+            <td>{i.Type}</td>
+            <td>{i.CType}</td>
+            <td>{i.Description}</td>
+          </tr>
         ))}
-      </div>
+    </tbody>
     </>
   );
 };

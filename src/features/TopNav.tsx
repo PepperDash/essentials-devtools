@@ -14,6 +14,7 @@ const TopNav = () => {
             <NavLink className={ location.pathname.includes("/home") ? 'text-secondary me-3' : 'me-3'  } to="/home">Home</NavLink>
             <NavLink className={ location.pathname.includes("/console") ? 'text-secondary me-3' : 'me-3'} to="/console">Debug Console</NavLink>
             <NavLink className={ location.pathname.includes("/versions") ? 'text-secondary me-3' : 'me-3'  } to="/versions">Versions</NavLink>
+            <NavLink className={ location.pathname.includes("/config") ? 'text-secondary me-3' : 'me-3'  } to="/config">Config File</NavLink>
             <NavLink className={ location.pathname.includes("/devices") ? 'text-secondary me-3' : 'me-3'  } to="/devices">Devices</NavLink>
             <NavLink className={ location.pathname.includes("/types") ? 'text-secondary me-3' : 'me-3'  } to="/types">Types</NavLink>
         </Nav>

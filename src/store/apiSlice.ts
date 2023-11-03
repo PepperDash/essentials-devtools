@@ -43,7 +43,12 @@ const apiSlice = createApi({
       })
     }),
 
-
+    getConfig: builder.query<any, void>({
+      query: () => ({
+        url: `/config`,
+        method: 'GET',
+      })
+    }),
   }),
 });
 
@@ -53,6 +58,7 @@ export const {
   useGetTypesQuery,
   useGetDevicePropertiesQuery,
   useGetDeviceMethodsQuery,
+  useGetConfigQuery,
 } = apiSlice;
 
 
