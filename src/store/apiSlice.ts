@@ -49,6 +49,20 @@ const apiSlice = createApi({
         method: 'GET',
       })
     }),
+
+    getDebugSession: builder.query<DebugSession, void>({
+      query: () => ({
+        url: `/debugSession`,
+        method: 'GET',
+      })
+    }),
+
+    stopDebugSession: builder.mutation<void, void>({
+      query: () => ({
+        url: `/debugSession`,
+        method: 'POST',
+      })
+    }),
   }),
 });
 
@@ -59,6 +73,8 @@ export const {
   useGetDevicePropertiesQuery,
   useGetDeviceMethodsQuery,
   useGetConfigQuery,
+  useGetDebugSessionQuery,
+  useStopDebugSessionMutation,
 } = apiSlice;
 
 
@@ -102,4 +118,8 @@ export interface DeviceMethods {
 interface MethodParam {
   Name: string;
   Type: string;
+}
+
+interface DebugSession {
+  url: string;
 }

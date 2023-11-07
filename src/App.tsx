@@ -5,6 +5,7 @@ import DeviceList from "./features/DeviceList";
 import TopNav from "./features/TopNav";
 import Types from "./features/Types";
 import Versions from "./features/Versions";
+import DebugConsole from './features/DebugConsole';
 
 function App() {
   return (
@@ -18,7 +19,7 @@ function App() {
             <Route path="/config" element={<ConfigFile />} />
             <Route path="/devices" element={<DeviceList />} />
             <Route path="/types" element={<Types />} />
-            <Route path="/console" element={<h1>Debug</h1>} />
+            <Route path="/console" element={<DebugConsole />} />
           </Routes>
         </div>
       </Suspense>
