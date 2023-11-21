@@ -1,11 +1,11 @@
 import { Suspense } from "react";
 import { Route, Routes } from "react-router-dom";
 import ConfigFile from './features/ConfigFile';
+import DebugConsole from './features/DebugConsole/DebugConsole';
 import DeviceList from "./features/DeviceList";
 import TopNav from "./features/TopNav";
 import Types from "./features/Types";
 import Versions from "./features/Versions";
-import DebugConsole from './features/DebugConsole';
 
 function App() {
   return (

@@ -50,7 +50,7 @@ const apiSlice = createApi({
       })
     }),
 
-    getDebugSession: builder.query<DebugSession, void>({
+    getDebugSession: builder.mutation<DebugSession, void>({
       query: () => ({
         url: `/debugSession`,
         method: 'GET',
@@ -73,7 +73,7 @@ export const {
   useGetDevicePropertiesQuery,
   useGetDeviceMethodsQuery,
   useGetConfigQuery,
-  useGetDebugSessionQuery,
+  useGetDebugSessionMutation,
   useStopDebugSessionMutation,
 } = apiSlice;
 
