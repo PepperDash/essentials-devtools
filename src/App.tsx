@@ -9,10 +9,10 @@ import Versions from "./features/Versions";
 
 function App() {
   return (
-    <div className="App">
+    <div className="d-flex flex-column overflow-hidden h-100">
       <TopNav />
       <Suspense fallback={null}>
-        <div className="p-2">
+        <div className="p-2 overflow-hidden flex-grow-1">
           <Routes>
             <Route path="/home" element={<h1>Home</h1>} />
             <Route path="/versions" element={<Versions />} />

@@ -6,8 +6,9 @@ import {
   useGetDebugSessionMutation,
   useStopDebugSessionMutation,
 } from "../../store/apiSlice";
-import { DebugFilters } from './DebugFilters';
-import { useFilteredMessages } from './hooks/useFilteredMessages';
+import ConsoleWindow from './ConsoleWindow';
+import { DebugFilters } from "./DebugFilters";
+import { useFilteredMessages } from "./hooks/useFilteredMessages";
 
 const DebugConsole = () => {
   //* HOOKS ***********************************************************/
@@ -17,7 +18,6 @@ const DebugConsole = () => {
 
   const [startSession] = useGetDebugSessionMutation();
   const [stopSession] = useStopDebugSessionMutation();
-
 
   //* EFFECTS *********************************************************/
   const filteredItems = useFilteredMessages(messages);
@@ -48,13 +48,57 @@ const DebugConsole = () => {
 
   const onMessage = (event: { data: string }) => {
     const data = JSON.parse(event.data);
-    console.log(data);
+    // console.log(data);
     setMessages((messages) => [...messages, data]);
   };
 
   //* RENDER **********************************************************/
   return (
     <>
+      {/* <HeaderScrollerFooter
+      headerElements={
+        <>
+          <div className="d-flex align-items-center justify-content-start">
+            <Button className="mx-1" variant="primary" size="sm" onClick={join}>
+              Start Debug Session
+            </Button>
+            <Button className="mx-1" variant="primary" size="sm" onClick={stop}>
+              Stop Debug Session
+            </Button>
+            <span className='ps-2'>Message Count: {messages.length}</span>
+          </div>
+          <div className="d-flex align-items-center justify-content-start">
+            <h5>Debug Console</h5>
+          </div>
+
+          <ListFiltersHeader showSearch filters={<DebugFilters />} />
+        </>
+      }
+      scrollingElements={
+        <>
+          <table className="table table-sm table-striped table-hover">
+            <thead className='bg-body'>
+              <tr>
+                <th>Timestamp</th>
+                <th>Key</th>
+                <th>Level</th>
+                <th>Message</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredItems.map((message, index) => (
+                <tr key={index}>
+                  <td>{message.Timestamp}</td>
+                  <td>{message.Properties?.Key || "global"}</td>
+                  <td>{message.Level}</td>
+                  <td>{message.MessageTemplate}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </>
+      }
+    /> */}
       <div className="d-flex align-items-center justify-content-start">
         <Button className="mx-1" variant="primary" size="sm" onClick={join}>
           Start Debug Session
@@ -62,32 +106,13 @@ const DebugConsole = () => {
         <Button className="mx-1" variant="primary" size="sm" onClick={stop}>
           Stop Debug Session
         </Button>
+        <span className="ps-2">Message Count: {messages.length}</span>
       </div>
       <div className="d-flex align-items-center justify-content-start">
         <h5>Debug Console</h5>
       </div>
-
       <ListFiltersHeader showSearch filters={<DebugFilters />} />
-      <table className="table table-sm table-striped table-hover">
-        <thead>
-          <tr>
-            <th>Timestamp</th>
-            <th>Key</th>
-            <th>Level</th>
-            <th>Message</th>
-          </tr>
-        </thead>
-        <tbody>
-          {filteredItems.map((message, index) => (
-            <tr key={index}>
-              <td>{message.Timestamp}</td>
-              <td>{message.Properties?.Key || "global"}</td>
-              <td>{message.Level}</td>
-              <td>{message.MessageTemplate}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <ConsoleWindow filteredItems={filteredItems} />
     </>
   );
 };

@@ -3,8 +3,8 @@ import { Badge } from 'react-bootstrap';
 import Dropdown from 'react-bootstrap/Dropdown';
 import Form from 'react-bootstrap/Form';
 import { useSearchParams } from 'react-router-dom';
+import { IdLabel } from './types/IdLabel';
 // import { IconDarkChevronDown } from 'shared/icons';
-import { IKeyed } from '../store/apiSlice';
 
 /** */
 export const FilterDropdownSearchParams = (
@@ -20,11 +20,11 @@ export const FilterDropdownSearchParams = (
 
   // Defined inside here for access to props
   const FilterCheckItem = (checkProps: {
-    item: IKeyed ;
+    item: IdLabel ;
     htmlName: string;
     htmlId: string;
   }) => {
-    const stringId = checkProps.item.Key.toString(); // occasionally numeric id
+    const stringId = checkProps.item.id.toString(); // occasionally numeric id
 
     function clickItem(event: ChangeEvent<HTMLInputElement>) {
       const newValues = [...values];
@@ -45,7 +45,7 @@ export const FilterDropdownSearchParams = (
       <Form.Check
         type="checkbox"
         className="m-2"
-        label={ checkProps.item.Key}
+        label={ checkProps.item.id}
         name={checkProps.htmlName}
         id={checkProps.htmlId}
         onChange={clickItem}
@@ -70,10 +70,10 @@ export const FilterDropdownSearchParams = (
         {props.items.map((item) => (
           <Dropdown.Item
             as={FilterCheckItem}
-            key={item.Key}
+            key={item.id}
             item={item}
-            htmlName={item.Key.toString()}
-            htmlId={`${props.paramName}-${item.Key}`}
+            htmlName={item.id.toString()}
+            htmlId={`${props.paramName}-${item.id}`}
           />
         ))}
       </Dropdown.Menu>
@@ -86,5 +86,5 @@ export interface FilterDropdownSearchParamsProps {
   buttonLabel: string;
   /** Passed to the Dropdown contained inside */
   className?: string;
-  items: IKeyed[];
+  items: IdLabel[];
 }
