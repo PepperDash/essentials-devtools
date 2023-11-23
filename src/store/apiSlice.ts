@@ -6,6 +6,7 @@ const baseApiPath = '/cws/app01/api';
 
 const apiSlice = createApi({
   baseQuery: axiosBaseQuery({ baseUrl: baseApiPath }),
+  tagTypes: ['Version', 'Device', 'Type', 'DeviceProperty', 'DeviceMethod', 'Config', 'DebugSession', 'DoNotLoadConfigOnNextBoot'],
   endpoints: (builder) => ({
 
     getVersions: builder.query<Version[], void>({
@@ -63,6 +64,23 @@ const apiSlice = createApi({
         method: 'POST',
       })
     }),
+
+    getDoNotLoadConfigOnNextBoot: builder.query<{doNotLoadConfigOnNextBoot: boolean}, void>({
+      query: () => ({
+        url: `/doNotLoadConfigOnNextBoot`,
+        method: 'GET',
+      }),
+      providesTags: ['DoNotLoadConfigOnNextBoot'],
+    }),
+
+    setDoNotLoadConfigOnNextBoot: builder.mutation<void, boolean>({
+      query: (doNotLoadConfigOnNextBoot) => ({
+        url: `/doNotLoadConfigOnNextBoot`,
+        method: 'POST',
+        data: { doNotLoadConfigOnNextBoot },
+      }),
+      invalidatesTags: ['DoNotLoadConfigOnNextBoot'],
+    }),
   }),
 });
 
@@ -75,6 +93,8 @@ export const {
   useGetConfigQuery,
   useGetDebugSessionMutation,
   useStopDebugSessionMutation,
+  useGetDoNotLoadConfigOnNextBootQuery,
+  useSetDoNotLoadConfigOnNextBootMutation,
 } = apiSlice;
 
 

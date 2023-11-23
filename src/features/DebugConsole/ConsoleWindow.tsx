@@ -1,34 +1,42 @@
+import { Col, Container, Row } from "react-bootstrap";
 import ScrollToBottom from "react-scroll-to-bottom";
 import { Message } from "./DebugConsole";
 
+const Content = ({ filteredItems }: ConsoleWindowProps) => {
+  return (
+    <Container fluid>
+      {filteredItems.map((message, index) => (
+        <Row key={index}>
+          <Col md={6}>{message.Timestamp}</Col>
+          <Col md={4}>{message.Properties?.Key || "global"}</Col>
+          <Col md={4}>{message.Level}</Col>
+          <Col md={10}>{message.RenderedMessage}</Col>
+        </Row>
+      ))}
+    </Container>
+  );
+};
+
 const ConsoleWindow = ({ filteredItems }: ConsoleWindowProps) => {
   return (
-    <ScrollToBottom
-      className="table-responsive"
-      followButtonClassName="btn btn-sm btn-outline-secondary"
-      mode="bottom"
-    >
-      <table className="table table-sm table-striped table-hover">
-        <thead className="bg-body">
-          <tr>
-            <th>Timestamp</th>
-            <th>Key</th>
-            <th>Level</th>
-            <th>Message</th>
-          </tr>
-        </thead>
-        <tbody>
-          {filteredItems.map((message, index) => (
-            <tr key={index}>
-              <td>{message.Timestamp}</td>
-              <td>{message.Properties?.Key || "global"}</td>
-              <td>{message.Level}</td>
-              <td>{message.MessageTemplate}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </ScrollToBottom>
+    <>
+    <Container fluid>
+      <Row className="fw-bold">
+        <Col md={6}>Timestamp</Col>
+        <Col md={4}>Key</Col>
+        <Col md={4}>Level</Col>
+        <Col md={10}>Message</Col>
+      </Row>
+      </Container>
+
+      <ScrollToBottom
+        className="overflow-auto flex-grow-1"
+        followButtonClassName="btn btn-sm btn-outline-secondary"
+        mode="bottom"
+      >
+        <Content filteredItems={filteredItems} />
+      </ScrollToBottom>
+      </>
   );
 };
 

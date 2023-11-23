@@ -304,6 +304,11 @@ a:hover {
   text-decoration: underline;
 }
 
+.scrollbox {
+  width: 100%;
+  overflow: auto;
+}
+
 .dropzone-border {
   border-width: 3px;
   border-color: $light;

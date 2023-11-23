@@ -1,12 +1,14 @@
 import { useState } from "react";
-import { Button } from "react-bootstrap";
+import { Button, Form } from "react-bootstrap";
 import { useDispatch } from "react-redux";
 import ListFiltersHeader from "../../shared/ListFiltersHeader";
 import {
   useGetDebugSessionMutation,
+  useGetDoNotLoadConfigOnNextBootQuery,
+  useSetDoNotLoadConfigOnNextBootMutation,
   useStopDebugSessionMutation,
 } from "../../store/apiSlice";
-import ConsoleWindow from './ConsoleWindow';
+import ConsoleWindow from "./ConsoleWindow";
 import { DebugFilters } from "./DebugFilters";
 import { useFilteredMessages } from "./hooks/useFilteredMessages";
 
@@ -16,8 +18,12 @@ const DebugConsole = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const dispatch = useDispatch();
 
+  const { data: doNotLoadConfigOnNextBoot } =
+    useGetDoNotLoadConfigOnNextBootQuery();
+
   const [startSession] = useGetDebugSessionMutation();
   const [stopSession] = useStopDebugSessionMutation();
+  const [setDoNotLoadConfig] = useSetDoNotLoadConfigOnNextBootMutation();
 
   //* EFFECTS *********************************************************/
   const filteredItems = useFilteredMessages(messages);
@@ -48,9 +54,11 @@ const DebugConsole = () => {
 
   const onMessage = (event: { data: string }) => {
     const data = JSON.parse(event.data);
-    // console.log(data);
+    console.log(data);
     setMessages((messages) => [...messages, data]);
   };
+
+  if (!doNotLoadConfigOnNextBoot) return null;
 
   //* RENDER **********************************************************/
   return (
@@ -99,20 +107,31 @@ const DebugConsole = () => {
         </>
       }
     /> */}
-      <div className="d-flex align-items-center justify-content-start">
-        <Button className="mx-1" variant="primary" size="sm" onClick={join}>
-          Start Debug Session
-        </Button>
-        <Button className="mx-1" variant="primary" size="sm" onClick={stop}>
-          Stop Debug Session
-        </Button>
-        <span className="ps-2">Message Count: {messages.length}</span>
+      <div className="d-flex flex-column overflow-hidden h-100">
+        <div className="d-flex align-items-center justify-content-start">
+          <Button className="mx-1" variant="primary" size="sm" onClick={join}>
+            Start Debug Session
+          </Button>
+          <Button className="mx-1" variant="primary" size="sm" onClick={stop}>
+            Stop Debug Session
+          </Button>
+          <Form.Check
+            type="checkbox" 
+            className="m-2" 
+            label="Do Not Load Config on Next Boot" 
+            name="doNotLoadConfig" 
+            id="doNotLoadConfig" 
+            checked={doNotLoadConfigOnNextBoot?.doNotLoadConfigOnNextBoot}
+            onChange={() => setDoNotLoadConfig(!doNotLoadConfigOnNextBoot?.doNotLoadConfigOnNextBoot)}
+          />
+          <span className="ps-2">Message Count: {messages.length}</span>
+        </div>
+        <div className="d-flex align-items-center justify-content-start">
+          <h5>Debug Console</h5>
+        </div>
+        <ListFiltersHeader showSearch filters={<DebugFilters />} />
+        <ConsoleWindow filteredItems={filteredItems} />
       </div>
-      <div className="d-flex align-items-center justify-content-start">
-        <h5>Debug Console</h5>
-      </div>
-      <ListFiltersHeader showSearch filters={<DebugFilters />} />
-      <ConsoleWindow filteredItems={filteredItems} />
     </>
   );
 };
@@ -122,6 +141,7 @@ export default DebugConsole;
 export interface Message {
   Timestamp: string;
   MessageTemplate: string;
+  RenderedMessage: String;
   Level: string;
   Properties?: {
     Key: string;
