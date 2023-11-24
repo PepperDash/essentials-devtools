@@ -81,6 +81,13 @@ const apiSlice = createApi({
       }),
       invalidatesTags: ['DoNotLoadConfigOnNextBoot'],
     }),
+
+    setRestart: builder.mutation<void, void>({
+      query: () => ({
+        url: `/restartProgram`,
+        method: 'POST',
+      })
+    }),
   }),
 });
 
@@ -95,6 +102,7 @@ export const {
   useStopDebugSessionMutation,
   useGetDoNotLoadConfigOnNextBootQuery,
   useSetDoNotLoadConfigOnNextBootMutation,
+  useSetRestartMutation,
 } = apiSlice;
 
 

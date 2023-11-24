@@ -8,9 +8,9 @@ const Content = ({ filteredItems }: ConsoleWindowProps) => {
       {filteredItems.map((message, index) => (
         <Row key={index}>
           <Col md={6}>{message.Timestamp}</Col>
-          <Col md={4}>{message.Properties?.Key || "global"}</Col>
-          <Col md={4}>{message.Level}</Col>
-          <Col md={10}>{message.RenderedMessage}</Col>
+          <Col md={3}>{message.Properties?.Key || "global"}</Col>
+          <Col md={2}>{message.Level}</Col>
+          <Col md={13}>{message.RenderedMessage}</Col>
         </Row>
       ))}
     </Container>
@@ -23,9 +23,9 @@ const ConsoleWindow = ({ filteredItems }: ConsoleWindowProps) => {
     <Container fluid>
       <Row className="fw-bold">
         <Col md={6}>Timestamp</Col>
-        <Col md={4}>Key</Col>
-        <Col md={4}>Level</Col>
-        <Col md={10}>Message</Col>
+        <Col md={3}>Key</Col>
+        <Col md={2}>Level</Col>
+        <Col md={13}>Message</Col>
       </Row>
       </Container>
 
