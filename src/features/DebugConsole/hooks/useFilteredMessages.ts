@@ -1,10 +1,10 @@
 import filter from 'lodash/filter';
 import { useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Message } from '../DebugConsole';
+import { LogMessage } from '../../../shared/types/LogMessage';
 import { debugConsts } from '../debugConsts';
 
-export function useFilteredMessages(listItems: Message[]) {
+export function useFilteredMessages(listItems: LogMessage[]) {
   const [searchParams] = useSearchParams();
 
   return useMemo(() => {

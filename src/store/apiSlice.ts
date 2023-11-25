@@ -6,7 +6,7 @@ const baseApiPath = '/cws/app01/api';
 
 const apiSlice = createApi({
   baseQuery: axiosBaseQuery({ baseUrl: baseApiPath }),
-  tagTypes: ['Version', 'Device', 'Type', 'DeviceProperty', 'DeviceMethod', 'Config', 'DebugSession', 'DoNotLoadConfigOnNextBoot'],
+  tagTypes: ['Version', 'Device', 'Type', 'DeviceProperty', 'DeviceMethod', 'Config', 'DebugSession', 'DoNotLoadConfigOnNextBoot', 'MinimumLogLevel'],
   endpoints: (builder) => ({
 
     getVersions: builder.query<Version[], void>({
@@ -58,6 +58,23 @@ const apiSlice = createApi({
       })
     }),
 
+    getMinimumLogLevel: builder.query<{minimumLevel: LogEventLevel}, void>({
+      query: () => ({
+        url: `/appdebug`,
+        method: 'GET',
+      }),
+      providesTags: ['MinimumLogLevel'],
+    }),
+
+    setMinimumLogLevel: builder.mutation<void, LogEventLevel>({
+      query: (minimumLevel) => ({
+        url: `/appdebug`,
+        method: 'POST',
+        data: { minimumLevel },
+      }),
+      invalidatesTags: ['MinimumLogLevel'],
+    }),
+
     stopDebugSession: builder.mutation<void, void>({
       query: () => ({
         url: `/debugSession`,
@@ -88,6 +105,13 @@ const apiSlice = createApi({
         method: 'POST',
       })
     }),
+
+    setLoadConfig: builder.mutation<void, void>({
+      query: () => ({
+        url: `/loadConfig`,
+        method: 'POST',
+      })
+    }),
   }),
 });
 
@@ -103,6 +127,9 @@ export const {
   useGetDoNotLoadConfigOnNextBootQuery,
   useSetDoNotLoadConfigOnNextBootMutation,
   useSetRestartMutation,
+  useSetLoadConfigMutation,
+  useGetMinimumLogLevelQuery,
+  useSetMinimumLogLevelMutation,
 } = apiSlice;
 
 
@@ -151,3 +178,5 @@ interface MethodParam {
 interface DebugSession {
   url: string;
 }
+
+export type LogEventLevel = 'Verbose' | 'Debug' | 'Information' | 'Warning' | 'Error' | 'Fatal';
