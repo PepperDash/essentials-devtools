@@ -1,15 +1,12 @@
 import { useState } from "react";
 import { Button, Form } from "react-bootstrap";
-import { useDispatch } from "react-redux";
 import ListFiltersHeader from "../../shared/ListFiltersHeader";
 import { LogMessage } from '../../shared/types/LogMessage';
 import {
-  useGetDebugSessionMutation,
   useGetDoNotLoadConfigOnNextBootQuery,
   useSetDoNotLoadConfigOnNextBootMutation,
   useSetLoadConfigMutation,
-  useSetRestartMutation,
-  useStopDebugSessionMutation,
+  useSetRestartMutation
 } from "../../store/apiSlice";
 import ConsoleWindow from "./ConsoleWindow";
 import { DebugFilters } from "./DebugFilters";
@@ -17,48 +14,19 @@ import MinimumLogLevelDropdown from './MinimumLogLevelDropdown';
 import RestartConfirmModal from "./RestartConfirmModal";
 import { useFilteredMessages } from "./hooks/useFilteredMessages";
 
-const DebugConsole = () => {
+const DebugConsole = ({messages, join, stop}: DebugConsoleProps) => {
   //* HOOKS ***********************************************************/
-  const [websocket, setWebsocket] = useState<WebSocket>();
-  const [messages, setMessages] = useState<LogMessage[]>([]);
   const [showModal, setShowModal] = useState(false);
-  const dispatch = useDispatch();
 
   const { data: doNotLoadConfigOnNextBoot } =
     useGetDoNotLoadConfigOnNextBootQuery();
 
-  const [startSession] = useGetDebugSessionMutation();
-  const [stopSession] = useStopDebugSessionMutation();
   const [setDoNotLoadConfig] = useSetDoNotLoadConfigOnNextBootMutation();
   const [restart] = useSetRestartMutation();
   const [loadConfig] = useSetLoadConfigMutation();
 
   //* EFFECTS *********************************************************/
   const filteredItems = useFilteredMessages(messages);
-
-  //* FUNCTIONS *******************************************************/
-  const join = async () => {
-    const res = await startSession().unwrap();
-
-    console.log("Joining debug session at " + res.url);
-
-    console.log("Connecting to debug session");
-    const ws = new WebSocket(res.url);
-    ws.onmessage = onMessage;
-    ws.onclose = () => {
-      dispatch({ type: "DISCONNECTED" });
-    };
-
-    setWebsocket(ws);
-  };
-
-  const stop = () => {
-    if (!websocket) return;
-
-    console.log("Stopping debug session");
-    websocket.close();
-    stopSession();
-  };
 
   const clickRestart = () => {
     setShowModal(true);
@@ -67,12 +35,6 @@ const DebugConsole = () => {
   const clickLoadConfig = () => {
     console.log("Loading config");
     loadConfig();
-  };
-
-  const onMessage = (event: { data: string }) => {
-    const data = JSON.parse(event.data);
-    // console.log(data);
-    setMessages((messages) => [...messages, data]);
   };
 
   if (!doNotLoadConfigOnNextBoot) return null;
@@ -142,4 +104,10 @@ const DebugConsole = () => {
 
 export default DebugConsole;
 
+
+interface DebugConsoleProps {
+  messages: LogMessage[];
+  join: () => void;
+  stop: () => void;
+}
 

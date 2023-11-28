@@ -1,4 +1,5 @@
 import { Dropdown } from "react-bootstrap";
+import { IconDarkChevronDown } from '../../shared/icons';
 import {
   useGetMinimumLogLevelQuery,
   useSetMinimumLogLevelMutation,
@@ -18,6 +19,7 @@ const MinimumLogLevelDropdown = () => {
         className="d-flex align-items-center gap-1 text-reset text-decoration-none p-0"
       >
         {currentLogLevel.minimumLevel}
+        <IconDarkChevronDown />
       </Dropdown.Toggle>
 
       <Dropdown.Menu className="shadow">

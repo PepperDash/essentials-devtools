@@ -1,4 +1,5 @@
-import { Suspense } from "react";
+import { Suspense, useState } from "react";
+import { useDispatch } from 'react-redux';
 import { Route, Routes } from "react-router-dom";
 import ConfigFile from './features/ConfigFile';
 import DebugConsole from './features/DebugConsole/DebugConsole';
@@ -6,11 +7,61 @@ import DeviceList from "./features/DeviceList";
 import TopNav from "./features/TopNav";
 import Types from "./features/Types";
 import Versions from "./features/Versions";
+import { LogMessage } from './shared/types/LogMessage';
+import { useGetDebugSessionMutation, useStopDebugSessionMutation } from './store/apiSlice';
 
 function App() {
+  const [websocket, setWebsocket] = useState<WebSocket>();
+  const [messages, setMessages] = useState<LogMessage[]>([]);
+  const [isConnected, setIsConnected] = useState<boolean>(false);
+  const dispatch = useDispatch();
+
+  const [startSession] = useGetDebugSessionMutation();
+  const [stopSession] = useStopDebugSessionMutation();
+
+  //* FUNCTIONS *******************************************************/
+  const join = async () => {
+    const res = await startSession().unwrap();
+
+    console.log("Joining debug session at " + res.url);
+
+    console.log("Connecting to debug session");
+    const ws = new WebSocket(res.url);
+    ws.onerror = (err) => {
+      console.log("Websocket error", err);
+    };
+    ws.onmessage = onMessage;
+    ws.onclose = () => {
+      dispatch({ type: "DISCONNECTED" });
+      setIsConnected(false);
+    };
+    // ws.onopen = () => {
+    //   dispatch({ type: "CONNECTED" });
+    //   setIsConnected(true);
+    // };
+
+    setWebsocket(ws);
+  };
+
+  const stop = () => {
+    if (!websocket) return;
+
+    console.log("Stopping debug session");
+    websocket.close();
+    stopSession();
+  };
+
+  const onMessage = (event: { data: string }) => {
+    const data = JSON.parse(event.data);
+    // console.log(data);
+
+    // Set the messages array as a new array to trigger a re-render of child components
+    setMessages(Array.from(messages.concat(data)));
+  };
+
   return (
     <div className="d-flex flex-column overflow-hidden h-100">
-      <TopNav />
+      <TopNav isConnected={isConnected} />
       <Suspense fallback={null}>
         <div className="p-2 overflow-hidden flex-grow-1">
           <Routes>
@@ -19,7 +70,7 @@ function App() {
             <Route path="/config" element={<ConfigFile />} />
             <Route path="/devices" element={<DeviceList />} />
             <Route path="/types" element={<Types />} />
-            <Route path="/console" element={<DebugConsole />} />
+            <Route path="/console" element={<DebugConsole messages={messages} join={join} stop={stop} />} />
           </Routes>
         </div>
       </Suspense>

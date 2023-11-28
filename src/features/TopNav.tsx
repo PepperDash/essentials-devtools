@@ -1,10 +1,8 @@
 import { Container, Nav, Navbar } from "react-bootstrap";
 import { NavLink, useLocation } from 'react-router-dom';
 
-const TopNav = () => {
+const TopNav = ({isConnected}: {isConnected: boolean}) => {
   const location = useLocation();
-
-
 
   return (
     <Navbar expand="md" variant="light" bg="white" className="user-select-none shadow-sm px-0">
@@ -24,3 +22,5 @@ const TopNav = () => {
 };
 
 export default TopNav;
+
+

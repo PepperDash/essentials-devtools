@@ -3,6 +3,7 @@ import { Badge } from 'react-bootstrap';
 import Dropdown from 'react-bootstrap/Dropdown';
 import Form from 'react-bootstrap/Form';
 import { useSearchParams } from 'react-router-dom';
+import { IconDarkChevronDown } from './icons';
 import { IdLabel } from './types/IdLabel';
 // import { IconDarkChevronDown } from 'shared/icons';
 
@@ -64,7 +65,7 @@ export const FilterDropdownSearchParams = (
             {values.length}
           </Badge>
         )}
-        {/* <IconDarkChevronDown className="ms-1" /> */}
+        <IconDarkChevronDown className="ms-1" />
       </Dropdown.Toggle>
       <Dropdown.Menu className="scroll-dropdown shadow">
         {props.items.map((item) => (

@@ -20,12 +20,12 @@ const Content = ({ filteredItems }: ConsoleWindowProps) => {
 
   return (
     <>
-      <Container fluid>
+      <Container fluid className='table-striped'>
         {filteredItems.map((message, index) => (
           <Row
             key={index}
             onClick={() => clickItem(message)}
-            className={selectedItem === message ? "bg-primary text-white cursor-pointer" : "cursor-pointer"}
+            className={(selectedItem === message ? "bg-primary text-white cursor-pointer" : "cursor-pointer") + (index % 2 === 0 ? " bg-light" : " 2bg-white")}
           >
             <Col md={6}>{message.Timestamp}</Col>
             <Col md={3}>{message.Properties?.Key || "global"}</Col>
