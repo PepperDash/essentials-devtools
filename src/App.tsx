@@ -35,10 +35,10 @@ function App() {
       dispatch({ type: "DISCONNECTED" });
       setIsConnected(false);
     };
-    // ws.onopen = () => {
-    //   dispatch({ type: "CONNECTED" });
-    //   setIsConnected(true);
-    // };
+    ws.onopen = () => {
+      dispatch({ type: "CONNECTED" });
+      setIsConnected(true);
+    };
 
     setWebsocket(ws);
   };
@@ -52,11 +52,11 @@ function App() {
   };
 
   const onMessage = (event: { data: string }) => {
-    const data = JSON.parse(event.data);
+    const newMsg = JSON.parse(event.data);
     // console.log(data);
 
     // Set the messages array as a new array to trigger a re-render of child components
-    setMessages(Array.from(messages.concat(data)));
+    setMessages(current => [...current, newMsg]);
   };
 
   return (

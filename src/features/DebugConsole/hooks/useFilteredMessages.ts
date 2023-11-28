@@ -49,7 +49,8 @@ export function useFilteredMessages(listItems: LogMessage[]) {
       let textMatch = true;
       if (searchText.length) {
         const textMatchFields = [
-          item.MessageTemplate,
+          item.RenderedMessage,
+          item.Timestamp,
         ];
         // true if for every search text word, some field contains it
         textMatch = searchText.every((st) =>

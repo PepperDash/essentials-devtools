@@ -16,7 +16,7 @@ const MinimumLogLevelDropdown = () => {
     <Dropdown>
       <Dropdown.Toggle
         variant="link"
-        className="d-flex align-items-center gap-1 text-reset text-decoration-none p-0"
+        className="d-flex align-items-center gap-1 text-reset text-decoration-none py-0"
       >
         {currentLogLevel.minimumLevel}
         <IconDarkChevronDown />

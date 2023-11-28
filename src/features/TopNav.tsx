@@ -1,5 +1,6 @@
 import { Container, Nav, Navbar } from "react-bootstrap";
 import { NavLink, useLocation } from 'react-router-dom';
+import { IconDarkEllipse } from '../shared/icons';
 
 const TopNav = ({isConnected}: {isConnected: boolean}) => {
   const location = useLocation();
@@ -16,6 +17,10 @@ const TopNav = ({isConnected}: {isConnected: boolean}) => {
             <NavLink className={ location.pathname.includes("/devices") ? 'text-secondary me-3' : 'me-3'  } to="/devices">Devices</NavLink>
             <NavLink className={ location.pathname.includes("/types") ? 'text-secondary me-3' : 'me-3'  } to="/types">Types</NavLink>
         </Nav>
+        <div className='d-flex align-items-center'>
+          <IconDarkEllipse className={isConnected ? 'text-success' : 'text-danger'} />
+          <span className='ms-2'>{isConnected ? 'Connected' : 'Disconnected'}</span>
+        </div>
       </Container>
     </Navbar>
   );
