@@ -14,7 +14,7 @@ import MinimumLogLevelDropdown from './MinimumLogLevelDropdown';
 import RestartConfirmModal from "./RestartConfirmModal";
 import { useFilteredMessages } from "./hooks/useFilteredMessages";
 
-const DebugConsole = ({messages, join, stop}: DebugConsoleProps) => {
+const DebugConsole = ({messages, isConnected, join, stop, clear}: DebugConsoleProps) => {
   //* HOOKS ***********************************************************/
   const [showModal, setShowModal] = useState(false);
 
@@ -47,12 +47,16 @@ const DebugConsole = ({messages, join, stop}: DebugConsoleProps) => {
           <h2>Debug Console</h2>
         </div>
         <div className="d-flex align-items-center justify-content-start mb-2">
+          {!isConnected ? (
           <Button className="mx-1" variant="primary" size="sm" onClick={join}>
             Start Debug Session
           </Button>
-          <Button className="mx-1" variant="primary" size="sm" onClick={stop}>
+          )
+          : (
+            <Button className="mx-1" variant="primary" size="sm" onClick={stop}>
             Stop Debug Session
           </Button>
+          )}
           <MinimumLogLevelDropdown />
           <Form.Check
             type="checkbox"
@@ -67,6 +71,7 @@ const DebugConsole = ({messages, join, stop}: DebugConsoleProps) => {
               )
             }
           />
+          {doNotLoadConfigOnNextBoot?.doNotLoadConfigOnNextBoot && (
           <Button
             className="mx-1"
             variant="primary"
@@ -75,6 +80,14 @@ const DebugConsole = ({messages, join, stop}: DebugConsoleProps) => {
             disabled={!doNotLoadConfigOnNextBoot.doNotLoadConfigOnNextBoot}
           >
             Load Config
+          </Button>)}
+          <Button
+            className="mx-1"
+            variant="primary"
+            size="sm"
+            onClick={clear}
+          >
+            Clear Console Trace
           </Button>
           <Button
             className="mx-1"
@@ -107,7 +120,9 @@ export default DebugConsole;
 
 interface DebugConsoleProps {
   messages: LogMessage[];
+  isConnected: boolean;
   join: () => void;
   stop: () => void;
+  clear: () => void;
 }
 

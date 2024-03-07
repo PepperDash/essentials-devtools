@@ -51,6 +51,10 @@ function App() {
     stopSession();
   };
 
+  const clear = () => {
+    setMessages([]);
+  };
+
   const onMessage = (event: { data: string }) => {
     const newMsg = JSON.parse(event.data);
     // console.log(data);
@@ -70,7 +74,7 @@ function App() {
             <Route path="/config" element={<ConfigFile />} />
             <Route path="/devices" element={<DeviceList />} />
             <Route path="/types" element={<Types />} />
-            <Route path="/console" element={<DebugConsole messages={messages} join={join} stop={stop} />} />
+            <Route path="/console" element={<DebugConsole messages={messages} isConnected={isConnected} join={join} stop={stop} clear={clear} />} />
           </Routes>
         </div>
       </Suspense>
