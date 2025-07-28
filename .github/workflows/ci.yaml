@@ -1,4 +1,4 @@
-name: Build CH5
+name: ci
 
 on:
   push:
@@ -9,12 +9,22 @@ jobs:
     uses: ./.github/workflows/get-version.yaml
     secrets: inherit
   build_and_push:
-    uses: ./.github/workflows/build-and-push.yaml
+    uses: ./.github/workflows/build.yaml
     secrets: inherit
-    needs: get_version
+    needs: get_version    
     with:
       newVersion: ${{ needs.get_version.outputs.newVersion }}
       version: ${{ needs.get_version.outputs.version }}
       hash: ${{ needs.get_version.outputs.hash }}
       tag: ${{ needs.get_version.outputs.tag }}
       channel: ${{ needs.get_version.outputs.channel }}
+  # deploy:
+  #   uses: ./.github/workflows/deploy.yaml
+  #   secrets: inherit
+  #   needs: [get_version, build_and_push]
+  #   if: needs.get_version.outputs.newVersion == 'true'
+  #   with:      
+  #     version: ${{ needs.get_version.outputs.version }}
+  #     hash: ${{ needs.get_version.outputs.hash }}
+  #     tag: ${{ needs.get_version.outputs.tag }}
+  #     channel: ${{ needs.get_version.outputs.channel }}

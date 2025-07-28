@@ -7,13 +7,27 @@
         "releaseRules": [
           { "scope": "force-patch", "release": "patch" },
           { "scope": "no-release", "release": false }
-        ],
-        "presetConfig": {}
+        ]
       }
     ],
-    "@semantic-release/release-notes-generator",
-    [
-      "@semantic-release/changelog",
+    ["@semantic-release/release-notes-generator",
+      {
+        "preset": "conventionalcommits",
+        "presetConfig":{
+          "types": [
+            {"type": "feat", "section": "Features"},
+            {"type": "fix", "section": "Bug Fixes"},
+            {"type": "chore", "hidden": true},
+            {"type": "docs", "hidden": true},
+            {"type": "style", "hidden": true},
+            {"type": "refactor", "hidden": true},
+            {"type": "perf", "hidden": true},
+            {"type": "test", "hidden": true}
+        ]
+        }
+      }
+    ],    
+    ["@semantic-release/changelog", 
       {
         "changelogFile": "CHANGELOG.md"
       }
@@ -21,6 +35,7 @@
     [
       "@semantic-release/exec",
       {
+        "analyzeCommitsCmd": "echo \"${releases}\" >> $GITHUB_STEP_SUMMARY && echo \"version ${lastRelease.version} tag ${lastRelease.gitTag} type ${lastRelease.type} channel ${lastRelease.channel}\" >> $GITHUB_STEP_SUMMARY",
         "verifyReleaseCmd": "echo \"newVersion=true\" >> $GITHUB_OUTPUT",
         "publishCmd": "echo \"version=${nextRelease.version}\" >> $GITHUB_OUTPUT && echo \"tag=${nextRelease.gitTag}\" >> $GITHUB_OUTPUT && echo \"type=${nextRelease.type}\" >> $GITHUB_OUTPUT && echo \"channel=${nextRelease.channel}\" >> $GITHUB_OUTPUT"
       }
@@ -30,14 +45,9 @@
   "branches": [
     "main",
     {
-      "name": "release",
-      "prerelease": "rc",
-      "channel": "rc"
-    },
-    {
-      "name": "development",
-      "prerelease": "beta",
-      "channel": "beta"
+      "name": "replace-me-feature-branch",
+      "prerelease": "replace-me-prerelease",
+      "channel": "replace-me-prerelease"
     }
   ]
 }

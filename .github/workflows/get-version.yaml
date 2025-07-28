@@ -11,7 +11,7 @@ on:
         value: ${{ jobs.get_version.outputs.tag }}
       newVersion:
         description: 'Was a new version generated?'
-        value: ${{ jobs.get_version.outputs.newVersion }}
+        value: ${{ jobs.get_version.outputs.newVersion }}      
       type:
         description: 'The type of version bump'
         value: ${{ jobs.get_version.outputs.type }}
@@ -31,13 +31,35 @@ jobs:
       channel: ${{ steps.get_version.outputs.channel }}
       newVersion: ${{ steps.get_version.outputs.newVersion }}
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3 # v3
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4 # v4
         with:
           cache: npm
           node-version: lts/*
           registry-url: https://npm.pkg.github.com
-          scope: '@pepperdash-products'
+          scope: "@pepperdash"
+      - name: Get branch name
+        id: get_branch
+        run: |
+          branch=${GITHUB_REF#refs/heads/}
+          echo "branch=$branch" >> $GITHUB_OUTPUT
+          echo "prerelease=${branch//\//-}" >> $GITHUB_OUTPUT
+        env:
+          GITHUB_REF: ${{ github.ref }}
+      - name: Replace branch name in .releaserc.json
+        if: steps.get_branch.outputs.branch != 'main'
+        uses: jacobtomlinson/gha-find-replace@v3
+        with:
+          find: 'replace-me-feature-branch'
+          replace: '${{ steps.get_branch.outputs.branch }}'
+          include: '.releaserc.json'
+      - name: Replace prerelease name in .releaserc.json
+        if: steps.get_branch.outputs.branch != 'main'
+        uses: jacobtomlinson/gha-find-replace@v3
+        with:
+          find: 'replace-me-prerelease'
+          replace: '${{ steps.get_branch.outputs.prerelease }}'
+          include: '.releaserc.json'
       - name: Get version number
         id: get_version
         run: |
@@ -50,12 +72,11 @@ jobs:
           -- semantic-release
           echo "hash=$(git rev-parse --short=7 HEAD)" >> $GITHUB_OUTPUT
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_REGISTRY_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_REGISTRY_TOKEN }}      
           NPM_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Print summary if no new version
         if: steps.get_version.outputs.newVersion != 'true'
-        run: |
+        run: |          
           branch=${GITHUB_REF#refs/heads/}
           echo "# UI V2 Summary" >> $GITHUB_STEP_SUMMARY
           echo "No new version generated" >> $GITHUB_STEP_SUMMARY
@@ -72,7 +93,7 @@ jobs:
         if: steps.get_version.outputs.newVersion == 'true'
         run: |
           echo "# UI V2 Summary" >> $GITHUB_STEP_SUMMARY
-
+          
           echo "Version: ${{ steps.get_version.outputs.version }}" >> $GITHUB_STEP_SUMMARY
           echo "Tag: ${{ steps.get_version.outputs.tag }}" >> $GITHUB_STEP_SUMMARY
           echo "New Version: ${{ steps.get_version.outputs.newVersion }}" >> $GITHUB_STEP_SUMMARY

@@ -1,0 +1,98 @@
+name: Build and Push to Artifacts S3
+
+on:
+  workflow_call:
+    inputs:
+      newVersion:
+        description: 'new version?'
+        required: true
+        type: string
+      version:
+        description: 'The version of the file to build and push'
+        required: true
+        type: string
+      hash:
+        description: 'The commit hash'
+        required: true
+        type: string
+      tag:
+        description: 'The tag of the image to build and push'
+        required: true
+        type: string
+      channel:
+        description: 'The channel of the image to build and push'
+        required: true
+        type: string
+jobs:
+  Build: 
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: write
+    steps:    
+      - name: Checkout Repo
+        uses: actions/checkout@v3
+      - name: Use Node 20
+        uses: actions/setup-node@v3
+        with:
+          cache: npm
+          node-version: '20'
+          registry-url: "https://npm.pkg.github.com"
+      - name: Set package.json version
+        run: |
+          if [ '${{ inputs.newVersion }}' = 'true' ]; then
+            echo "Setting package.json version to ${{ inputs.version }}"
+            npm version ${{ inputs.version }} --no-git-tag-version
+          else
+            echo "Not setting package.json version"
+          fi
+      - name: Install Packages
+        run: |
+          npm ci
+      # - name: Replace version number for api call        
+      #   uses: jacobtomlinson/gha-find-replace@v3
+      #   with:
+      #     find: "'vx.y.z'"
+      #     replace: "'${{ inputs.newVersion == 'true' && inputs.tag || format('{0}-{1}', github.ref_name, inputs.hash)}}'"
+      #     include: 'appVersion.ts'
+      - name: Build App
+        run: |
+          buildSummary=$(npm run build)
+
+          IFS=""
+          readarray buildSummaryArray <<< "$buildSummary"
+
+          for i in ${buildSummaryArray[@]}
+          do
+            echo "$i" >> $GITHUB_STEP_SUMMARY
+          done        
+      - name: Archive Output 
+        id: package
+        run: |
+          cd dist
+          branch=${GITHUB_REF#refs/heads/}
+          
+          if [ '${{ inputs.newVersion }}' = 'true' ]; then
+            filename=essentials-web-config-app-${{ inputs.tag }}-${{ inputs.hash }}.zip         
+          else
+            filename=essentials-web-config-app-${branch//\//-}-${{ inputs.hash }}.zip
+          fi
+
+          zip -r ../$filename .
+          echo "filename=${filename}" >> $GITHUB_OUTPUT      
+      - name: Get release notes
+        if: inputs.newVersion == 'true'
+        uses: actions/download-artifact@v4
+        with:
+          name: change-log      
+      - name: Create Release        
+        id: create_release
+        if: inputs.newVersion == 'true'
+        uses: ncipollo/release-action@v1
+        with:
+          artifacts: './${{ steps.package.outputs.filename }}'
+          bodyFile: ./CHANGELOG.md
+          prerelease: ${{ inputs.channel != '' }}
+          tag: ${{ inputs.tag }}
+          commit: ${{ github.sha }}
+          allowUpdates: true
