@@ -18,6 +18,7 @@ npm install
 
 # Set environment variables
 export PROGRAM_HOST=https://your-processor-ip
+export PROGRAM_ID=app01
 
 # Start development server
 npm start
