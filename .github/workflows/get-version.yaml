@@ -64,7 +64,7 @@ jobs:
           echo "hash: ${{ steps.get_version.outputs.hash }}" >> $GITHUB_STEP_SUMMARY
       - name: Upload release notes
         if: steps.get_version.outputs.newVersion == 'true'
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: change-log
           path: CHANGELOG.md
