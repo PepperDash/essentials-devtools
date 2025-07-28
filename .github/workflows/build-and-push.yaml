@@ -48,7 +48,7 @@ jobs:
           npx ch5-cli archive -p essentials-web-config-app-${{ inputs.version }} -d dist -o build
       - name: Get release notes
         if: inputs.newVersion == 'true'
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: change-log
       - name: Create Release
