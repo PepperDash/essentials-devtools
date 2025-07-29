@@ -17,8 +17,17 @@ A powerful web-based configuration and debugging tool for PepperDash Essentials 
 npm install
 
 # Set environment variables
+# macOS/Linux/WSL:
 export PROGRAM_HOST=https://your-processor-ip
 export PROGRAM_ID=app01
+
+# Windows Command Prompt:
+# set PROGRAM_HOST=https://your-processor-ip
+# set PROGRAM_ID=app01
+
+# Windows PowerShell:
+# $env:PROGRAM_HOST="https://your-processor-ip"
+# $env:PROGRAM_ID="app01"
 
 # Start development server
 npm start
@@ -87,9 +96,23 @@ Builds the app for production to the `build` folder with optimized bundles.
 ### Environment Setup
 
 **Required Environment Variables:**
+
+*macOS/Linux/WSL:*
 ```bash
-PROGRAM_HOST=https://your-processor-ip    # Required: Target processor IP
-PROGRAM_ID=app01                          # Optional: Application slot (default: app01)
+export PROGRAM_HOST=https://your-processor-ip    # Required: Target processor IP
+export PROGRAM_ID=app01                          # Optional: Application slot (default: app01)
+```
+
+*Windows Command Prompt:*
+```cmd
+set PROGRAM_HOST=https://your-processor-ip       # Required: Target processor IP
+set PROGRAM_ID=app01                             # Optional: Application slot (default: app01)
+```
+
+*Windows PowerShell:*
+```powershell
+$env:PROGRAM_HOST="https://your-processor-ip"    # Required: Target processor IP
+$env:PROGRAM_ID="app01"                          # Optional: Application slot (default: app01)
 ```
 
 **Development Prerequisites:**
