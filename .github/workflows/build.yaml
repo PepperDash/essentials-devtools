@@ -49,6 +49,8 @@ jobs:
       - name: Install Packages
         run: |
           npm ci
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       # - name: Replace version number for api call        
       #   uses: jacobtomlinson/gha-find-replace@v3
       #   with:
@@ -57,19 +59,18 @@ jobs:
       #     include: 'appVersion.ts'
       - name: Build App
         run: |
-          buildSummary=$(npm run build)
-
-          IFS=""
-          readarray buildSummaryArray <<< "$buildSummary"
-
-          for i in ${buildSummaryArray[@]}
-          do
-            echo "$i" >> $GITHUB_STEP_SUMMARY
-          done        
+          echo "## Build Summary" >> $GITHUB_STEP_SUMMARY
+          if ! npm run build 2>&1 | tee build_output.txt; then
+            echo "Build failed!" >> $GITHUB_STEP_SUMMARY
+            cat build_output.txt >> $GITHUB_STEP_SUMMARY
+            exit 1
+          fi
+          echo "" >> $GITHUB_STEP_SUMMARY
+          cat build_output.txt >> $GITHUB_STEP_SUMMARY
       - name: Archive Output 
         id: package
         run: |
-          cd dist
+          cd build
           branch=${GITHUB_REF#refs/heads/}
           
           if [ '${{ inputs.newVersion }}' = 'true' ]; then
