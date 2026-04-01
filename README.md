@@ -1,46 +1,201 @@
-# Getting Started with Create React App
+# PepperDash Essentials Web Config App
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+A powerful web-based configuration and debugging tool for PepperDash Essentials systems. This React application provides real-time system monitoring, configuration management, and troubleshooting capabilities through an intuitive web interface.
 
-## Available Scripts
+## 🚀 Quick Start
 
-In the project directory, you can run:
+### For Users
+**New to the application?** Start with the [Getting Started Tutorial](./docs/tutorials/getting-started.md) for a guided introduction.
 
-### `npm start`
+**Need to solve a specific problem?** Check the [How-to Guides](./docs/how-to/) for step-by-step solutions.
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+### For Developers
+**Setting up the development environment:**
 
-The page will reload if you make edits.\
-You will also see any lint errors in the console.
+```bash
+# Install dependencies
+npm install
 
-### `npm test`
+# Set environment variables
+# macOS/Linux/WSL:
+export PROGRAM_HOST=https://your-processor-ip
+export PROGRAM_ID=app01
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+# Windows Command Prompt:
+# set PROGRAM_HOST=https://your-processor-ip
+# set PROGRAM_ID=app01
 
-### `npm run build`
+# Windows PowerShell:
+# $env:PROGRAM_HOST="https://your-processor-ip"
+# $env:PROGRAM_ID="app01"
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+# Start development server
+npm start
+```
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+Open [http://localhost:3000](http://localhost:3000) to view the app in development mode.
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+## 📚 Documentation
 
-### `npm run eject`
+This project uses the [Diataxis framework](https://diataxis.fr/) to provide you with the right information at the right time:
 
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
+### 🎯 [Tutorials](./docs/tutorials/) - Learning-oriented
+**"Take me by the hand and teach me"**
+- [Getting Started Tutorial](./docs/tutorials/getting-started.md) - Your first steps with the web config app
+- [Debug Console Tutorial](./docs/tutorials/debug-console-basics.md) - Master the debug console
+- [Device Management Tutorial](./docs/tutorials/device-management-basics.md) - Device inspection and management
 
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+### 🔧 [How-to Guides](./docs/how-to/) - Problem-oriented
+**"Show me how to solve this specific problem"**
+- [Troubleshooting Connection Issues](./docs/how-to/troubleshoot-connection.md)
+- [Filter and Search Debug Messages](./docs/how-to/filter-debug-messages.md)
+- [Export and Analyze Configuration](./docs/how-to/export-configuration.md)
+- [Monitor System Performance](./docs/how-to/monitor-performance.md)
+- [Restart and Reload Configuration](./docs/how-to/restart-reload-config.md)
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
+### 📚 [Reference](./docs/reference/) - Information-oriented
+**"Tell me the facts"**
+- [UI Components Reference](./docs/reference/ui-components.md) - Complete component documentation
+- [API Endpoints Reference](./docs/reference/api-endpoints.md) - All available REST endpoints
+- [Configuration Schema Reference](./docs/reference/configuration-schema.md) - Configuration file structure
+- [Device Types Reference](./docs/reference/device-types.md) - Supported device types and properties
+- [Log Levels and Filters Reference](./docs/reference/log-levels.md) - Complete logging reference
 
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
+### 💡 [Explanation](./docs/explanation/) - Understanding-oriented
+**"Help me understand why and how this works"**
+- [System Architecture](./docs/explanation/architecture.md) - How the web app integrates with Essentials
+- [Debug Console Design](./docs/explanation/debug-console-design.md) - How real-time debugging works
+- [Configuration Management](./docs/explanation/configuration-management.md) - How configuration is handled
+- [Security Considerations](./docs/explanation/security.md) - Security model and best practices
 
-## Learn More
+## ✨ Key Features
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+- **🔍 Real-Time Debug Console**: Monitor system behavior with live message streaming
+- **⚙️ Device Management**: Inspect and understand configured devices
+- **📄 Configuration Viewer**: View and analyze complete system configuration
+- **📦 Version Information**: Check loaded assemblies and software versions
+- **🏷️ Type Registry**: Browse supported device types and capabilities
+- **🔄 System Control**: Restart system and reload configuration safely
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+## 🛠️ Development
+
+### Available Scripts
+
+#### `npm start`
+Runs the app in development mode. The page will reload when you make edits.
+
+#### `npm test`
+Launches the test runner in interactive watch mode.
+
+#### `npm run build`
+Builds the app for production to the `build` folder with optimized bundles.
+
+#### `npm run eject`
+**Note: This is a one-way operation.** Ejects from Create React App for full configuration control.
+
+### Environment Setup
+
+**Required Environment Variables:**
+
+*macOS/Linux/WSL:*
+```bash
+export PROGRAM_HOST=https://your-processor-ip    # Required: Target processor IP
+export PROGRAM_ID=app01                          # Optional: Application slot (default: app01)
+```
+
+*Windows Command Prompt:*
+```cmd
+set PROGRAM_HOST=https://your-processor-ip       # Required: Target processor IP
+set PROGRAM_ID=app01                             # Optional: Application slot (default: app01)
+```
+
+*Windows PowerShell:*
+```powershell
+$env:PROGRAM_HOST="https://your-processor-ip"    # Required: Target processor IP
+$env:PROGRAM_ID="app01"                          # Optional: Application slot (default: app01)
+```
+
+**Development Prerequisites:**
+- Node.js 16+ 
+- npm or yarn
+- Network access to target PepperDash Essentials processor
+- Modern web browser
+
+### Architecture Overview
+
+**Frontend Stack:**
+- React 18 with TypeScript
+- Redux Toolkit for state management
+- React Router for navigation
+- Bootstrap 5 for UI components
+- WebSocket for real-time communication
+
+**Integration:**
+- Connects to PepperDash Essentials processors via HTTPS API
+- Uses WebSocket for real-time debug message streaming
+- Serves as static files from processor's built-in web server
+
+## 🔐 Security Considerations
+
+- **HTTPS Required**: All communication encrypted
+- **Self-Signed Certificates**: Common for internal network devices
+- **Processor Authentication**: Leverages processor's built-in security
+- **Network-Level Security**: Relies on internal network protection
+
+## 🌐 Browser Compatibility
+
+**Supported Browsers:**
+- Chrome 70+
+- Firefox 65+
+- Safari 12+
+- Edge 79+
+
+**Required Features:**
+- WebSocket support for real-time debugging
+- Modern JavaScript (ES6+) support
+- CSS Grid and Flexbox for responsive layouts
+
+## 📖 Learning Resources
+
+**New Users:**
+1. Start with [Getting Started Tutorial](./docs/tutorials/getting-started.md)
+2. Learn [Debug Console Basics](./docs/tutorials/debug-console-basics.md)
+3. Explore [Device Management](./docs/tutorials/device-management-basics.md)
+
+**Troubleshooting:**
+- Check [How-to Guides](./docs/how-to/) for specific solutions
+- Review [Connection Troubleshooting](./docs/how-to/troubleshoot-connection.md) for access issues
+- Use [Performance Monitoring](./docs/how-to/monitor-performance.md) for system health
+
+**Advanced Usage:**  
+- Understand [System Architecture](./docs/explanation/architecture.md)
+- Learn [Debug Console Design](./docs/explanation/debug-console-design.md)
+- Reference [API Documentation](./docs/reference/api-endpoints.md)
+
+## 🤝 Contributing
+
+This project follows standard React development practices:
+- TypeScript for type safety
+- ESLint and Prettier for code formatting
+- Component-based architecture with feature organization
+- Redux Toolkit for predictable state management
+
+## 📄 License
+
+MIT License - see [LICENSE](./LICENSE) file for details.
+
+## 🆘 Support
+
+**For Application Issues:**
+- Check the [How-to Guides](./docs/how-to/) for common solutions
+- Review system requirements and browser compatibility
+- Verify network connectivity to target processor
+
+**For PepperDash Essentials Questions:**
+- Consult PepperDash documentation and support resources
+- Verify Essentials framework version compatibility
+- Check processor configuration and network settings
+
+---
+
+*Built with ❤️ for the PepperDash community. This web application makes PepperDash Essentials systems more accessible and manageable through modern web interfaces.*

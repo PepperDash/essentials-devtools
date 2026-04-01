@@ -1,0 +1,118 @@
+name: Build React Application
+
+on:
+  workflow_call:
+    inputs:
+      newVersion:
+        description: 'new version?'
+        required: true
+        type: string
+      version:
+        description: 'The version of the file to build and push'
+        required: true
+        type: string
+      tag:
+        description: 'The tag of the image to build and push'
+        required: true
+        type: string
+      channel:
+        description: 'The channel of the image to build and push'
+        required: true
+        type: string
+jobs:
+  Build:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: write
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v4
+      - name: Use Node 20
+        uses: actions/setup-node@v4
+        with:
+          cache: npm
+          node-version: '20'
+          registry-url: 'https://npm.pkg.github.com'
+      - name: Set package.json version
+        run: |
+          if [ '${{ inputs.newVersion }}' = 'true' ]; then
+            echo "Setting package.json version to ${{ inputs.version }}"
+            npm version ${{ inputs.version }} --no-git-tag-version
+          else
+            echo "Not setting package.json version"
+          fi
+      - name: Install Packages
+        run: |
+          npm ci
+      - name: Build App
+        id: build
+        run: |
+          # Enable pipefail to ensure the step fails if npm build fails
+          set -o pipefail
+
+          echo "## Build Output" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+
+          # Run build and capture output, but handle failure gracefully for summary
+          if npm run build 2>&1 | tee build_output.log; then
+            echo "Build completed successfully"
+          else
+            echo "Build failed - capturing output for summary"
+          fi
+
+          # Always add the build output to summary (success or failure)
+          sed 's/\x1b\[[0-9;]*m//g' build_output.log >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+
+          # Check if build actually failed and exit with error code
+          if [ ! -d "dist" ]; then
+            echo "Build failed - dist directory not created"
+            exit 1
+          fi
+      - name: Clean up after failed build
+        if: failure() && steps.build.conclusion == 'failure'
+        run: |
+          git push origin --delete ${{ inputs.tag }}
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "---" >> $GITHUB_STEP_SUMMARY
+          echo "## Build Result" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "❌ **BUILD FAILED**" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "The build output above shows the specific errors that caused the build to fail." >> $GITHUB_STEP_SUMMARY
+      - name: Archive Output
+        if: success()
+        id: package
+        run: |
+          cd dist
+          branch=${GITHUB_REF#refs/heads/}
+          repo_name=${GITHUB_REPOSITORY#*/}
+
+          if [ '${{ inputs.newVersion }}' = 'true' ]; then
+            filename=${repo_name}-${{ inputs.tag }}.zip         
+          else
+            filename=${repo_name}-${branch//\//-}.zip
+          fi
+
+          zip -r ../$filename .
+          echo "filename=${filename}" >> $GITHUB_OUTPUT
+      - name: Get release notes
+        if: success() && inputs.newVersion == 'true'
+        uses: actions/download-artifact@v4
+        with:
+          name: change-log
+      - name: Create Release
+        id: create_release
+        if: success() && inputs.newVersion == 'true'
+        uses: ncipollo/release-action@v1
+        with:
+          artifacts: './${{ steps.package.outputs.filename }}'
+          bodyFile: ./CHANGELOG.md
+          prerelease: ${{ inputs.channel != '' }}
+          tag: ${{ inputs.tag }}
+          commit: ${{ github.sha }}
+          allowUpdates: true

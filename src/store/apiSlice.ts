@@ -2,7 +2,10 @@ import { createApi } from '@reduxjs/toolkit/query/react';
 
 import { axiosBaseQuery } from '../services/httpService';
 
-const baseApiPath = '/cws/app01/api';
+const env = process.env;
+const programId = env.PROGRAM_ID || 'app02';
+console.log("programId == ", programId);
+const baseApiPath = `/cws/${programId}/api`;
 
 const apiSlice = createApi({
   baseQuery: axiosBaseQuery({ baseUrl: baseApiPath }),

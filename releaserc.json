@@ -3,17 +3,14 @@
     [
       "@semantic-release/commit-analyzer",
       {
-        "preset": "conventionalcommits",
         "releaseRules": [
           { "scope": "force-patch", "release": "patch" },
           { "scope": "no-release", "release": false }
-        ],
-        "presetConfig": {}
+        ]
       }
     ],
-    "@semantic-release/release-notes-generator",
-    [
-      "@semantic-release/changelog",
+    "@semantic-release/release-notes-generator",    
+    ["@semantic-release/changelog", 
       {
         "changelogFile": "CHANGELOG.md"
       }
@@ -25,19 +22,15 @@
         "publishCmd": "echo \"version=${nextRelease.version}\" >> $GITHUB_OUTPUT && echo \"tag=${nextRelease.gitTag}\" >> $GITHUB_OUTPUT && echo \"type=${nextRelease.type}\" >> $GITHUB_OUTPUT && echo \"channel=${nextRelease.channel}\" >> $GITHUB_OUTPUT"
       }
     ]
-  ],
-  "pkgRoot": "dist",
+  ],  
   "branches": [
     "main",
+    {"name": "development", "prerelease": "beta", "channel": "beta"},
+    {"name": "release", "prerelease": "rc", "channel": "rc"},
     {
-      "name": "release",
-      "prerelease": "rc",
-      "channel": "rc"
-    },
-    {
-      "name": "development",
-      "prerelease": "beta",
-      "channel": "beta"
+      "name": "replace-me-feature-branch",
+      "prerelease": "replace-me-prerelease",
+      "channel": "replace-me-prerelease"
     }
   ]
 }
