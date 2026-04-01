@@ -13,9 +13,9 @@ const DeviceList = () => {
 
   return (
     <>
-      <Container fluid className="h-100 overflow-none">
-        <Row className="h-100 overflow-none">
-          <Col md={8} className="h-100 overflow-none">
+      <Container fluid className="h-100 overflow-hidden">
+        <Row className="h-100 overflow-hidden">
+          <Col md={8} className="h-100 overflow-hidden">
             <Row className="w-100 fw-bold">
               <Col md={12}>Key</Col>
               <Col md={12}>Name</Col>
@@ -33,8 +33,8 @@ const DeviceList = () => {
             ))}
             </div>
           </Col>
-          <Col md={16}>
-            <DeviceDetail item={selectedDevice} />
+          <Col md={16} className='h-100 overflow-hidden'>
+            {selectedDevice && <DeviceDetail item={selectedDevice} />}
           </Col>
         </Row>
       </Container>

@@ -1,118 +1,145 @@
-import { createApi } from '@reduxjs/toolkit/query/react';
+import { createApi } from "@reduxjs/toolkit/query/react";
 
-import { axiosBaseQuery } from '../services/httpService';
+import { axiosBaseQuery } from "../services/httpService";
 
-const programId = import.meta.env.VITE_PROGRAM_ID || 'app02';
+const programId = import.meta.env.VITE_PROGRAM_ID || "app02";
 console.log("programId == ", programId);
 const baseApiPath = `/cws/${programId}/api`;
 
 const apiSlice = createApi({
   baseQuery: axiosBaseQuery({ baseUrl: baseApiPath }),
-  tagTypes: ['Version', 'Device', 'Type', 'DeviceProperty', 'DeviceMethod', 'Config', 'DebugSession', 'DoNotLoadConfigOnNextBoot', 'MinimumLogLevel'],
+  tagTypes: [
+    "Version",
+    "Device",
+    "Type",
+    "DeviceProperty",
+    "DeviceMethod",
+    "Config",
+    "DebugSession",
+    "DoNotLoadConfigOnNextBoot",
+    "MinimumLogLevel",
+  ],
   endpoints: (builder) => ({
-
     getVersions: builder.query<Version[], void>({
       query: () => ({
         url: `/versions`,
-        method: 'GET',
-      })
+        method: "GET",
+      }),
     }),
 
     getDevices: builder.query<IKeyed[], void>({
       query: () => ({
         url: `/devices`,
-        method: 'GET',
-      })
+        method: "GET",
+      }),
     }),
 
     getTypes: builder.query<Type[], void>({
       query: () => ({
         url: `/types`,
-        method: 'GET',
-      })
+        method: "GET",
+      }),
     }),
 
-    getDeviceProperties: builder.query<DeviceProperties[], void>({
+    getDeviceProperties: builder.query<DeviceProperties[], string>({
       query: (key) => ({
         url: `/deviceProperties/${key}`,
-        method: 'GET',
-      })
+        method: "GET",
+      }),
     }),
 
-    getDeviceMethods: builder.query<DeviceMethods[], void>({
+    getDeviceMethods: builder.query<DeviceMethods[], string>({
       query: (key) => ({
         url: `/deviceMethods/${key}`,
-        method: 'GET',
-      })
+        method: "GET",
+      }),
+    }),
+
+    getDeviceFeedbacks: builder.query<DeviceFeedbacks, string>({
+      query: (key) => ({
+        url: `/deviceFeedbacks/${key}`,
+        method: "GET",
+      }),
+    }),
+
+    setDeviceJsonCommand: builder.mutation<void, { deviceKey: string; methodName: string; params?: any }>({
+      query: ({ deviceKey, methodName, params }) => ({
+        url: `/deviceCommands/${deviceKey}`,
+        method: "POST",
+        data: {deviceKey, methodName, params},
+      }),
     }),
 
     getConfig: builder.query<any, void>({
       query: () => ({
         url: `/config`,
-        method: 'GET',
-      })
+        method: "GET",
+      }),
     }),
 
     getDebugSession: builder.mutation<DebugSession, void>({
       query: () => ({
         url: `/debugSession`,
-        method: 'GET',
-      })
+        method: "GET",
+      }),
     }),
 
-    getMinimumLogLevel: builder.query<{minimumLevel: LogEventLevel}, void>({
+    getMinimumLogLevel: builder.query<{ minimumLevel: LogEventLevel }, void>({
       query: () => ({
         url: `/appdebug`,
-        method: 'GET',
+        method: "GET",
       }),
-      providesTags: ['MinimumLogLevel'],
+      providesTags: ["MinimumLogLevel"],
     }),
 
     setMinimumLogLevel: builder.mutation<void, LogEventLevel>({
       query: (minimumLevel) => ({
         url: `/appdebug`,
-        method: 'POST',
+        method: "POST",
         data: { minimumLevel },
       }),
-      invalidatesTags: ['MinimumLogLevel'],
+      invalidatesTags: ["MinimumLogLevel"],
     }),
 
     stopDebugSession: builder.mutation<void, void>({
       query: () => ({
         url: `/debugSession`,
-        method: 'POST',
-      })
+        method: "POST",
+      }),
     }),
 
-    getDoNotLoadConfigOnNextBoot: builder.query<{doNotLoadConfigOnNextBoot: boolean}, void>({
+    getDoNotLoadConfigOnNextBoot: builder.query<
+      { doNotLoadConfigOnNextBoot: boolean },
+      void
+    >({
       query: () => ({
         url: `/doNotLoadConfigOnNextBoot`,
-        method: 'GET',
+        method: "GET",
       }),
-      providesTags: ['DoNotLoadConfigOnNextBoot'],
+      providesTags: ["DoNotLoadConfigOnNextBoot"],
     }),
 
     setDoNotLoadConfigOnNextBoot: builder.mutation<void, boolean>({
       query: (doNotLoadConfigOnNextBoot) => ({
         url: `/doNotLoadConfigOnNextBoot`,
-        method: 'POST',
+        method: "POST",
         data: { doNotLoadConfigOnNextBoot },
       }),
-      invalidatesTags: ['DoNotLoadConfigOnNextBoot'],
+      invalidatesTags: ["DoNotLoadConfigOnNextBoot"],
     }),
 
     setRestart: builder.mutation<void, void>({
       query: () => ({
         url: `/restartProgram`,
-        method: 'POST',
-      })
+        method: "POST",
+      }),
     }),
 
     setLoadConfig: builder.mutation<void, void>({
       query: () => ({
         url: `/loadConfig`,
-        method: 'POST',
-      })
+        method: "POST",
+      }),
     }),
   }),
 });
@@ -123,6 +150,8 @@ export const {
   useGetTypesQuery,
   useGetDevicePropertiesQuery,
   useGetDeviceMethodsQuery,
+  useGetDeviceFeedbacksQuery,
+  useSetDeviceJsonCommandMutation,
   useGetConfigQuery,
   useGetDebugSessionMutation,
   useStopDebugSessionMutation,
@@ -134,14 +163,11 @@ export const {
   useSetMinimumLogLevelMutation,
 } = apiSlice;
 
-
 export const oneSliceToRuleThemAll = {
   apiSlice,
   /** @deprecated */
   baseApiPath,
-  
 };
-
 
 export interface Type {
   Type: string;
@@ -172,6 +198,17 @@ export interface DeviceMethods {
   Params: MethodParam[];
 }
 
+export interface DeviceFeedbacks {
+  BoolValues: Feedback[];
+  IntValues: Feedback[];
+  SerialValues: Feedback[];
+}
+
+interface Feedback {
+  FeedbackKey: string;
+  Value: string;
+}
+
 interface MethodParam {
   Name: string;
   Type: string;
@@ -181,4 +218,10 @@ interface DebugSession {
   url: string;
 }
 
-export type LogEventLevel = 'Verbose' | 'Debug' | 'Information' | 'Warning' | 'Error' | 'Fatal';
+export type LogEventLevel =
+  | "Verbose"
+  | "Debug"
+  | "Information"
+  | "Warning"
+  | "Error"
+  | "Fatal";
