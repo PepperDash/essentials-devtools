@@ -2,7 +2,7 @@ import { createApi } from "@reduxjs/toolkit/query/react";
 
 import { axiosBaseQuery } from "../services/httpService";
 
-const programId = import.meta.env.VITE_PROGRAM_ID || "app02";
+const programId = import.meta.env.VITE_PROGRAM_ID || "app01";
 console.log("programId == ", programId);
 const baseApiPath = `/cws/${programId}/api`;
 
