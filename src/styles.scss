@@ -105,7 +105,7 @@ $form-label-margin-bottom: 0.25rem;
 $form-label-font-size: small;
 
 // Keep bootstrap variable overrides before these imports
-@import '~bootstrap/scss/bootstrap.scss';
+@import 'bootstrap/scss/bootstrap.scss';
 @import 'bootstrap/scss/functions';
 @import 'bootstrap/scss/variables';
 @import 'bootstrap/scss/utilities';
