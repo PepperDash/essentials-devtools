@@ -62,7 +62,7 @@ const apiSlice = createApi({
       }),
     }),
 
-    setDeviceJsonCommand: builder.mutation<void, { deviceKey: string; methodName: string; params?: any }>({
+    setDeviceJsonCommand: builder.mutation<void, { deviceKey: string; methodName: string; params?: unknown[] }>({
       query: ({ deviceKey, methodName, params }) => ({
         url: `/deviceCommands/${deviceKey}`,
         method: "POST",

@@ -66,7 +66,7 @@ const DeviceDetailRender = ({
 
   const handleExecute = async () => {
     if (!selectedMethod) return;
-    await executeMethod({ deviceKey, methodName: selectedMethod.Name, params: paramValues });
+    await executeMethod({ deviceKey, methodName: selectedMethod.Name, params: Object.values(paramValues) });
     handleClose();
   };
 
