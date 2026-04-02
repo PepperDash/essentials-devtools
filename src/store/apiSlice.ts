@@ -2,69 +2,82 @@ import { createApi } from "@reduxjs/toolkit/query/react";
 
 import { axiosBaseQuery } from "../services/httpService";
 
-const programId = import.meta.env.VITE_PROGRAM_ID || "app01";
-console.log("programId == ", programId);
-const baseApiPath = `/cws/${programId}/api`;
+
+function getAppIdFromPath(): string {
+  const path = window.location.pathname;
+  const pathParts = path.split("/");
+  return pathParts[2];
+}
+
+function getBaseApiPath(): string {
+  return `/cws`;
+}
 
 const apiSlice = createApi({
-  baseQuery: axiosBaseQuery({ baseUrl: baseApiPath }),
+  baseQuery: axiosBaseQuery({ baseUrl: getBaseApiPath() }),
   tagTypes: [
     "Version",
     "Device",
     "Type",
     "DeviceProperty",
     "DeviceMethod",
+    "DeviceFeedback",
     "Config",
     "DebugSession",
     "DoNotLoadConfigOnNextBoot",
     "MinimumLogLevel",
   ],
   endpoints: (builder) => ({
-    getVersions: builder.query<Version[], void>({
-      query: () => ({
-        url: `/versions`,
+    getVersions: builder.query<Version[], {appId: string}>({
+      query: ({ appId }) => ({
+        url: `/${appId}/api/versions`,
+        method: "GET",
+      }),
+      providesTags: ["Version"],
+    }),
+
+    getDevices: builder.query<IKeyed[], {appId: string}>({
+      query: ({ appId }) => ({
+        url: `/${appId}/api/devices`,
+        method: "GET",
+      }),
+      providesTags: ["Device"],
+    }),
+
+    getTypes: builder.query<Type[], {appId: string}>({
+      query: ({ appId }) => ({
+        url: `/${appId}/api/types`,
+        method: "GET",
+      }),
+      providesTags: ["Type"],
+    }),
+
+    getDeviceProperties: builder.query<DeviceProperties[], {appId: string; key: string}>({
+      query: ({ appId, key }) => ({
+        url: `/${appId}/api/deviceProperties/${key}`,
+        method: "GET",
+      }),
+      providesTags: ["DeviceProperty"],
+    }),
+
+    getDeviceMethods: builder.query<DeviceMethods[], {appId: string; key: string}>({
+      query: ({ appId, key }) => ({
+        url: `/${appId}/api/deviceMethods/${key}`,
         method: "GET",
       }),
     }),
 
-    getDevices: builder.query<IKeyed[], void>({
-      query: () => ({
-        url: `/devices`,
+    getDeviceFeedbacks: builder.query<DeviceFeedbacks, {appId: string; key: string}>({
+      query: ({ appId, key }) => ({
+        url: `/${appId}/api/deviceFeedbacks/${key}`,
         method: "GET",
       }),
+      providesTags: ["DeviceFeedback"],
     }),
 
-    getTypes: builder.query<Type[], void>({
-      query: () => ({
-        url: `/types`,
-        method: "GET",
-      }),
-    }),
-
-    getDeviceProperties: builder.query<DeviceProperties[], string>({
-      query: (key) => ({
-        url: `/deviceProperties/${key}`,
-        method: "GET",
-      }),
-    }),
-
-    getDeviceMethods: builder.query<DeviceMethods[], string>({
-      query: (key) => ({
-        url: `/deviceMethods/${key}`,
-        method: "GET",
-      }),
-    }),
-
-    getDeviceFeedbacks: builder.query<DeviceFeedbacks, string>({
-      query: (key) => ({
-        url: `/deviceFeedbacks/${key}`,
-        method: "GET",
-      }),
-    }),
-
-    setDeviceJsonCommand: builder.mutation<void, { deviceKey: string; methodName: string; params?: unknown[] }>({
-      query: ({ deviceKey, methodName, params }) => ({
-        url: `/deviceCommands/${deviceKey}`,
+    setDeviceJsonCommand: builder.mutation<void, { appId: string; deviceKey: string; methodName: string; params?: unknown[] }>({
+      query: ({ appId, deviceKey, methodName, params }) => ({
+        url: `/${appId}/api/deviceCommands/${deviceKey}`,
         method: "POST",
         data: {deviceKey, methodName, params},
       }),
@@ -75,6 +88,7 @@ const apiSlice = createApi({
         url: `/config`,
         method: "GET",
       }),
+      providesTags: ["Config"],
     }),
 
     getDebugSession: builder.mutation<DebugSession, void>({
@@ -166,7 +180,7 @@ export const {
 export const oneSliceToRuleThemAll = {
   apiSlice,
   /** @deprecated */
-  baseApiPath,
+  getBaseApiPath,
 };
 
 export interface Type {

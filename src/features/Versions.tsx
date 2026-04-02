@@ -1,8 +1,11 @@
+import { skipToken } from '@reduxjs/toolkit/query';
 import { Col, Container, Row } from 'react-bootstrap';
+import useAppParams from '../shared/hooks/useAppParams';
 import { Version, useGetVersionsQuery } from "../store/apiSlice";
 
 const Versions = () => {
-  const { data: versions } = useGetVersionsQuery();
+  const { appId } = useAppParams();
+  const { data: versions } = useGetVersionsQuery(appId ? { appId } : skipToken);
 
   if (!versions) {
     return <div>Loading...</div>;

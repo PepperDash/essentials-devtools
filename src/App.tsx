@@ -1,14 +1,17 @@
 import { Suspense, useState } from "react";
-import { useDispatch } from 'react-redux';
-import { Route, Routes } from "react-router-dom";
-import ConfigFile from './features/ConfigFile';
-import DebugConsole from './features/DebugConsole/DebugConsole';
+import { useDispatch } from "react-redux";
+import { Navigate, Route, Routes } from "react-router-dom";
+import ConfigFile from "./features/ConfigFile";
+import DebugConsole from "./features/DebugConsole/DebugConsole";
 import DeviceList from "./features/DeviceList";
-import TopNav from "./features/TopNav";
+import MainLayout from './features/MainLayout';
 import Types from "./features/Types";
 import Versions from "./features/Versions";
-import { LogMessage } from './shared/types/LogMessage';
-import { useGetDebugSessionMutation, useStopDebugSessionMutation } from './store/apiSlice';
+import { LogMessage } from "./shared/types/LogMessage";
+import {
+  useGetDebugSessionMutation,
+  useStopDebugSessionMutation,
+} from "./store/apiSlice";
 
 function App() {
   const [websocket, setWebsocket] = useState<WebSocket>();
@@ -60,25 +63,33 @@ function App() {
     // console.log(data);
 
     // Set the messages array as a new array to trigger a re-render of child components
-    setMessages(current => [...current, newMsg]);
+    setMessages((current) => [...current, newMsg]);
   };
 
   return (
-    <div className="d-flex flex-column overflow-hidden h-100">
-      <TopNav isConnected={isConnected} />
       <Suspense fallback={null}>
-        <div className="p-2 overflow-hidden flex-grow-1">
           <Routes>
-            <Route path="/home" element={<h1>Home</h1>} />
-            <Route path="/versions" element={<Versions />} />
-            <Route path="/config" element={<ConfigFile />} />
-            <Route path="/devices" element={<DeviceList />} />
-            <Route path="/types" element={<Types />} />
-            <Route path="/console" element={<DebugConsole messages={messages} isConnected={isConnected} join={join} stop={stop} clear={clear} />} />
+            <Route path="/" element={<Navigate to="/app01/versions" replace />} />
+            <Route path=":appId" element={<MainLayout isConnected={isConnected} />}>
+              <Route path="versions" element={<Versions />} />
+              <Route path="config" element={<ConfigFile />} />
+              <Route path="devices" element={<DeviceList />} />
+              <Route path="types" element={<Types />} />
+              <Route
+                path="console"
+                element={
+                  <DebugConsole
+                    messages={messages}
+                    isConnected={isConnected}
+                    join={join}
+                    stop={stop}
+                    clear={clear}
+                  />
+                }
+              />
+            </Route>
           </Routes>
-        </div>
       </Suspense>
-    </div>
   );
 }
 
