@@ -1,5 +1,4 @@
 import { skipToken } from '@reduxjs/toolkit/query';
-import { Col, Container, Row } from 'react-bootstrap';
 import useAppParams from '../shared/hooks/useAppParams';
 import { Version, useGetVersionsQuery } from "../store/apiSlice";
 
@@ -26,22 +25,23 @@ const Versions = () => {
 
   return (
     <div className="d-flex flex-column overflow-hidden h-100">
-    <h2 className='mb-2'>Loaded Assemblies and Versions</h2>
-
-      <Container fluid className='bg-body sticky-top'>
-        <Row className="fw-bold">
-          <Col md={8}>Name</Col>
-          <Col >Version</Col>
-        </Row>
-      </Container>
-      <Container fluid>
-        {sorted?.map((i) => (
-          <Row key={i.Name}>
-            <Col md={8}>{i.Name}</Col>
-            <Col>{i.Version}</Col>
-          </Row>
-        ))}
-      </Container>
+      <h2 className='mb-2'>Loaded Assemblies and Versions</h2>
+      <table className="table table-striped">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Version</th>
+          </tr>
+        </thead>
+        <tbody>
+          {sorted?.map((i) => (
+            <tr key={i.Name}>
+              <td>{i.Name}</td>
+              <td>{i.Version}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 };

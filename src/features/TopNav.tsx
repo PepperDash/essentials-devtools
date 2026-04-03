@@ -1,9 +1,9 @@
-import { useMemo } from 'react';
+import { useMemo } from "react";
 import { Dropdown, Nav, Navbar } from "react-bootstrap";
 import { NavLink, useLocation } from "react-router-dom";
-import useAppParams from '../shared/hooks/useAppParams';
-import { IconDarkEllipse } from "../shared/icons";
-import { useGetVersionsQuery } from '../store/apiSlice';
+import useAppParams from "../shared/hooks/useAppParams";
+import { IconDarkChevronDown, IconDarkEllipse } from "../shared/icons";
+import { useGetVersionsQuery } from "../store/apiSlice";
 
 const TopNav = ({ isConnected }: { isConnected: boolean }) => {
   const location = useLocation();
@@ -35,7 +35,18 @@ const TopNav = ({ isConnected }: { isConnected: boolean }) => {
     if (app09versions) options.push("app09");
     if (app10versions) options.push("app10");
     return options;
-  }, [app01versions, app02versions, app03versions, app04versions, app05versions, app06versions, app07versions, app08versions, app09versions, app10versions]);
+  }, [
+    app01versions,
+    app02versions,
+    app03versions,
+    app04versions,
+    app05versions,
+    app06versions,
+    app07versions,
+    app08versions,
+    app09versions,
+    app10versions,
+  ]);
 
   return (
     <Navbar
@@ -44,38 +55,22 @@ const TopNav = ({ isConnected }: { isConnected: boolean }) => {
       bg="white"
       className="user-select-none shadow-sm px-0"
     >
-      <div className='w-100 px-2 d-flex align-items-center gap-2'>
+      <div className="w-100 px-2 d-flex align-items-center gap-2">
         <Navbar.Brand>Essentials Dev Tools</Navbar.Brand>
         <Dropdown>
-          <Dropdown.Toggle
-            variant="primary"
-            id="dropdown-basic"
-          >
+          <Dropdown.Toggle variant="link" id="dropdown-basic">
             {params.appId}
+            <IconDarkChevronDown />
           </Dropdown.Toggle>
           <Dropdown.Menu>
             {appIdOptions.map((id) => (
-              <Dropdown.Item
-                key={id}
-                as={NavLink}
-                to={`/${id}/console`}
-              >
+              <Dropdown.Item key={id} as={NavLink} to={`/${id}/console`}>
                 {id}
               </Dropdown.Item>
             ))}
           </Dropdown.Menu>
         </Dropdown>
         <Nav className="me-auto">
-          <NavLink
-            className={
-              location.pathname.includes(`/${params.appId}/console`)
-                ? "text-secondary me-3"
-                : "me-3"
-            }
-            to={`/${params.appId}/console`}
-          >
-            Debug Console
-          </NavLink>
           <NavLink
             className={
               location.pathname.includes(`/${params.appId}/versions`)
@@ -85,6 +80,16 @@ const TopNav = ({ isConnected }: { isConnected: boolean }) => {
             to={`/${params.appId}/versions`}
           >
             Versions
+          </NavLink>
+          <NavLink
+            className={
+              location.pathname.includes(`/${params.appId}/console`)
+                ? "text-secondary me-3"
+                : "me-3"
+            }
+            to={`/${params.appId}/console`}
+          >
+            Debug Console
           </NavLink>
           <NavLink
             className={
@@ -116,6 +121,16 @@ const TopNav = ({ isConnected }: { isConnected: boolean }) => {
           >
             Types
           </NavLink>
+          <NavLink
+            className={
+              location.pathname.includes(`/${params.appId}/mobileControl`)
+                ? "text-secondary me-3"
+                : "me-3"
+            }
+            to={`/${params.appId}/mobileControl`}
+          >
+            Mobile Control
+          </NavLink>
         </Nav>
         <div className="d-flex align-items-center">
           <IconDarkEllipse
@@ -143,5 +158,3 @@ type appIds =
   | "app08"
   | "app09"
   | "app10";
-
-

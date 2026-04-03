@@ -1,11 +1,14 @@
 import { Editor, OnMount, useMonaco } from "@monaco-editor/react";
+import { skipToken } from "@reduxjs/toolkit/query";
 import { useEffect, useRef } from "react";
+import useAppParams from "../shared/hooks/useAppParams";
 import { useGetConfigQuery } from "../store/apiSlice";
 
 type IConfigViewer = Parameters<OnMount>[0];
 
 const ConfigFile = () => {
-  const { data: config } = useGetConfigQuery();
+  const { appId } = useAppParams();
+  const { data: config } = useGetConfigQuery(appId ? { appId } : skipToken);
 
   if (!config) {
     return <div>Loading...</div>;
@@ -17,7 +20,7 @@ const ConfigFile = () => {
 export default ConfigFile;
 
 const ConfigFileRender = ({ config }: { config: any }) => {
-    console.log("ConfigFileRender == ", config);
+  console.log("ConfigFileRender == ", config);
   const monaco = useMonaco();
   const editorRef = useRef<IConfigViewer | null>(null);
 

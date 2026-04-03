@@ -1,10 +1,13 @@
+import { skipToken } from '@reduxjs/toolkit/query';
 import { useState } from "react";
+import useAppParams from '../shared/hooks/useAppParams';
 import { IKeyed, useGetDevicesQuery } from "../store/apiSlice";
 import DeviceDetail from "./DeviceDetail";
 
 const DeviceList = () => {
   const [selectedDevice, setSelectedDevice] = useState<IKeyed>();
-  const { data: devices } = useGetDevicesQuery();
+  const { appId } = useAppParams();
+  const { data: devices } = useGetDevicesQuery(appId ? { appId } : skipToken);
 
   if (!devices) {
     return <div>Loading...</div>;

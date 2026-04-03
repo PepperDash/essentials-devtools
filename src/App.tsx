@@ -4,7 +4,8 @@ import { Navigate, Route, Routes } from "react-router-dom";
 import ConfigFile from "./features/ConfigFile";
 import DebugConsole from "./features/DebugConsole/DebugConsole";
 import DeviceList from "./features/DeviceList";
-import MainLayout from './features/MainLayout';
+import MainLayout from "./features/MainLayout";
+import MobileControl from './features/MobileControl';
 import Types from "./features/Types";
 import Versions from "./features/Versions";
 import { LogMessage } from "./shared/types/LogMessage";
@@ -23,8 +24,9 @@ function App() {
   const [stopSession] = useStopDebugSessionMutation();
 
   //* FUNCTIONS *******************************************************/
-  const join = async () => {
-    const res = await startSession().unwrap();
+  const join = async (appId: string) => {
+    if (!appId) return;
+    const res = await startSession({ appId }).unwrap();
 
     console.log("Joining debug session at " + res.url);
 
@@ -46,12 +48,13 @@ function App() {
     setWebsocket(ws);
   };
 
-  const stop = () => {
+  const stop = (appId: string) => {
     if (!websocket) return;
 
     console.log("Stopping debug session");
     websocket.close();
-    stopSession();
+    if (!appId) return;
+    stopSession({ appId });
   };
 
   const clear = () => {
@@ -67,29 +70,30 @@ function App() {
   };
 
   return (
-      <Suspense fallback={null}>
-          <Routes>
-            <Route path="/" element={<Navigate to="/app01/versions" replace />} />
-            <Route path=":appId" element={<MainLayout isConnected={isConnected} />}>
-              <Route path="versions" element={<Versions />} />
-              <Route path="config" element={<ConfigFile />} />
-              <Route path="devices" element={<DeviceList />} />
-              <Route path="types" element={<Types />} />
-              <Route
-                path="console"
-                element={
-                  <DebugConsole
-                    messages={messages}
-                    isConnected={isConnected}
-                    join={join}
-                    stop={stop}
-                    clear={clear}
-                  />
-                }
+    <Suspense fallback={null}>
+      <Routes>
+        <Route path="/" element={<Navigate to="/app01/versions" replace />} />
+        <Route path=":appId" element={<MainLayout isConnected={isConnected} />}>
+          <Route path="versions" element={<Versions />} />
+          <Route path="config" element={<ConfigFile />} />
+          <Route path="devices" element={<DeviceList />} />
+          <Route path="types" element={<Types />} />
+          <Route path="mobileControl" element={<MobileControl />} />
+          <Route
+            path="console"
+            element={
+              <DebugConsole
+                messages={messages}
+                isConnected={isConnected}
+                join={join}
+                stop={stop}
+                clear={clear}
               />
-            </Route>
-          </Routes>
-      </Suspense>
+            }
+          />
+        </Route>
+      </Routes>
+    </Suspense>
   );
 }
 

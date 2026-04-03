@@ -1,5 +1,7 @@
+import { skipToken } from '@reduxjs/toolkit/query';
 import { useState } from "react";
 import { Button, Form, Modal } from "react-bootstrap";
+import useAppParams from '../shared/hooks/useAppParams';
 import {
   DeviceFeedbacks,
   DeviceMethods,
@@ -12,15 +14,11 @@ import {
 } from "../store/apiSlice";
 
 const DeviceDetail = ({ item }: DeviceDetailProps) => {
-  const { data: properties } = useGetDevicePropertiesQuery(item.Key, {
-    skip: !item?.Key,
-  });
-  const { data: methods } = useGetDeviceMethodsQuery(item.Key, {
-    skip: !item?.Key,
-  });
-  const { data: feedbacks } = useGetDeviceFeedbacksQuery(item.Key, {
-    skip: !item?.Key,
-  });
+  const { appId } = useAppParams();
+  const { data: properties } = useGetDevicePropertiesQuery(appId && item?.Key ? { appId, key: item.Key } : skipToken
+  );
+  const { data: methods } = useGetDeviceMethodsQuery(appId && item?.Key ? { appId, key: item.Key } : skipToken);
+  const { data: feedbacks } = useGetDeviceFeedbacksQuery(appId && item?.Key ? { appId, key: item.Key } : skipToken);
 
   console.log("DeviceDetail == ", { item, properties, methods, feedbacks });
 
@@ -50,6 +48,7 @@ const DeviceDetailRender = ({
   feedbacks,
   deviceKey,
 }: DeviceDetailRenderProps) => {
+  const { appId } = useAppParams();
   const [selectedMethod, setSelectedMethod] = useState<DeviceMethods | null>(null);
   const [paramValues, setParamValues] = useState<Record<string, string>>({});
   const [executeMethod, { isLoading: isExecuting }] = useSetDeviceJsonCommandMutation();
@@ -65,8 +64,8 @@ const DeviceDetailRender = ({
   };
 
   const handleExecute = async () => {
-    if (!selectedMethod) return;
-    await executeMethod({ deviceKey, methodName: selectedMethod.Name, params: Object.values(paramValues) });
+    if (!selectedMethod || !appId) return;
+    await executeMethod({ appId, deviceKey, methodName: selectedMethod.Name, params: Object.values(paramValues) });
     handleClose();
   };
 

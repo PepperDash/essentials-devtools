@@ -83,75 +83,89 @@ const apiSlice = createApi({
       }),
     }),
 
-    getConfig: builder.query<any, void>({
-      query: () => ({
-        url: `/config`,
+    getConfig: builder.query<any, {appId: string}>({
+      query: ({ appId }) => ({
+        url: `/${appId}/api/config`,
         method: "GET",
       }),
       providesTags: ["Config"],
     }),
 
-    getDebugSession: builder.mutation<DebugSession, void>({
-      query: () => ({
-        url: `/debugSession`,
+    getMobileControlInfo: builder.query<MobileControlInfo, {appId: string, deviceKey: string,}>({
+      query: ({ appId, deviceKey }) => ({
+        url: `/${appId}/api/device/${deviceKey}/info`,
         method: "GET",
       }),
     }),
 
-    getMinimumLogLevel: builder.query<{ minimumLevel: LogEventLevel }, void>({
-      query: () => ({
-        url: `/appdebug`,
+    getMobileControlActionPaths: builder.query<any, {appId: string, deviceKey: string,}>({
+      query: ({ appId, deviceKey }) => ({
+        url: `/${appId}/api/device/${deviceKey}/actionPaths`,
+        method: "GET",
+      }),
+    }),
+
+    getDebugSession: builder.mutation<DebugSession, {appId: string}>({
+      query: ({ appId }) => ({
+        url: `/${appId}/api/debugSession`,
+        method: "GET",
+      }),
+    }),
+
+    getMinimumLogLevel: builder.query<{ minimumLevel: LogEventLevel }, {appId: string}>({
+      query: ({ appId }) => ({
+        url: `/${appId}/api/appdebug`,
         method: "GET",
       }),
       providesTags: ["MinimumLogLevel"],
     }),
 
-    setMinimumLogLevel: builder.mutation<void, LogEventLevel>({
-      query: (minimumLevel) => ({
-        url: `/appdebug`,
+    setMinimumLogLevel: builder.mutation<void, {appId: string; minimumLevel: LogEventLevel}>({
+      query: ({ appId, minimumLevel }) => ({
+        url: `/${appId}/api/appdebug`,
         method: "POST",
         data: { minimumLevel },
       }),
       invalidatesTags: ["MinimumLogLevel"],
     }),
 
-    stopDebugSession: builder.mutation<void, void>({
-      query: () => ({
-        url: `/debugSession`,
+    stopDebugSession: builder.mutation<void, {appId: string}>({
+      query: ({ appId }) => ({
+        url: `/${appId}/api/debugSession`,
         method: "POST",
       }),
     }),
 
     getDoNotLoadConfigOnNextBoot: builder.query<
       { doNotLoadConfigOnNextBoot: boolean },
-      void
+      {appId: string}
     >({
-      query: () => ({
-        url: `/doNotLoadConfigOnNextBoot`,
+      query: ({ appId }) => ({
+        url: `/${appId}/api/doNotLoadConfigOnNextBoot`,
         method: "GET",
       }),
       providesTags: ["DoNotLoadConfigOnNextBoot"],
     }),
 
-    setDoNotLoadConfigOnNextBoot: builder.mutation<void, boolean>({
-      query: (doNotLoadConfigOnNextBoot) => ({
-        url: `/doNotLoadConfigOnNextBoot`,
+    setDoNotLoadConfigOnNextBoot: builder.mutation<void, {appId: string; doNotLoadConfigOnNextBoot: boolean}>({
+      query: ({ appId, doNotLoadConfigOnNextBoot }) => ({
+        url: `/${appId}/api/doNotLoadConfigOnNextBoot`,
         method: "POST",
         data: { doNotLoadConfigOnNextBoot },
       }),
       invalidatesTags: ["DoNotLoadConfigOnNextBoot"],
     }),
 
-    setRestart: builder.mutation<void, void>({
-      query: () => ({
-        url: `/restartProgram`,
+    setRestart: builder.mutation<void, {appId: string}>({
+      query: ({ appId }) => ({
+        url: `/${appId}/api/restartProgram`,
         method: "POST",
       }),
     }),
 
-    setLoadConfig: builder.mutation<void, void>({
-      query: () => ({
-        url: `/loadConfig`,
+    setLoadConfig: builder.mutation<void, {appId: string}>({
+      query: ({ appId }) => ({
+        url: `/${appId}/api/loadConfig`,
         method: "POST",
       }),
     }),
@@ -167,6 +181,8 @@ export const {
   useGetDeviceFeedbacksQuery,
   useSetDeviceJsonCommandMutation,
   useGetConfigQuery,
+  useGetMobileControlInfoQuery,
+  useGetMobileControlActionPathsQuery,
   useGetDebugSessionMutation,
   useStopDebugSessionMutation,
   useGetDoNotLoadConfigOnNextBootQuery,
@@ -230,6 +246,27 @@ interface MethodParam {
 
 interface DebugSession {
   url: string;
+}
+
+export interface MobileControlClient {
+  clientNumber: string;
+  roomKey: string;
+  touchpanelKey: string;
+  url: string;
+  token: string;
+  clientStatus: unknown[];
+}
+
+export interface MobileControlDirectServer {
+  userAppUrl: string;
+  serverPort: number;
+  tokensDefined: number;
+  clientsConnected: number;
+  clients: MobileControlClient[];
+}
+
+export interface MobileControlInfo {
+  directServer: MobileControlDirectServer;
 }
 
 export type LogEventLevel =

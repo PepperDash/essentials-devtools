@@ -1,6 +1,8 @@
+import { skipToken } from '@reduxjs/toolkit/query';
 import { useState } from "react";
 import { Button, Form } from "react-bootstrap";
 import ListFiltersHeader from "../../shared/ListFiltersHeader";
+import useAppParams from '../../shared/hooks/useAppParams';
 import { LogMessage } from '../../shared/types/LogMessage';
 import {
   useGetDoNotLoadConfigOnNextBootQuery,
@@ -17,9 +19,10 @@ import { useFilteredMessages } from "./hooks/useFilteredMessages";
 const DebugConsole = ({messages, isConnected, join, stop, clear}: DebugConsoleProps) => {
   //* HOOKS ***********************************************************/
   const [showModal, setShowModal] = useState(false);
+  const { appId } = useAppParams();
 
   const { data: doNotLoadConfigOnNextBoot } =
-    useGetDoNotLoadConfigOnNextBootQuery();
+    useGetDoNotLoadConfigOnNextBootQuery(appId ? { appId } : skipToken);
 
   const [setDoNotLoadConfig] = useSetDoNotLoadConfigOnNextBootMutation();
   const [restart] = useSetRestartMutation();
@@ -33,11 +36,12 @@ const DebugConsole = ({messages, isConnected, join, stop, clear}: DebugConsolePr
   };
 
   const clickLoadConfig = () => {
+    if(!appId) return;
     console.log("Loading config");
-    loadConfig();
+    loadConfig({ appId });
   };
 
-  if (!doNotLoadConfigOnNextBoot) return null;
+  if (!doNotLoadConfigOnNextBoot || !appId) return null;
 
   //* RENDER **********************************************************/
   return (
@@ -48,12 +52,12 @@ const DebugConsole = ({messages, isConnected, join, stop, clear}: DebugConsolePr
         </div>
         <div className="d-flex align-items-center justify-content-start mb-2">
           {!isConnected ? (
-          <Button className="mx-1" variant="primary" size="sm" onClick={join}>
+          <Button className="mx-1" variant="primary" size="sm" onClick={() => join(appId)}>
             Start Debug Session
           </Button>
           )
           : (
-            <Button className="mx-1" variant="primary" size="sm" onClick={stop}>
+            <Button className="mx-1" variant="primary" size="sm" onClick={() => stop(appId)}>
             Stop Debug Session
           </Button>
           )}
@@ -65,11 +69,12 @@ const DebugConsole = ({messages, isConnected, join, stop, clear}: DebugConsolePr
             name="doNotLoadConfig"
             id="doNotLoadConfig"
             checked={doNotLoadConfigOnNextBoot?.doNotLoadConfigOnNextBoot}
-            onChange={() =>
+            onChange={() => {
+              if(!appId) return;
               setDoNotLoadConfig(
-                !doNotLoadConfigOnNextBoot?.doNotLoadConfigOnNextBoot
+                { appId, doNotLoadConfigOnNextBoot: !doNotLoadConfigOnNextBoot?.doNotLoadConfigOnNextBoot }
               )
-            }
+            }}
           />
           {doNotLoadConfigOnNextBoot?.doNotLoadConfigOnNextBoot && (
           <Button
@@ -107,7 +112,8 @@ const DebugConsole = ({messages, isConnected, join, stop, clear}: DebugConsolePr
         show={showModal}
         handleClose={() => setShowModal(false)}
         handleConfirm={() => {
-          restart();
+          if(!appId) return;
+          restart({ appId });
           setShowModal(false);
         }}
       />
@@ -121,8 +127,8 @@ export default DebugConsole;
 interface DebugConsoleProps {
   messages: LogMessage[];
   isConnected: boolean;
-  join: () => void;
-  stop: () => void;
+  join: (appId: string) => void;
+  stop: (appId: string) => void;
   clear: () => void;
 }
 
