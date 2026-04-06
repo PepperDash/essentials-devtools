@@ -1,25 +1,27 @@
 import { skipToken } from '@reduxjs/toolkit/query';
 import { useState } from "react";
 import { Button, Form } from "react-bootstrap";
+import { useSelector } from 'react-redux';
 import ListFiltersHeader from "../../shared/ListFiltersHeader";
 import useAppParams from '../../shared/hooks/useAppParams';
-import { LogMessage } from '../../shared/types/LogMessage';
 import {
   useGetDoNotLoadConfigOnNextBootQuery,
   useSetDoNotLoadConfigOnNextBootMutation,
   useSetLoadConfigMutation,
   useSetRestartMutation
 } from "../../store/apiSlice";
+import { RootState } from '../../store/store';
 import ConsoleWindow from "./ConsoleWindow";
 import { DebugFilters } from "./DebugFilters";
 import MinimumLogLevelDropdown from './MinimumLogLevelDropdown';
 import RestartConfirmModal from "./RestartConfirmModal";
 import { useFilteredMessages } from "./hooks/useFilteredMessages";
 
-const DebugConsole = ({messages, isConnected, join, stop, clear}: DebugConsoleProps) => {
+const DebugConsole = ({isConnected, join, stop, clear}: DebugConsoleProps) => {
   //* HOOKS ***********************************************************/
   const [showModal, setShowModal] = useState(false);
   const { appId } = useAppParams();
+  const messages = useSelector((state: RootState) => state.websocket.messages);
 
   const { data: doNotLoadConfigOnNextBoot } =
     useGetDoNotLoadConfigOnNextBootQuery(appId ? { appId } : skipToken);
@@ -125,7 +127,6 @@ export default DebugConsole;
 
 
 interface DebugConsoleProps {
-  messages: LogMessage[];
   isConnected: boolean;
   join: (appId: string) => void;
   stop: (appId: string) => void;

@@ -1,5 +1,5 @@
-import { Suspense, useState } from "react";
-import { useDispatch } from "react-redux";
+import { Suspense } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import { Navigate, Route, Routes } from "react-router-dom";
 import ConfigFile from "./features/ConfigFile";
 import DebugConsole from "./features/DebugConsole/DebugConsole";
@@ -8,17 +8,16 @@ import MainLayout from "./features/MainLayout";
 import MobileControl from './features/MobileControl';
 import Types from "./features/Types";
 import Versions from "./features/Versions";
-import { LogMessage } from "./shared/types/LogMessage";
 import {
   useGetDebugSessionMutation,
   useStopDebugSessionMutation,
 } from "./store/apiSlice";
+import { AppDispatch, RootState } from "./store/store";
+import { messagesCleared, WS_CONNECT, WS_DISCONNECT } from "./store/websocketSlice";
 
 function App() {
-  const [websocket, setWebsocket] = useState<WebSocket>();
-  const [messages, setMessages] = useState<LogMessage[]>([]);
-  const [isConnected, setIsConnected] = useState<boolean>(false);
-  const dispatch = useDispatch();
+  const dispatch = useDispatch<AppDispatch>();
+  const isConnected = useSelector((state: RootState) => state.websocket.isConnected);
 
   const [startSession] = useGetDebugSessionMutation();
   const [stopSession] = useStopDebugSessionMutation();
@@ -27,46 +26,19 @@ function App() {
   const join = async (appId: string) => {
     if (!appId) return;
     const res = await startSession({ appId }).unwrap();
-
     console.log("Joining debug session at " + res.url);
-
-    console.log("Connecting to debug session");
-    const ws = new WebSocket(res.url);
-    ws.onerror = (err) => {
-      console.log("Websocket error", err);
-    };
-    ws.onmessage = onMessage;
-    ws.onclose = () => {
-      dispatch({ type: "DISCONNECTED" });
-      setIsConnected(false);
-    };
-    ws.onopen = () => {
-      dispatch({ type: "CONNECTED" });
-      setIsConnected(true);
-    };
-
-    setWebsocket(ws);
+    dispatch({ type: WS_CONNECT, payload: { url: res.url } });
   };
 
   const stop = (appId: string) => {
-    if (!websocket) return;
-
     console.log("Stopping debug session");
-    websocket.close();
+    dispatch({ type: WS_DISCONNECT });
     if (!appId) return;
     stopSession({ appId });
   };
 
   const clear = () => {
-    setMessages([]);
-  };
-
-  const onMessage = (event: { data: string }) => {
-    const newMsg = JSON.parse(event.data);
-    // console.log(data);
-
-    // Set the messages array as a new array to trigger a re-render of child components
-    setMessages((current) => [...current, newMsg]);
+    dispatch(messagesCleared());
   };
 
   return (
@@ -83,7 +55,6 @@ function App() {
             path="console"
             element={
               <DebugConsole
-                messages={messages}
                 isConnected={isConnected}
                 join={join}
                 stop={stop}
