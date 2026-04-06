@@ -28,11 +28,11 @@ jobs:
     steps:
       - name: Checkout Repo
         uses: actions/checkout@v4
-      - name: Use Node 20
+      - name: Use Node 22
         uses: actions/setup-node@v4
         with:
           cache: npm
-          node-version: '20'
+          node-version: '22'
           registry-url: 'https://npm.pkg.github.com'
       - name: Set package.json version
         run: |

@@ -15,7 +15,7 @@ const DeviceList = () => {
 
   return (
     <div className="h-100 overflow-hidden d-flex gap-3">
-      <div className="h-100 overflow-hidden d-flex flex-column" style={{ minWidth: 0, flex: "0 0 33%" }}>
+      <div className="h-100 overflow-hidden d-flex flex-column flex-basis-33">
         <div className="h-100 overflow-auto">
           <h2>Devices</h2>
           <table className="table table-sm table-striped table-hover">
