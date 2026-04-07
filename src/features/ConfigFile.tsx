@@ -11,7 +11,7 @@ const ConfigFile = () => {
   const { data: config } = useGetConfigQuery(appId ? { appId } : skipToken);
 
   if (!config) {
-    return <div>Loading...</div>;
+    return <div>Config Data Loading or Not Available</div>;
   }
 
   return <ConfigFileRender config={config} />;
