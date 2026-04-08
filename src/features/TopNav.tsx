@@ -57,19 +57,26 @@ const TopNav = ({ isConnected }: { isConnected: boolean }) => {
     >
       <div className="w-100 px-2 d-flex align-items-center gap-2">
         <Navbar.Brand>Essentials Dev Tools</Navbar.Brand>
-        <Dropdown>
-          <Dropdown.Toggle variant="link" id="dropdown-basic">
-            {params.appId}
-            <IconDarkChevronDown />
-          </Dropdown.Toggle>
-          <Dropdown.Menu>
-            {appIdOptions.map((id) => (
-              <Dropdown.Item key={id} as={NavLink} to={`/${id}/console`}>
-                {id}
-              </Dropdown.Item>
-            ))}
-          </Dropdown.Menu>
-        </Dropdown>
+        {/* display a message indicating that there are no loaded applications if the appIdOptions array is empty, otherwise display the dropdown */}
+        {appIdOptions.length === 0 ? (
+          <span>No Loaded Applications</span>
+        ) : (
+          <Dropdown>
+            <Dropdown.Toggle variant="link" id="dropdown-basic">
+              {/* display the currently selected appId or "Select Application" if no appId is selected */}
+              {/* if no appIdOptions are available, display "No Loaded Applications" */}
+              {params.appId || "Select Application"}
+              <IconDarkChevronDown />
+            </Dropdown.Toggle>
+            <Dropdown.Menu>
+              {appIdOptions.map((id) => (
+                <Dropdown.Item key={id} as={NavLink} to={`/${id}/console`}>
+                  {id}
+                </Dropdown.Item>
+              ))}
+            </Dropdown.Menu>
+          </Dropdown>
+        )}
         <Nav className="me-auto">
           <NavLink
             className={
