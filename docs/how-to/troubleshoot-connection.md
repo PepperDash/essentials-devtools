@@ -9,7 +9,7 @@
 Try these quick checks first:
 
 1. **Can you ping the processor?** `ping [processor-ip]`
-2. **Is the URL correct?** Should be `https://[processor-ip]/debug/`
+2. **Is the URL correct?** Should be `https://[processor-ip]/cws/debug/`
 3. **Does the processor respond on any port?** Try `https://[processor-ip]` (may show different content)
 
 ## Step-by-Step Troubleshooting

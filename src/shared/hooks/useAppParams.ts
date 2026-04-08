@@ -1,4 +1,4 @@
-import { useParams } from 'react-router';
+import { useParams } from 'react-router-dom';
 
 /** Wraps up useParams with a type */
 export default function useAppParams() {
