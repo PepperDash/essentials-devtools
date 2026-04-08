@@ -16,24 +16,15 @@ A powerful web-based configuration and debugging tool for PepperDash Essentials 
 # Install dependencies
 npm install
 
-# Set environment variables
-# macOS/Linux/WSL:
-export PROGRAM_HOST=https://your-processor-ip
-export PROGRAM_ID=app01
-
-# Windows Command Prompt:
-# set PROGRAM_HOST=https://your-processor-ip
-# set PROGRAM_ID=app01
-
-# Windows PowerShell:
-# $env:PROGRAM_HOST="https://your-processor-ip"
-# $env:PROGRAM_ID="app01"
+# Create a .env.local file in the project root with your target processor:
+# PROGRAM_HOST=https://your-processor-ip
+# VITE_PROGRAM_ID=app01
 
 # Start development server
-npm start
+npm run start
 ```
 
-Open [http://localhost:3000](http://localhost:3000) to view the app in development mode.
+The app will be available at `http://localhost:5173/cws/debug/`.
 
 ## 📚 Documentation
 
@@ -82,63 +73,51 @@ This project uses the [Diataxis framework](https://diataxis.fr/) to provide you 
 ### Available Scripts
 
 #### `npm start`
-Runs the app in development mode. The page will reload when you make edits.
+Runs the app in development mode via Vite. The page will reload when you make edits. Available at `http://localhost:5173/cws/debug/`.
 
 #### `npm test`
-Launches the test runner in interactive watch mode.
+Launches the Vitest test runner in interactive watch mode.
 
 #### `npm run build`
-Builds the app for production to the `build` folder with optimized bundles.
+Compiles TypeScript and builds the app for production to the `dist/` folder with optimized bundles.
 
-#### `npm run eject`
-**Note: This is a one-way operation.** Ejects from Create React App for full configuration control.
+#### `npm run preview`
+Serves the production build locally for inspection before deployment.
 
 ### Environment Setup
 
-**Required Environment Variables:**
+Create a `.env.local` file in the project root (never commit this file):
 
-*macOS/Linux/WSL:*
-```bash
-export PROGRAM_HOST=https://your-processor-ip    # Required: Target processor IP
-export PROGRAM_ID=app01                          # Optional: Application slot (default: app01)
-```
-
-*Windows Command Prompt:*
-```cmd
-set PROGRAM_HOST=https://your-processor-ip       # Required: Target processor IP
-set PROGRAM_ID=app01                             # Optional: Application slot (default: app01)
-```
-
-*Windows PowerShell:*
-```powershell
-$env:PROGRAM_HOST="https://your-processor-ip"    # Required: Target processor IP
-$env:PROGRAM_ID="app01"                          # Optional: Application slot (default: app01)
+```dotenv
+PROGRAM_HOST=https://your-processor-ip    # Required: Target processor IP
+VITE_PROGRAM_ID=app01                     # Optional: Default application slot
 ```
 
 **Development Prerequisites:**
-- Node.js 16+ 
-- npm or yarn
+- Node.js 18+
+- npm
 - Network access to target PepperDash Essentials processor
 - Modern web browser
 
 ### Architecture Overview
 
 **Frontend Stack:**
-- React 18 with TypeScript
-- Redux Toolkit for state management
-- React Router for navigation
+- React 19 with TypeScript
+- Redux Toolkit for state management (including WebSocket middleware)
+- React Router v7 for navigation
 - Bootstrap 5 for UI components
 - WebSocket for real-time communication
 
 **Integration:**
-- Connects to PepperDash Essentials processors via HTTPS API
+- Connects to PepperDash Essentials processors via HTTPS API at `/cws/<appId>/api/`
 - Uses WebSocket for real-time debug message streaming
-- Serves as static files from processor's built-in web server
+- In development, Vite proxies all `/cws/` API requests to `PROGRAM_HOST`
+- In production, served as static files from the processor's built-in web server at `/cws/debug/`
 
 ## 🔐 Security Considerations
 
 - **HTTPS Required**: All communication encrypted
-- **Self-Signed Certificates**: Common for internal network devices
+- **Self-Signed Certificates**: Common for internal network devices; must be accepted in the browser before use
 - **Processor Authentication**: Leverages processor's built-in security
 - **Network-Level Security**: Relies on internal network protection
 
