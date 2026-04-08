@@ -9,6 +9,7 @@ const commonUiSlice = createSlice({
       state.roomId = action.payload;
     },
 
+
     // resetState: () => {
     //   // This is here in order to provide an action name to trigger store reset
     //   // in root store reducer

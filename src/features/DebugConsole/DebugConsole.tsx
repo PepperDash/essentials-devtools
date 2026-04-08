@@ -1,34 +1,31 @@
+import { skipToken } from '@reduxjs/toolkit/query';
 import { useState } from "react";
 import { Button, Form } from "react-bootstrap";
-import { useDispatch } from "react-redux";
+import { useSelector } from 'react-redux';
 import ListFiltersHeader from "../../shared/ListFiltersHeader";
-import { LogMessage } from '../../shared/types/LogMessage';
+import useAppParams from '../../shared/hooks/useAppParams';
 import {
-  useGetDebugSessionMutation,
   useGetDoNotLoadConfigOnNextBootQuery,
   useSetDoNotLoadConfigOnNextBootMutation,
   useSetLoadConfigMutation,
-  useSetRestartMutation,
-  useStopDebugSessionMutation,
+  useSetRestartMutation
 } from "../../store/apiSlice";
+import { RootState } from '../../store/store';
 import ConsoleWindow from "./ConsoleWindow";
 import { DebugFilters } from "./DebugFilters";
 import MinimumLogLevelDropdown from './MinimumLogLevelDropdown';
 import RestartConfirmModal from "./RestartConfirmModal";
 import { useFilteredMessages } from "./hooks/useFilteredMessages";
 
-const DebugConsole = () => {
+const DebugConsole = ({isConnected, join, stop, clear}: DebugConsoleProps) => {
   //* HOOKS ***********************************************************/
-  const [websocket, setWebsocket] = useState<WebSocket>();
-  const [messages, setMessages] = useState<LogMessage[]>([]);
   const [showModal, setShowModal] = useState(false);
-  const dispatch = useDispatch();
+  const { appId } = useAppParams();
+  const messages = useSelector((state: RootState) => state.websocket.messages);
 
   const { data: doNotLoadConfigOnNextBoot } =
-    useGetDoNotLoadConfigOnNextBootQuery();
+    useGetDoNotLoadConfigOnNextBootQuery(appId ? { appId } : skipToken);
 
-  const [startSession] = useGetDebugSessionMutation();
-  const [stopSession] = useStopDebugSessionMutation();
   const [setDoNotLoadConfig] = useSetDoNotLoadConfigOnNextBootMutation();
   const [restart] = useSetRestartMutation();
   const [loadConfig] = useSetLoadConfigMutation();
@@ -36,46 +33,17 @@ const DebugConsole = () => {
   //* EFFECTS *********************************************************/
   const filteredItems = useFilteredMessages(messages);
 
-  //* FUNCTIONS *******************************************************/
-  const join = async () => {
-    const res = await startSession().unwrap();
-
-    console.log("Joining debug session at " + res.url);
-
-    console.log("Connecting to debug session");
-    const ws = new WebSocket(res.url);
-    ws.onmessage = onMessage;
-    ws.onclose = () => {
-      dispatch({ type: "DISCONNECTED" });
-    };
-
-    setWebsocket(ws);
-  };
-
-  const stop = () => {
-    if (!websocket) return;
-
-    console.log("Stopping debug session");
-    websocket.close();
-    stopSession();
-  };
-
   const clickRestart = () => {
     setShowModal(true);
   };
 
   const clickLoadConfig = () => {
+    if(!appId) return;
     console.log("Loading config");
-    loadConfig();
+    loadConfig({ appId });
   };
 
-  const onMessage = (event: { data: string }) => {
-    const data = JSON.parse(event.data);
-    // console.log(data);
-    setMessages((messages) => [...messages, data]);
-  };
-
-  if (!doNotLoadConfigOnNextBoot) return null;
+  if (!doNotLoadConfigOnNextBoot || !appId) return null;
 
   //* RENDER **********************************************************/
   return (
@@ -85,12 +53,16 @@ const DebugConsole = () => {
           <h2>Debug Console</h2>
         </div>
         <div className="d-flex align-items-center justify-content-start mb-2">
-          <Button className="mx-1" variant="primary" size="sm" onClick={join}>
+          {!isConnected ? (
+          <Button className="mx-1" variant="primary" size="sm" onClick={() => join(appId)}>
             Start Debug Session
           </Button>
-          <Button className="mx-1" variant="primary" size="sm" onClick={stop}>
+          )
+          : (
+            <Button className="mx-1" variant="primary" size="sm" onClick={() => stop(appId)}>
             Stop Debug Session
           </Button>
+          )}
           <MinimumLogLevelDropdown />
           <Form.Check
             type="checkbox"
@@ -99,12 +71,14 @@ const DebugConsole = () => {
             name="doNotLoadConfig"
             id="doNotLoadConfig"
             checked={doNotLoadConfigOnNextBoot?.doNotLoadConfigOnNextBoot}
-            onChange={() =>
+            onChange={() => {
+              if(!appId) return;
               setDoNotLoadConfig(
-                !doNotLoadConfigOnNextBoot?.doNotLoadConfigOnNextBoot
+                { appId, doNotLoadConfigOnNextBoot: !doNotLoadConfigOnNextBoot?.doNotLoadConfigOnNextBoot }
               )
-            }
+            }}
           />
+          {doNotLoadConfigOnNextBoot?.doNotLoadConfigOnNextBoot && (
           <Button
             className="mx-1"
             variant="primary"
@@ -113,6 +87,14 @@ const DebugConsole = () => {
             disabled={!doNotLoadConfigOnNextBoot.doNotLoadConfigOnNextBoot}
           >
             Load Config
+          </Button>)}
+          <Button
+            className="mx-1"
+            variant="primary"
+            size="sm"
+            onClick={clear}
+          >
+            Clear Console Trace
           </Button>
           <Button
             className="mx-1"
@@ -132,7 +114,8 @@ const DebugConsole = () => {
         show={showModal}
         handleClose={() => setShowModal(false)}
         handleConfirm={() => {
-          restart();
+          if(!appId) return;
+          restart({ appId });
           setShowModal(false);
         }}
       />
@@ -142,4 +125,11 @@ const DebugConsole = () => {
 
 export default DebugConsole;
 
+
+interface DebugConsoleProps {
+  isConnected: boolean;
+  join: (appId: string) => void;
+  stop: (appId: string) => void;
+  clear: () => void;
+}
 

@@ -1,29 +1,70 @@
 import { Suspense } from "react";
-import { Route, Routes } from "react-router-dom";
-import ConfigFile from './features/ConfigFile';
-import DebugConsole from './features/DebugConsole/DebugConsole';
+import { useDispatch, useSelector } from "react-redux";
+import { Navigate, Route, Routes } from "react-router-dom";
+import ConfigFile from "./features/ConfigFile";
+import DebugConsole from "./features/DebugConsole/DebugConsole";
 import DeviceList from "./features/DeviceList";
-import TopNav from "./features/TopNav";
+import MainLayout from "./features/MainLayout";
+import MobileControl from './features/MobileControl';
 import Types from "./features/Types";
 import Versions from "./features/Versions";
+import {
+  useGetDebugSessionMutation,
+  useStopDebugSessionMutation,
+} from "./store/apiSlice";
+import { AppDispatch, RootState } from "./store/store";
+import { messagesCleared, WS_CONNECT, WS_DISCONNECT } from "./store/websocketSlice";
 
 function App() {
+  const dispatch = useDispatch<AppDispatch>();
+  const isConnected = useSelector((state: RootState) => state.websocket.isConnected);
+
+  const [startSession] = useGetDebugSessionMutation();
+  const [stopSession] = useStopDebugSessionMutation();
+
+  //* FUNCTIONS *******************************************************/
+  const join = async (appId: string) => {
+    if (!appId) return;
+    const res = await startSession({ appId }).unwrap();
+    console.log("Joining debug session at " + res.url);
+    dispatch({ type: WS_CONNECT, payload: { url: res.url } });
+  };
+
+  const stop = (appId: string) => {
+    console.log("Stopping debug session");
+    dispatch({ type: WS_DISCONNECT });
+    if (!appId) return;
+    stopSession({ appId });
+  };
+
+  const clear = () => {
+    dispatch(messagesCleared());
+  };
+
   return (
-    <div className="d-flex flex-column overflow-hidden h-100">
-      <TopNav />
-      <Suspense fallback={null}>
-        <div className="p-2 overflow-hidden flex-grow-1">
-          <Routes>
-            <Route path="/home" element={<h1>Home</h1>} />
-            <Route path="/versions" element={<Versions />} />
-            <Route path="/config" element={<ConfigFile />} />
-            <Route path="/devices" element={<DeviceList />} />
-            <Route path="/types" element={<Types />} />
-            <Route path="/console" element={<DebugConsole />} />
-          </Routes>
-        </div>
-      </Suspense>
-    </div>
+    <Suspense fallback={null}>
+      <Routes>
+        <Route path="/" element={<Navigate to="/app01/versions" replace />} />
+        <Route path=":appId" element={<MainLayout isConnected={isConnected} />}>
+          <Route path="versions" element={<Versions />} />
+          <Route path="config" element={<ConfigFile />} />
+          <Route path="devices" element={<DeviceList />} />
+          <Route path="types" element={<Types />} />
+          <Route path="mobileControl" element={<MobileControl />} />
+          <Route
+            path="console"
+            element={
+              <DebugConsole
+                isConnected={isConnected}
+                join={join}
+                stop={stop}
+                clear={clear}
+              />
+            }
+          />
+        </Route>
+      </Routes>
+    </Suspense>
   );
 }
 

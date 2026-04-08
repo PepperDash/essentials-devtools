@@ -1,4 +1,4 @@
-import { BaseQueryFn } from '@reduxjs/toolkit/dist/query';
+import { BaseQueryFn } from '@reduxjs/toolkit/query';
 import axios, { AxiosError, AxiosRequestConfig } from 'axios';
 
 // axios.defaults.xsrfCookieName = 'csrftoken';
@@ -16,7 +16,7 @@ export const axiosBaseQuery =
       baseUrl: '',
     }
   ): BaseQueryFn<QueryArgs, unknown, unknown> =>
-  async ({ url, method, data, params }) => {
+  async ({ url, method, data, params }: QueryArgs) => {
     try {
       const result = await httpClient({
         url: baseUrl + url,

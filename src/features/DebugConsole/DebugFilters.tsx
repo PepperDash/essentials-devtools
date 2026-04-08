@@ -1,14 +1,17 @@
 
+import { skipToken } from '@reduxjs/toolkit/query';
 import { useMemo } from 'react';
 import { FilterClearButton } from '../../shared/FilterClearButton';
 import { FilterDropdownSearchParams } from '../../shared/FilterDropdownSearchParams';
+import useAppParams from '../../shared/hooks/useAppParams';
 import { IdLabel } from '../../shared/types/IdLabel';
 import { useGetDevicesQuery } from '../../store/apiSlice';
 import { debugConsts, debugSearchParams, logLevelOpts } from "./debugConsts";
 
 
 export const DebugFilters = () => {
-  const { data: devices } = useGetDevicesQuery();
+  const { appId } = useAppParams();
+  const { data: devices } = useGetDevicesQuery(appId ? { appId } : skipToken);
 
   const items = useMemo(() => {
     if (!devices) return [{ id: debugConsts.GLOBAL, label: "Global"}];
