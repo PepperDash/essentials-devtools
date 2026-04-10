@@ -54,12 +54,12 @@ const DebugConsole = ({isConnected, join, stop, clear}: DebugConsoleProps) => {
         </div>
         <div className="d-flex align-items-center justify-content-start mb-2">
           {!isConnected ? (
-          <Button className="mx-1" variant="primary" size="sm" onClick={() => join(appId)}>
+          <Button className="mx-1" variant="success" size="sm" onClick={() => join(appId)}>
             Start Debug Session
           </Button>
           )
           : (
-            <Button className="mx-1" variant="primary" size="sm" onClick={() => stop(appId)}>
+            <Button className="mx-1" variant="danger" size="sm" onClick={() => stop(appId)}>
             Stop Debug Session
           </Button>
           )}
