@@ -1,0 +1,28 @@
+.nodeCard {
+  width: 280px;
+  font-size: 0.72rem;
+}
+
+.nodeHeader {
+  line-height: 1.4;
+}
+
+.nodeKeyLabel {
+  font-size: 0.65rem;
+}
+
+.handle {
+  background: #555;
+}
+
+// Border added between port rows via adjacent-sibling selector,
+// removing the need for a conditional inline style.
+.portRow {
+  & + & {
+    border-top: 1px solid #f0f0f0;
+  }
+}
+
+.portLabel {
+  max-width: 46%;
+}

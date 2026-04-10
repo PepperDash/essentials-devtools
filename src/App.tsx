@@ -6,6 +6,7 @@ import DebugConsole from "./features/DebugConsole/DebugConsole";
 import DeviceList from "./features/DeviceList";
 import MainLayout from "./features/MainLayout";
 import MobileControl from './features/MobileControl';
+import Routing from './features/Routing';
 import Types from "./features/Types";
 import Versions from "./features/Versions";
 import {
@@ -50,6 +51,7 @@ function App() {
           <Route path="config" element={<ConfigFile />} />
           <Route path="devices" element={<DeviceList />} />
           <Route path="types" element={<Types />} />
+          <Route path="routing" element={<Routing />} />
           <Route path="mobileControl" element={<MobileControl />} />
           <Route
             path="console"

@@ -130,6 +130,16 @@ const TopNav = ({ isConnected }: { isConnected: boolean }) => {
           </NavLink>
           <NavLink
             className={
+              location.pathname.includes(`/${params.appId}/routing`)
+                ? "text-secondary me-3"
+                : "me-3"
+            }
+            to={`/${params.appId}/routing`}
+          >
+            Routing
+          </NavLink>
+          <NavLink
+            className={
               location.pathname.includes(`/${params.appId}/mobileControl`)
                 ? "text-secondary me-3"
                 : "me-3"

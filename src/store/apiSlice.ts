@@ -2,7 +2,6 @@ import { createApi } from "@reduxjs/toolkit/query/react";
 
 import { axiosBaseQuery } from "../services/httpService";
 
-
 function getAppIdFromPath(): string {
   const path = window.location.pathname;
   const pathParts = path.split("/");
@@ -28,7 +27,7 @@ const apiSlice = createApi({
     "MinimumLogLevel",
   ],
   endpoints: (builder) => ({
-    getVersions: builder.query<Version[], {appId: string}>({
+    getVersions: builder.query<Version[], { appId: string }>({
       query: ({ appId }) => ({
         url: `/${appId}/api/versions`,
         method: "GET",
@@ -36,7 +35,7 @@ const apiSlice = createApi({
       providesTags: ["Version"],
     }),
 
-    getDevices: builder.query<IKeyed[], {appId: string}>({
+    getDevices: builder.query<IKeyed[], { appId: string }>({
       query: ({ appId }) => ({
         url: `/${appId}/api/devices`,
         method: "GET",
@@ -44,7 +43,7 @@ const apiSlice = createApi({
       providesTags: ["Device"],
     }),
 
-    getTypes: builder.query<Type[], {appId: string}>({
+    getTypes: builder.query<Type[], { appId: string }>({
       query: ({ appId }) => ({
         url: `/${appId}/api/types`,
         method: "GET",
@@ -52,7 +51,10 @@ const apiSlice = createApi({
       providesTags: ["Type"],
     }),
 
-    getDeviceProperties: builder.query<DeviceProperties[], {appId: string; key: string}>({
+    getDeviceProperties: builder.query<
+      DeviceProperties[],
+      { appId: string; key: string }
+    >({
       query: ({ appId, key }) => ({
         url: `/${appId}/api/deviceProperties/${key}`,
         method: "GET",
@@ -60,14 +62,20 @@ const apiSlice = createApi({
       providesTags: ["DeviceProperty"],
     }),
 
-    getDeviceMethods: builder.query<DeviceMethods[], {appId: string; key: string}>({
+    getDeviceMethods: builder.query<
+      DeviceMethods[],
+      { appId: string; key: string }
+    >({
       query: ({ appId, key }) => ({
         url: `/${appId}/api/deviceMethods/${key}`,
         method: "GET",
       }),
     }),
 
-    getDeviceFeedbacks: builder.query<DeviceFeedbacks, {appId: string; key: string}>({
+    getDeviceFeedbacks: builder.query<
+      DeviceFeedbacks,
+      { appId: string; key: string }
+    >({
       query: ({ appId, key }) => ({
         url: `/${appId}/api/deviceFeedbacks/${key}`,
         method: "GET",
@@ -75,15 +83,33 @@ const apiSlice = createApi({
       providesTags: ["DeviceFeedback"],
     }),
 
-    setDeviceJsonCommand: builder.mutation<void, { appId: string; deviceKey: string; methodName: string; params?: unknown[] }>({
+    setDeviceJsonCommand: builder.mutation<
+      void,
+      {
+        appId: string;
+        deviceKey: string;
+        methodName: string;
+        params?: unknown[];
+      }
+    >({
       query: ({ appId, deviceKey, methodName, params }) => ({
         url: `/${appId}/api/deviceCommands/${deviceKey}`,
         method: "POST",
-        data: {deviceKey, methodName, params},
+        data: { deviceKey, methodName, params },
       }),
     }),
 
-    getConfig: builder.query<any, {appId: string}>({
+    getRoutingDevicesAndTieLines: builder.query<
+      RoutingDevicesAndTieLines,
+      { appId: string }
+    >({
+      query: ({ appId }) => ({
+        url: `/${appId}/api/routingDevicesAndTieLines`,
+        method: "GET",
+      }),
+    }),
+
+    getConfig: builder.query<any, { appId: string }>({
       query: ({ appId }) => ({
         url: `/${appId}/api/config`,
         method: "GET",
@@ -91,28 +117,37 @@ const apiSlice = createApi({
       providesTags: ["Config"],
     }),
 
-    getMobileControlInfo: builder.query<MobileControlInfo, {appId: string, deviceKey: string,}>({
+    getMobileControlInfo: builder.query<
+      MobileControlInfo,
+      { appId: string; deviceKey: string }
+    >({
       query: ({ appId, deviceKey }) => ({
         url: `/${appId}/api/device/${deviceKey}/info`,
         method: "GET",
       }),
     }),
 
-    getMobileControlActionPaths: builder.query<any, {appId: string, deviceKey: string,}>({
+    getMobileControlActionPaths: builder.query<
+      any,
+      { appId: string; deviceKey: string }
+    >({
       query: ({ appId, deviceKey }) => ({
         url: `/${appId}/api/device/${deviceKey}/actionPaths`,
         method: "GET",
       }),
     }),
 
-    getDebugSession: builder.mutation<DebugSession, {appId: string}>({
+    getDebugSession: builder.mutation<DebugSession, { appId: string }>({
       query: ({ appId }) => ({
         url: `/${appId}/api/debugSession`,
         method: "GET",
       }),
     }),
 
-    getMinimumLogLevel: builder.query<{ minimumLevel: LogEventLevel }, {appId: string}>({
+    getMinimumLogLevel: builder.query<
+      { minimumLevel: LogEventLevel },
+      { appId: string }
+    >({
       query: ({ appId }) => ({
         url: `/${appId}/api/appdebug`,
         method: "GET",
@@ -120,7 +155,10 @@ const apiSlice = createApi({
       providesTags: ["MinimumLogLevel"],
     }),
 
-    setMinimumLogLevel: builder.mutation<void, {appId: string; minimumLevel: LogEventLevel}>({
+    setMinimumLogLevel: builder.mutation<
+      void,
+      { appId: string; minimumLevel: LogEventLevel }
+    >({
       query: ({ appId, minimumLevel }) => ({
         url: `/${appId}/api/appdebug`,
         method: "POST",
@@ -129,7 +167,7 @@ const apiSlice = createApi({
       invalidatesTags: ["MinimumLogLevel"],
     }),
 
-    stopDebugSession: builder.mutation<void, {appId: string}>({
+    stopDebugSession: builder.mutation<void, { appId: string }>({
       query: ({ appId }) => ({
         url: `/${appId}/api/debugSession`,
         method: "POST",
@@ -138,7 +176,7 @@ const apiSlice = createApi({
 
     getDoNotLoadConfigOnNextBoot: builder.query<
       { doNotLoadConfigOnNextBoot: boolean },
-      {appId: string}
+      { appId: string }
     >({
       query: ({ appId }) => ({
         url: `/${appId}/api/doNotLoadConfigOnNextBoot`,
@@ -147,7 +185,10 @@ const apiSlice = createApi({
       providesTags: ["DoNotLoadConfigOnNextBoot"],
     }),
 
-    setDoNotLoadConfigOnNextBoot: builder.mutation<void, {appId: string; doNotLoadConfigOnNextBoot: boolean}>({
+    setDoNotLoadConfigOnNextBoot: builder.mutation<
+      void,
+      { appId: string; doNotLoadConfigOnNextBoot: boolean }
+    >({
       query: ({ appId, doNotLoadConfigOnNextBoot }) => ({
         url: `/${appId}/api/doNotLoadConfigOnNextBoot`,
         method: "POST",
@@ -156,14 +197,14 @@ const apiSlice = createApi({
       invalidatesTags: ["DoNotLoadConfigOnNextBoot"],
     }),
 
-    setRestart: builder.mutation<void, {appId: string}>({
+    setRestart: builder.mutation<void, { appId: string }>({
       query: ({ appId }) => ({
         url: `/${appId}/api/restartProgram`,
         method: "POST",
       }),
     }),
 
-    setLoadConfig: builder.mutation<void, {appId: string}>({
+    setLoadConfig: builder.mutation<void, { appId: string }>({
       query: ({ appId }) => ({
         url: `/${appId}/api/loadConfig`,
         method: "POST",
@@ -191,6 +232,7 @@ export const {
   useSetLoadConfigMutation,
   useGetMinimumLogLevelQuery,
   useSetMinimumLogLevelMutation,
+  useGetRoutingDevicesAndTieLinesQuery,
 } = apiSlice;
 
 export const oneSliceToRuleThemAll = {
@@ -267,6 +309,37 @@ export interface MobileControlDirectServer {
 
 export interface MobileControlInfo {
   directServer: MobileControlDirectServer;
+}
+
+export interface RoutingPort {
+  key: string;
+  signalType: string;
+  connectionType: string;
+  isInternal: boolean;
+}
+
+export interface RoutingDevice {
+  key: string;
+  name: string;
+  hasInputs: boolean;
+  hasOutputs: boolean;
+  hasInputsAndOutputs: boolean;
+  inputPorts?: RoutingPort[];
+  outputPorts?: RoutingPort[];
+}
+
+export interface TieLine {
+  sourceDeviceKey: string;
+  sourcePortKey: string;
+  destinationDeviceKey: string;
+  destinationPortKey: string;
+  signalType: string;
+  isInternal: boolean;
+}
+
+export interface RoutingDevicesAndTieLines {
+  devices: RoutingDevice[];
+  tieLines: TieLine[];
 }
 
 export type LogEventLevel =
