@@ -4,13 +4,14 @@ import styles from "./RoutingDeviceNode.module.scss";
 
 export type RoutingDeviceNodeData = {
   device: RoutingDevice;
+  onHide?: () => void;
 };
 
 const PORT_ROW_PX = 28;
 const HEADER_PX = 38;
 
 const RoutingDeviceNode = ({ data }: NodeProps) => {
-  const device = (data as RoutingDeviceNodeData).device;
+  const { device, onHide } = data as RoutingDeviceNodeData;
   const inputPorts = device.inputPorts ?? [];
   const outputPorts = device.outputPorts ?? [];
   const portRows = Math.max(inputPorts.length, outputPorts.length, 1);
@@ -22,15 +23,26 @@ const RoutingDeviceNode = ({ data }: NodeProps) => {
       style={{ minHeight: HEADER_PX + bodyHeight }}
     >
       <div
-        className={`card-header py-1 px-2 fw-semibold text-truncate bg-secondary-subtle ${styles.nodeHeader}`}
+        className={`card-header py-1 px-2 fw-semibold bg-secondary-subtle d-flex align-items-start ${styles.nodeHeader}`}
         style={{ height: HEADER_PX }}
         title={device.key}
       >
-        <div className="text-truncate">{device.name || device.key}</div>
-        {device.name && (
-          <div className={`text-muted text-truncate ${styles.nodeKeyLabel}`}>
-            {device.key}
-          </div>
+        <div className="text-truncate flex-grow-1 overflow-hidden me-1">
+          <div className="text-truncate">{device.name || device.key}</div>
+          {device.name && (
+            <div className={`text-muted text-truncate ${styles.nodeKeyLabel}`}>
+              {device.key}
+            </div>
+          )}
+        </div>
+        {onHide && (
+          <button
+            className={`nodrag ${styles.hideBtn}`}
+            onClick={onHide}
+            title="Hide device"
+          >
+            &times;
+          </button>
         )}
       </div>
 

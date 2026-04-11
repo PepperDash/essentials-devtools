@@ -231,7 +231,20 @@ const Routing = () => {
       hideUnconnected,
       hiddenDevices,
     );
-    setNodes(layoutNodes);
+    setNodes(
+      layoutNodes.map((n) => ({
+        ...n,
+        data: {
+          ...n.data,
+          onHide: () =>
+            setHiddenDevices((prev) => {
+              const next = new Set(prev);
+              next.add(n.id);
+              return next;
+            }),
+        },
+      })),
+    );
     setEdges(layoutEdges);
   }, [data, hiddenTypes, hideUnconnected, hiddenDevices, setNodes, setEdges]);
 
