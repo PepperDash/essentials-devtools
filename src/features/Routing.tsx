@@ -22,6 +22,7 @@ import {
   RoutingDevicesAndTieLines,
   TieLine,
   useGetRoutingDevicesAndTieLinesQuery,
+  useGetVersionsQuery,
 } from "../store/apiSlice";
 import styles from "./Routing.module.scss";
 import RoutingDeviceNode, {
@@ -176,6 +177,18 @@ function uniqueSignalTypes(tieLines: TieLine[]): string[] {
   return [...new Set(tieLines.map((tl) => tl.signalType))].sort();
 }
 
+// Compares dot-separated version strings numerically (e.g. "2.29" > "2.9").
+function meetsMinVersion(version: string, minimum: string): boolean {
+  const vParts = version.split(".").map(Number);
+  const mParts = minimum.split(".").map(Number);
+  for (let i = 0; i < Math.max(vParts.length, mParts.length); i++) {
+    const a = vParts[i] ?? 0;
+    const b = mParts[i] ?? 0;
+    if (a !== b) return a > b;
+  }
+  return true;
+}
+
 // ─── Node types registry (stable reference outside component) ────────────────
 
 const nodeTypes: NodeTypes = {
@@ -186,6 +199,7 @@ const nodeTypes: NodeTypes = {
 
 const Routing = () => {
   const { appId } = useAppParams();
+  const { data: versions } = useGetVersionsQuery(appId ? { appId } : skipToken);
   const { data, isLoading, isError } = useGetRoutingDevicesAndTieLinesQuery(
     appId ? { appId } : skipToken,
   );
@@ -285,6 +299,20 @@ const Routing = () => {
   if (isLoading) return <div className="p-3">Loading routing data…</div>;
   if (isError || !data)
     return <div className="p-3 text-danger">Failed to load routing data.</div>;
+  if (
+    versions &&
+    !versions.some(
+      (v) =>
+        v.Name === "PepperDashEssentials" &&
+        meetsMinVersion(v.Version, "2.29"),
+    )
+  ) {
+    return (
+      <div className="p-3 text-danger">
+        Routing feature is not available for this version.
+      </div>
+    );
+  }
 
   return (
     <div className="h-100 d-flex flex-column overflow-hidden">
