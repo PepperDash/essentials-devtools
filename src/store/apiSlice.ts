@@ -35,6 +35,13 @@ const apiSlice = createApi({
       providesTags: ["Version"],
     }),
 
+    getInitializationExceptions: builder.query<EssentialsExceptionReturn, { appId: string }>({
+      query: ({ appId }) => ({
+        url: `/${appId}/api/initializationExceptions`,
+        method: "GET",
+      }),
+    }),
+
     getDevices: builder.query<IKeyed[], { appId: string }>({
       query: ({ appId }) => ({
         url: `/${appId}/api/devices`,
@@ -215,6 +222,7 @@ const apiSlice = createApi({
 
 export const {
   useGetVersionsQuery,
+  useGetInitializationExceptionsQuery,
   useGetDevicesQuery,
   useGetTypesQuery,
   useGetDevicePropertiesQuery,
@@ -240,6 +248,20 @@ export const oneSliceToRuleThemAll = {
   /** @deprecated */
   getBaseApiPath,
 };
+
+export interface EssentialsExceptionReturn {
+  Exceptions: EssentialsException[];
+}
+
+export interface EssentialsException extends EssentialsExceptionBase {  
+  InnerException?: EssentialsExceptionBase;
+}
+
+export interface EssentialsExceptionBase {
+  Message: string;
+  StackTrace: string;
+  Type: string;
+}
 
 export interface Type {
   Type: string;

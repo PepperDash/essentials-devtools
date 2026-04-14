@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { Dropdown, Nav, Navbar } from "react-bootstrap";
 import { NavLink, useLocation } from "react-router-dom";
+import { meetsMinVersion } from '../shared/functions/meetsMinimumVersion';
 import useAppParams from "../shared/hooks/useAppParams";
 import { IconDarkChevronDown, IconDarkEllipse } from "../shared/icons";
 import { useGetVersionsQuery } from "../store/apiSlice";
@@ -48,6 +49,71 @@ const TopNav = ({ isConnected }: { isConnected: boolean }) => {
     app10versions,
   ]);
 
+  // Extract the current sub-route (e.g. "routing", "console") so we can
+  // preserve it when switching apps. Falls back to "console" if not on an
+  // app-scoped route yet.
+  const currentSubRoute = useMemo(() => {
+    const match = location.pathname.match(/^\/app\d+\/(.+)/);
+    return match ? match[1] : "console";
+  }, [location.pathname]);
+
+  // based on the curren params.appId, use the matching versions response to determine if the current version of PepperDashEssentials.dll is >= 3.0
+  const showInitializationExceptions = useMemo(() => {
+    let versions;
+    switch (params.appId) {
+      case "app01":
+        versions = app01versions;
+        break;
+      case "app02":
+        versions = app02versions;
+        break;
+      case "app03":
+        versions = app03versions;
+        break;
+      case "app04":
+        versions = app04versions;
+        break;
+      case "app05":
+        versions = app05versions;
+        break;
+      case "app06":
+        versions = app06versions;
+        break;
+      case "app07":
+        versions = app07versions;
+        break;
+      case "app08":
+        versions = app08versions;
+        break;
+      case "app09":
+        versions = app09versions;
+        break;
+      case "app10":
+        versions = app10versions;
+        break;
+      default:
+        return false;
+    }
+    const essentialsVersion = versions?.find(
+      (v) => v.Name === "PepperDashEssentials.dll",
+    )?.Version;
+    if (!essentialsVersion) return false;
+   
+    return meetsMinVersion(essentialsVersion, "3.0.0");
+  }, [
+    params.appId,
+    app01versions,
+    app02versions,
+    app03versions,
+    app04versions,
+    app05versions,
+    app06versions,
+    app07versions,
+    app08versions,
+    app09versions,
+    app10versions,
+  ]);
+
   return (
     <Navbar
       expand="md"
@@ -70,7 +136,11 @@ const TopNav = ({ isConnected }: { isConnected: boolean }) => {
             </Dropdown.Toggle>
             <Dropdown.Menu>
               {appIdOptions.map((id) => (
-                <Dropdown.Item key={id} as={NavLink} to={`/${id}/console`}>
+                <Dropdown.Item
+                  key={id}
+                  as={NavLink}
+                  to={`/${id}/${currentSubRoute}`}
+                >
                   {id}
                 </Dropdown.Item>
               ))}
@@ -88,6 +158,20 @@ const TopNav = ({ isConnected }: { isConnected: boolean }) => {
           >
             Versions
           </NavLink>
+          {showInitializationExceptions && (
+            <NavLink
+                className={
+                  location.pathname.includes(
+                  `/${params.appId}/initializationExceptions`,
+                )
+                  ? "text-secondary me-3"
+                  : "me-3"
+              }
+              to={`/${params.appId}/initializationExceptions`}
+            >
+              Initialization Exceptions
+            </NavLink>
+          )}
           <NavLink
             className={
               location.pathname.includes(`/${params.appId}/console`)

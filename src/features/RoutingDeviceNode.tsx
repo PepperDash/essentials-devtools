@@ -5,13 +5,14 @@ import styles from "./RoutingDeviceNode.module.scss";
 export type RoutingDeviceNodeData = {
   device: RoutingDevice;
   onHide?: () => void;
+  darkMode?: boolean;
 };
 
 const PORT_ROW_PX = 28;
 const HEADER_PX = 38;
 
 const RoutingDeviceNode = ({ data }: NodeProps) => {
-  const { device, onHide } = data as RoutingDeviceNodeData;
+  const { device, onHide, darkMode } = data as RoutingDeviceNodeData;
   const inputPorts = device.inputPorts ?? [];
   const outputPorts = device.outputPorts ?? [];
   const portRows = Math.max(inputPorts.length, outputPorts.length, 1);
@@ -19,11 +20,11 @@ const RoutingDeviceNode = ({ data }: NodeProps) => {
 
   return (
     <div
-      className={`card border ${styles.nodeCard}`}
+      className={`card border ${styles.nodeCard} ${darkMode ? styles.nodeCardDark : ""}`}
       style={{ minHeight: HEADER_PX + bodyHeight }}
     >
       <div
-        className={`card-header py-1 px-2 fw-semibold bg-secondary-subtle d-flex align-items-start ${styles.nodeHeader}`}
+        className={`card-header py-1 px-2 fw-semibold d-flex align-items-start ${darkMode ? styles.nodeHeaderDark : "bg-secondary-subtle"} ${styles.nodeHeader}`}
         style={{ height: HEADER_PX }}
         title={device.key}
       >
@@ -70,7 +71,7 @@ const RoutingDeviceNode = ({ data }: NodeProps) => {
           return (
             <div
               key={`row-${i}`}
-              className={`d-flex justify-content-between align-items-center px-3 ${styles.portRow}`}
+              className={`d-flex justify-content-between align-items-center px-3 ${styles.portRow} ${darkMode ? styles.portRowDark : ""}`}
               style={{ height: PORT_ROW_PX }}
             >
               <span className={`text-muted text-truncate ${styles.portLabel}`} title={inPort?.key}>

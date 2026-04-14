@@ -4,6 +4,8 @@ import { Navigate, Route, Routes } from "react-router-dom";
 import ConfigFile from "./features/ConfigFile";
 import DebugConsole from "./features/DebugConsole/DebugConsole";
 import DeviceList from "./features/DeviceList";
+import ErrorBoundary from "./features/ErrorBoundary";
+import InitializationExceptions from "./features/InitializationExceptions";
 import MainLayout from "./features/MainLayout";
 import MobileControl from './features/MobileControl';
 import Routing from './features/Routing';
@@ -43,11 +45,13 @@ function App() {
   };
 
   return (
-    <Suspense fallback={null}>
-      <Routes>
+    <ErrorBoundary>
+      <Suspense fallback={null}>
+        <Routes>
         <Route path="/" element={<Navigate to="/app01/versions" replace />} />
         <Route path=":appId" element={<MainLayout isConnected={isConnected} />}>
           <Route path="versions" element={<Versions />} />
+          <Route path="initializationExceptions" element={<InitializationExceptions />} />
           <Route path="config" element={<ConfigFile />} />
           <Route path="devices" element={<DeviceList />} />
           <Route path="types" element={<Types />} />
@@ -65,8 +69,9 @@ function App() {
             }
           />
         </Route>
-      </Routes>
-    </Suspense>
+        </Routes>
+      </Suspense>
+    </ErrorBoundary>
   );
 }
 
