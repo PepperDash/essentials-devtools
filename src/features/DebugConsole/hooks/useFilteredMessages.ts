@@ -55,7 +55,7 @@ export function useFilteredMessages(listItems: LogMessage[]) {
         ];
         // true if for every search text word, some field contains it
         textMatch = searchText.every((st) =>
-          textMatchFields.some((f) => f?.toLowerCase().includes(st))
+          textMatchFields.some((f) => f?.toLowerCase().includes(st.toLowerCase()))
         );
       }
       return (

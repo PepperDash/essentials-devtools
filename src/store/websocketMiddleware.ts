@@ -1,6 +1,8 @@
 import { Middleware } from "@reduxjs/toolkit";
 import {
   connected,
+  connectionAttemptStarted,
+  connectionFailed,
   disconnected,
   messageReceived,
   WS_CONNECT,
@@ -20,6 +22,8 @@ export const websocketMiddleware: Middleware = (store) => {
 
       console.log("[ws] Connecting to", url);
 
+      store.dispatch(connectionAttemptStarted());
+
       // Close any existing connection before opening a new one
       if (socket) {
         socket.close();
@@ -31,7 +35,10 @@ export const websocketMiddleware: Middleware = (store) => {
         store.dispatch(disconnected());
         socket = null;
       };
-      socket.onerror = (err) => console.error("WebSocket error", err);
+      socket.onerror = (err) => {
+        console.error("WebSocket error", err);
+        store.dispatch(connectionFailed(url));
+      };
       socket.onmessage = (event: MessageEvent<string>) => {
         try {
           store.dispatch(messageReceived(JSON.parse(event.data)));

@@ -5,6 +5,7 @@ import {
   Background,
   Controls,
   Edge,
+  EdgeTypes,
   MiniMap,
   Node,
   NodeTypes,
@@ -31,6 +32,7 @@ import RoutingDeviceNode, {
   PORT_ROW_PX,
   RoutingDeviceNodeData,
 } from "./RoutingDeviceNode";
+import TieLineEdge from "./TieLineEdge";
 
 // ─── Constants ──────────────────────────────────────────────────────────────
 
@@ -200,7 +202,15 @@ function buildGraph(
       target: tl.destinationDeviceKey,
       targetHandle: tl.destinationPortKey,
       style: { stroke: signalColor(tl.signalType), strokeWidth: 1.5 },
-      data: { signalColor: signalColor(tl.signalType) },
+      data: {
+        signalColor: signalColor(tl.signalType),
+        sourceDeviceKey: tl.sourceDeviceKey,
+        sourcePortKey: tl.sourcePortKey,
+        destinationDeviceKey: tl.destinationDeviceKey,
+        destinationPortKey: tl.destinationPortKey,
+        signalType: tl.signalType,
+      },
+      type: "tieLine",
       animated: false,
     }));
 
@@ -218,6 +228,10 @@ function uniqueSignalTypes(tieLines: TieLine[]): string[] {
 
 const nodeTypes: NodeTypes = {
   routingDevice: RoutingDeviceNode,
+};
+
+const edgeTypes: EdgeTypes = {
+  tieLine: TieLineEdge,
 };
 
 // ─── Component ───────────────────────────────────────────────────────────────
@@ -300,12 +314,17 @@ const Routing = () => {
         const baseColor =
           (e.data as { signalColor?: string } | undefined)?.signalColor ??
           FALLBACK_COLOR;
+        const isSelected = selectedEdgeId !== null && e.id === selectedEdgeId;
         if (selectedEdgeId === null) {
-          return { ...e, style: { stroke: baseColor, strokeWidth: 1.5 } };
+          return {
+            ...e,
+            data: { ...e.data, selected: false },
+            style: { stroke: baseColor, strokeWidth: 1.5 },
+          };
         }
-        const isSelected = e.id === selectedEdgeId;
         return {
           ...e,
+          data: { ...e.data, selected: isSelected },
           style: {
             stroke: isSelected ? baseColor : "#ccc",
             strokeWidth: isSelected ? 3.5 : 1.5,
@@ -323,6 +342,27 @@ const Routing = () => {
   );
 
   const onPaneClick = useCallback(() => setSelectedEdgeId(null), []);
+
+  const onEdgeMouseEnter = useCallback(
+    (_: React.MouseEvent, edge: Edge) =>
+      setEdges((eds) => {
+        if (eds.some((e) => e.data?.selected)) return eds;
+        return eds.map((e) =>
+          e.id === edge.id ? { ...e, data: { ...e.data, hovered: true } } : e,
+        );
+      }),
+    [setEdges],
+  );
+
+  const onEdgeMouseLeave = useCallback(
+    (_: React.MouseEvent, edge: Edge) =>
+      setEdges((eds) =>
+        eds.map((e) =>
+          e.id === edge.id ? { ...e, data: { ...e.data, hovered: false } } : e,
+        ),
+      ),
+    [setEdges],
+  );
 
   function toggleSignalType(type: string) {
     setHiddenTypes((prev) => {
@@ -538,8 +578,11 @@ const Routing = () => {
           edges={edges}
           onNodesChange={onNodesChange}
           onEdgeClick={onEdgeClick}
+          onEdgeMouseEnter={onEdgeMouseEnter}
+          onEdgeMouseLeave={onEdgeMouseLeave}
           onPaneClick={onPaneClick}
           nodeTypes={nodeTypes}
+          edgeTypes={edgeTypes}
           nodesConnectable={false}
           elementsSelectable={false}
           colorMode={darkMode ? "dark" : "light"}

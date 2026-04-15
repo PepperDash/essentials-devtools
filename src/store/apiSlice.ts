@@ -25,6 +25,7 @@ const apiSlice = createApi({
     "DebugSession",
     "DoNotLoadConfigOnNextBoot",
     "MinimumLogLevel",
+    "MobileControlInfo",
   ],
   endpoints: (builder) => ({
     getVersions: builder.query<Version[], { appId: string }>({
@@ -35,7 +36,10 @@ const apiSlice = createApi({
       providesTags: ["Version"],
     }),
 
-    getInitializationExceptions: builder.query<EssentialsExceptionReturn, { appId: string }>({
+    getInitializationExceptions: builder.query<
+      EssentialsExceptionReturn,
+      { appId: string }
+    >({
       query: ({ appId }) => ({
         url: `/${appId}/api/initializationExceptions`,
         method: "GET",
@@ -132,10 +136,11 @@ const apiSlice = createApi({
         url: `/${appId}/api/device/${deviceKey}/info`,
         method: "GET",
       }),
+      providesTags: ["MobileControlInfo"],
     }),
 
     getMobileControlActionPaths: builder.query<
-      any,
+      MobileControlActionPaths,
       { appId: string; deviceKey: string }
     >({
       query: ({ appId, deviceKey }) => ({
@@ -217,6 +222,41 @@ const apiSlice = createApi({
         method: "POST",
       }),
     }),
+
+    createMobileControlUiClient: builder.mutation<
+      ClientResponse,
+      { appId: string; deviceKey: string, request: ClientRequest }
+    >({
+      query: ({ appId, deviceKey, request }) => ({
+        url: `/${appId}/api/device/${deviceKey}/client`,
+        method: "POST",
+        data: request,
+      }),
+      invalidatesTags: ["MobileControlInfo"],
+    }),
+
+    deleteMobileControlUiClient: builder.mutation<
+      void,
+      { appId: string; deviceKey: string; client: ClientResponse }
+    >({
+      query: ({ appId, deviceKey, client }) => ({
+        url: `/${appId}/api/device/${deviceKey}/client`,
+        method: "DELETE",
+        data: client,
+      }),
+      invalidatesTags: ["MobileControlInfo"],
+    }),
+
+    deleteAllMobileControlUiClients: builder.mutation<
+      void,
+      { appId: string; deviceKey: string }
+    >({
+      query: ({ appId, deviceKey }) => ({
+        url: `/${appId}/api/device/${deviceKey}/deleteAllUiClients`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["MobileControlInfo"],
+    }),
   }),
 });
 
@@ -241,6 +281,9 @@ export const {
   useGetMinimumLogLevelQuery,
   useSetMinimumLogLevelMutation,
   useGetRoutingDevicesAndTieLinesQuery,
+  useCreateMobileControlUiClientMutation,
+  useDeleteMobileControlUiClientMutation,
+  useDeleteAllMobileControlUiClientsMutation,
 } = apiSlice;
 
 export const oneSliceToRuleThemAll = {
@@ -253,7 +296,7 @@ export interface EssentialsExceptionReturn {
   Exceptions: EssentialsException[];
 }
 
-export interface EssentialsException extends EssentialsExceptionBase {  
+export interface EssentialsException extends EssentialsExceptionBase {
   InnerException?: EssentialsExceptionBase;
 }
 
@@ -331,6 +374,27 @@ export interface MobileControlDirectServer {
 
 export interface MobileControlInfo {
   directServer: MobileControlDirectServer;
+}
+
+export interface MobileControlActionPaths {
+  actionPaths: ActionPath[];
+}
+
+export interface ActionPath {
+  messengerKey: string;
+  path: string;
+}
+
+export interface ClientRequest {
+  roomKey: string;
+  grantCode: string;
+  token: string;
+}
+
+export interface ClientResponse {
+  error: string;
+  token: string;
+  path: string;
 }
 
 export interface RoutingPort {

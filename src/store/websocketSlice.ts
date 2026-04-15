@@ -4,11 +4,13 @@ import { LogMessage } from "../shared/types/LogMessage";
 interface WebsocketState {
   messages: LogMessage[];
   isConnected: boolean;
+  failedUrl: string | null;
 }
 
 const initialState: WebsocketState = {
   messages: [],
   isConnected: false,
+  failedUrl: null,
 };
 
 const websocketSlice = createSlice({
@@ -31,10 +33,18 @@ const websocketSlice = createSlice({
     messagesCleared(state) {
       state.messages = [];
     },
+    /** Dispatched by the middleware when a connection attempt fails */
+    connectionFailed(state, action: PayloadAction<string>) {
+      state.failedUrl = action.payload;
+    },
+    /** Dispatched by the middleware when a new connection attempt starts */
+    connectionAttemptStarted(state) {
+      state.failedUrl = null;
+    },
   },
 });
 
-export const { connected, disconnected, messageReceived, messagesCleared } =
+export const { connected, disconnected, messageReceived, messagesCleared, connectionFailed, connectionAttemptStarted } =
   websocketSlice.actions;
 
 export default websocketSlice.reducer;

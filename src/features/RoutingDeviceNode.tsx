@@ -74,15 +74,22 @@ const RoutingDeviceNode = ({ data }: NodeProps) => {
               className={`d-flex justify-content-between align-items-center px-3 ${styles.portRow} ${darkMode ? styles.portRowDark : ""}`}
               style={{ height: PORT_ROW_PX }}
             >
-              <span className={`text-muted text-truncate ${styles.portLabel}`} title={inPort?.key}>
-                {inPort?.key ?? ""}
-              </span>
-              <span
-                className={`text-muted text-truncate text-end ${styles.portLabel}`}
-                title={outPort?.key}
-              >
-                {outPort?.key ?? ""}
-              </span>
+              <div className={styles.portLabelWrap}>
+                <span className={`text-muted text-truncate ${styles.portLabelText}`} title={inPort?.key}>
+                  {inPort?.key ?? ""}
+                </span>
+                {inPort && (
+                  <span className={styles.portTooltip}>{inPort.signalType}</span>
+                )}
+              </div>
+              <div className={`text-end ${styles.portLabelWrap}`}>
+                <span className={`text-muted text-truncate ${styles.portLabelText}`} title={outPort?.key}>
+                  {outPort?.key ?? ""}
+                </span>
+                {outPort && (
+                  <span className={styles.portTooltip}>{outPort.signalType}</span>
+                )}
+              </div>
             </div>
           );
         })}

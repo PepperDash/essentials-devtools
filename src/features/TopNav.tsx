@@ -238,7 +238,7 @@ const TopNav = ({ isConnected }: { isConnected: boolean }) => {
             className={isConnected ? "text-success" : "text-danger"}
           />
           <span className="ms-2">
-            {isConnected ? "Connected" : "Disconnected"}
+            Debug Console {isConnected ? "Connected" : "Disconnected"}
           </span>
         </div>
       </div>

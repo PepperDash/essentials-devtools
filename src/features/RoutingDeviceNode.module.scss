@@ -57,6 +57,36 @@
   }
 }
 
-.portLabel {
+.portLabelWrap {
+  position: relative;
   max-width: 46%;
+  min-width: 0;
+
+  &:hover .portTooltip {
+    opacity: 1;
+  }
+}
+
+.portLabelText {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.portTooltip {
+  position: absolute;
+  bottom: calc(100% + 4px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(30, 30, 30, 0.92);
+  color: #f0f0f0;
+  border-radius: 4px;
+  padding: 3px 8px;
+  font-size: 0.68rem;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 100;
+  opacity: 0;
+  transition: opacity 0.12s;
 }

@@ -51,3 +51,29 @@
 .hideUnconnectedSwitch {
   font-size: 0.8rem;
 }
+
+.tieLineTooltip {
+  position: absolute;
+  background: rgba(30, 30, 30, 0.92);
+  color: #f0f0f0;
+  border-radius: 5px;
+  padding: 6px 10px;
+  font-size: 0.72rem;
+  pointer-events: none;
+  white-space: nowrap;
+  z-index: 10;
+  line-height: 1.6;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+}
+
+.tieLineTooltipRow {
+  display: flex;
+  gap: 8px;
+}
+
+.tieLineTooltipLabel {
+  color: #aaa;
+  min-width: 52px;
+  text-align: right;
+  flex-shrink: 0;
+}
