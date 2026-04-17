@@ -68,7 +68,8 @@ const LoginForm = () => {
   }
 
   return (
-    <div className="d-flex justify-content-center align-items-center h-100">
+    <div className="d-flex flex-column justify-content-center align-items-center h-100">
+      <h1 className="mb-5 text-center">PepperDash Essentials Developer Tools</h1>
       <div className="w-100" style={{ maxWidth: '360px' }}>
         <h2 className="mb-4">Sign In</h2>
         {error && <Alert variant="danger">{error}</Alert>}

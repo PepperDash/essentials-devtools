@@ -52,12 +52,10 @@ function App() {
       <Suspense fallback={null}>
         <Routes>
         <Route path="/" element={<Navigate to="/login" replace />} />
-        <Route path="/login" element={<MainLayout isConnected={isConnected} />}>
-          <Route index element={<LoginForm />} />
-        </Route>
+        <Route path="/login" element={<LoginForm />} />
           
+        <Route path=":appId/login" element={<LoginForm />} />
         <Route path=":appId" element={<MainLayout isConnected={isConnected} />}>
-          <Route path="login" element={<LoginForm />} />
           <Route element={<RequireAuth />}>
             <Route path="versions" element={<Versions />} />
             <Route path="apiPaths" element={<ApiPaths />} />
