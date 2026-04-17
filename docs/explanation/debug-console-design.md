@@ -25,9 +25,9 @@ The console presents information in layers, allowing users to start broad and na
 ```
 All System Messages
     ↓ (Filter by Device)
-Device-Specific Messages  
-    ↓ (Filter by Level)
-Problem-Level Messages
+Device-Specific Messages
+    ↓ (Set Per-Device Minimum Level)
+Severity-Filtered Device Messages
     ↓ (Text Search)
 Specific Event Messages
     ↓ (Click for Details)
@@ -65,9 +65,10 @@ Complete Message Information
 
 **Why Client-Side**:
 - **Responsive Filtering**: Filter changes apply instantly to existing messages
-- **Rich Interaction**: Complex filter combinations without server round-trips
+- **Rich Interaction**: Complex filter combinations (including per-device levels) without server round-trips
 - **Historical Analysis**: Can re-filter previously received messages
 - **Reduced Server Load**: Filtering computation happens in user's browser
+- **Persistent Across Navigation**: Filter state stored in Redux survives route changes within the same session
 
 **Trade-offs Accepted**:
 - **Bandwidth Usage**: All messages transmitted even if filtered out
@@ -101,18 +102,17 @@ Messages use structured logging with both human-readable text and machine-readab
 ### Filter Interface Design
 
 **Multiple Filter Types**:
-The console provides three distinct filtering mechanisms:
-1. **Device Selection**: Who generated the message?
-2. **Log Level Selection**: How important is the message?
-3. **Text Search**: What specific content are you looking for?
+The console provides two distinct filtering mechanisms:
+1. **Device Selection with Per-Device Minimum Level**: Which devices to show, and what minimum severity to require per device
+2. **Text Search**: What specific content are you looking for?
 
-**Why Multiple Types**:
-- **Different Mental Models**: Users think about problems in different ways
-- **Complementary Filtering**: Different filters answer different questions
-- **Flexible Workflow**: Users can apply filters in any order that makes sense
+**Per-Device Minimum Log Level**:
+Each device in the filter list can have its own minimum log level threshold, independent of the server-side global minimum. When a device is checked in the Devices dropdown, it defaults to `Information`. A nested level dropdown next to each checked device allows selecting a higher threshold (e.g. `Warning` or `Error`) to reduce noise from that specific device while keeping other devices at a lower threshold.
 
-**Filter Combination Logic**:
-All filters use AND logic (all conditions must match)
+**Why Per-Device Rather Than Global-Only**:
+- **Precision**: A busy device generating many `Information` messages can be silenced at `Warning` while other devices remain visible at `Information`
+- **Context Preservation**: Keeps the context of multiple devices without overwhelming the view with one device's verbose output
+- **Flexible Workflow**: Useful when one device is suspected of issues and you want high verbosity from it, but low noise from everything else
 
 **Why AND Logic**:
 - **Intuitive**: Matches mental model of "show me messages that are X AND Y AND Z"

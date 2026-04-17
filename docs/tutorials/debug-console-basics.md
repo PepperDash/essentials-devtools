@@ -45,42 +45,32 @@
 
 ## Part 2: Advanced Filtering Techniques
 
-### Step 3: Master Device Filtering
+### Step 3: Master Device Filtering with Per-Device Levels
 
 1. **Open the Devices filter dropdown**
 2. **Notice the "Global" option** - this captures system-wide messages
-3. **Select specific devices** to focus on particular components
-4. **Try combining multiple devices** to monitor a subset of your system
+3. **Check specific devices** to focus on particular components
+4. **Set a per-device minimum level**: Once a device is checked, an inline level dropdown appears next to its name. Change it to `Warning` to suppress that device's `Information` and `Debug` messages while keeping other devices at a lower threshold
+5. **Combine multiple devices** each with their own levels
 
 **Practical example**: 
-- If troubleshooting display issues, filter to just display devices
-- For audio problems, focus on audio-related devices
+- If one display is flooding the console with `Information` messages, check it and set its level to `Warning`
+- Keep other devices at `Information` so you see their normal activity
 
-### Step 4: Combine Multiple Filters
+### Step 4: Combine Device and Text Filters
 
 1. **Apply a device filter** (select 1-2 devices)
-2. **Add a log level filter** (try "Warning" and "Error" only)
-3. **Add search terms** in the search box
-4. **Observe how filters work together** (AND logic - all conditions must match)
+2. **Add search terms** in the search box
+3. **Observe how filters work together** (AND logic — all conditions must match)
 
-**Exercise**: Create a filter to show only error messages from display devices containing the word "power".
+**Exercise**: Create a filter to show only messages from display devices containing the word "power".
 
-### Step 5: Use Search Effectively
+### Step 5: Understand Filter State Persistence
 
-The search function is powerful but has specific behavior:
-
-1. **Single word searches**: Type "button" to find all button-related messages
-2. **Multiple word searches**: Type "display power" to find messages containing both words
-3. **Case insensitive**: "ERROR" and "error" work the same way
-4. **Partial matches**: "conn" will match "connection", "connected", "disconnect"
-
-**Try these search examples**:
-- `error` - Find all error-related messages
-- `display power` - Find display power-related messages  
-- `button press` - Find button press events
-- `connection timeout` - Find connection timeout issues
-
-✅ **Success indicator**: You can create complex filter combinations to find exactly what you need.
+Filter selections are stored in Redux state:
+- **Persists across navigation**: Switching to Versions and back preserves your filters
+- **Resets on page reload**: Refreshing the browser clears all filter state (along with the login session)
+- **Clear Filters button**: Resets device selections, per-device levels, and search text in one click
 
 ## Part 3: Interpreting Messages and Troubleshooting
 

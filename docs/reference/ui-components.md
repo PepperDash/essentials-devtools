@@ -86,40 +86,96 @@ This document provides detailed information about every UI element, its purpose,
 - Device keys and names
 
 #### Device Filter Dropdown
-**Component**: `FilterDropdownSearchParams`
-**Purpose**: Filter messages by source device
+**Component**: `DeviceFilterDropdown`
+**Purpose**: Filter messages by source device and set a per-device minimum log level
 
 **Options**:
 - **Global**: System-wide messages not tied to specific devices
-- **Device entries**: All configured devices with Key and Name
+- **Device entries**: All configured devices, sorted alphabetically by name (or key when no name is set)
 - **Multiple selection**: Checkbox interface allows multiple devices
-- **Badge indicator**: Shows count of selected filters
+- **Badge indicator**: Shows count of checked devices
 
-**Behavior**:
-- **Scroll support**: Long device lists are scrollable
-- **Search within dropdown**: Future enhancement capability
-- **Persistence**: Selections persist until manually cleared
+**Per-Device Minimum Log Level**:
+- When a device is checked, a level dropdown appears inline next to its name
+- Default level when first checked: `Information`
+- Available levels: Fatal, Error, Warning, Information, Debug, Verbose
+- Only messages at or above the selected threshold for that device are shown
+- Each device can have a different level independently
+- Unchecking a device removes both the device filter and its level setting
+- The level dropdown closes after a selection; the Devices dropdown stays open
 
-#### Log Level Filter Dropdown
-**Purpose**: Filter messages by severity level
+**State**: Stored in Redux `debugConsole` slice (`checkedDevices` and `deviceLevels`); persists across route navigation
 
-**Available levels**:
-- Error
-- Warning  
-- Information
-- Log
-- Verbose
-- Debug
-
-**Behavior**:
-- **Multiple selection**: Can select multiple levels simultaneously
-- **Badge indicator**: Shows count of selected levels
-- **Immediate application**: Filters apply to current message list
+**Filter Combined With**:
+- Text search (AND logic: both conditions must be satisfied)
 
 #### Clear Filters Button
-**Purpose**: Reset all filters to default state
-**Behavior**: Clears device filters, log level filters, and search terms
-**Visual**: Outline button style, positioned with other filter controls
+**Purpose**: Reset all debug console filters (checked devices, per-device levels, and search text) to their initial empty state
+
+**Trigger**: "Clear Filters" button in the debug filters toolbar
+**Effect**: Dispatches `clearAllFilters()` to the Redux `debugConsole` slice
+
+---
+
+## API Paths Components
+
+### API Paths Table
+**Location**: API Paths page (`/:appId/apiPaths`)
+**Purpose**: Display all available REST API routes exposed by the processor
+
+**Layout**:
+- **Two columns**: Name and URL
+- **Sortable**: Alphabetically sorted by route name
+- **Striped rows**: Bootstrap `table-striped` styling
+
+**Interaction**:
+- **Click row**: Selects the route and opens the detail drawer
+- **Selected row**: Highlighted with `table-primary`
+
+### API Path Detail Drawer
+**Component**: `ApiPathDetailDrawer`
+**Purpose**: Show complete detail for a selected API route
+
+**Location**: Slides in from right side of screen
+**Trigger**: Click on any route row
+
+**Content Sections**:
+1. **Name**: Route name
+2. **URL**: Full URL as a clickable link (opens in new tab)
+3. **Data Token Name**: Shown only when present
+
+**Behavior**:
+- No backdrop (main content remains interactive)
+- Close button dismisses the drawer
+
+---
+
+## Routing Components
+
+### Routing Diagram
+**Location**: Routing page (`/:appId/routing`)
+**Purpose**: Visual signal routing diagram showing devices, ports, and tie lines
+
+**Technology**: React Flow (@xyflow/react) with Dagre auto-layout
+
+**Elements**:
+- **Device Nodes**: Each routing device shown as a card with input and output ports
+- **Tie Line Edges**: Connections between device ports, color-coded by signal type
+- **MiniMap**: Overview map for orientation in large diagrams
+- **Controls**: Zoom and pan controls
+
+**Signal Type Colors**:
+| Signal Type | Color |
+|-------------|-------|
+| AudioVideo | Purple (#6f42c1) |
+| Video | Blue (#0d6efd) |
+| Audio | Red (#dc3545) |
+| UsbOutput / UsbInput | Orange (#fd7e14) |
+
+**Filtering**:
+- A signal type dropdown allows filtering visible tie lines by signal type
+
+---
 
 ### Message Display Components
 

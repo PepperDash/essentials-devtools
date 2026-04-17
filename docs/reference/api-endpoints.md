@@ -2,15 +2,41 @@
 
 **Complete technical reference for all REST API endpoints used by the PepperDash Essentials Web Config App.**
 
-All API endpoints are accessed through the base path `/cws/app01/api` on the processor's HTTPS port (443).
+All API endpoints are accessed through the base path `/cws/:appId/api` where `:appId` is the program slot identifier (e.g. `app01` through `app10`).
 
 ## Base Configuration
 
-**Base URL**: `https://[processor-ip]/cws/app01/api`
+**Base URL**: `https://[processor-ip]/cws/:appId/api`
 **Protocol**: HTTPS only
-**Authentication**: None (uses processor's built-in web authentication)
+**Authentication**: Credential-based via `POST /loginCredentials` (see below)
 **Content-Type**: `application/json` for POST requests
 **Response Format**: JSON
+
+## Authentication Endpoints
+
+### Set Login Credentials
+**Purpose**: Authenticate with the processor. The backend uses a single shared authentication mechanism for all program slots.
+
+```http
+POST /loginCredentials
+```
+
+**Request Body**:
+```json
+{
+  "username": "admin",
+  "password": "yourpassword"
+}
+```
+
+**Response**: `200 OK` (empty body) on success
+
+**Notes**:
+- A successful response with any `appId` authenticates the session for all running slots
+- The app probes all 10 slots in parallel after initial auth to discover which are running
+- A `4xx` or network error indicates invalid credentials or that the slot is not running
+
+---
 
 ## System Information Endpoints
 
@@ -43,6 +69,42 @@ GET /versions
 
 **Error Conditions**:
 - `500`: Server error if version information cannot be retrieved
+
+---
+
+### Get API Paths
+**Purpose**: Retrieve all available REST API routes registered on the processor
+
+```http
+GET /apiPaths
+```
+
+**Response**:
+```json
+{
+  "url": "https://192.168.1.100/cws/app01",
+  "routes": [
+    {
+      "Name": "getDevices",
+      "Url": "app01/api/devices",
+      "DataTokens": { "Name": "getDevices" },
+      "RouteHandler": null
+    }
+  ]
+}
+```
+
+**Response Fields**:
+- `url` (string): Base URL of the processor web server for this app slot
+- `routes` (array): List of route objects
+  - `Name` (string): Route name
+  - `Url` (string): Route URL relative to the base
+  - `DataTokens.Name` (string): Data token name when present
+
+**Usage**: Displayed on the API Paths page; routes are sorted alphabetically and shown with clickable URLs
+
+**Error Conditions**:
+- `500`: Server error if route information cannot be retrieved
 
 ---
 
