@@ -1,51 +1,43 @@
 import filter from 'lodash/filter';
 import { useMemo } from 'react';
-import { useSearchParams } from 'react-router-dom';
 import { LogMessage } from '../../../shared/types/LogMessage';
-import { debugConsts } from '../debugConsts';
+import {
+  selectCheckedDevices,
+  selectDeviceLevels,
+  selectSearchText,
+} from '../../../store/debugConsole/debugConsoleSelectors';
+import { useAppSelector } from '../../../store/hooks';
+import { debugConsts, LOG_LEVEL_ORDER } from '../debugConsts';
 
 export function useFilteredMessages(listItems: LogMessage[]) {
-  const [searchParams] = useSearchParams();
+  const checkedDevices = useAppSelector(selectCheckedDevices);
+  const deviceLevels = useAppSelector(selectDeviceLevels);
+  const searchText = useAppSelector(selectSearchText);
 
   return useMemo(() => {
     if (!listItems?.length) return [];
 
-
-    const deviceValues = searchParams.getAll(
-      debugConsts.DEVICE
-    );
-    const logLevelValues = searchParams.getAll(
-      debugConsts.LOG_LEVEL
-    );
-    const searchText = searchParams.getAll(debugConsts.SEARCH_TEXT);
-
-    // filter for other criteria
     const filtered = filter(listItems, (item) => {
-
-
+      // Device filter
       let deviceMatch = true;
-      // if (deviceValues.length) {
-      //   deviceValues.forEach((val) => {
-      //     // TODO: handle global
-      //     // set deviceMatch to false if global and no key
-      //     if((val === debugConsts.GLOBAL && item.Properties?.Key) || item.Properties?.Key !== val) 
-      //       deviceMatch = false;
-          
-      //   });
-      // }
-
-      if (deviceValues.length)
-        deviceMatch = deviceValues.some((val) => {
-            if(!item.Properties?.Key) return val === debugConsts.GLOBAL;
-            return item.Properties?.Key === val;
-        })
-
-      let levelMatch = true;
-      if (logLevelValues.length) {
-        levelMatch = logLevelValues.includes(item.Level);
+      if (checkedDevices.length) {
+        deviceMatch = checkedDevices.some((val: string) => {
+          if (!item.Properties?.Key) return val === debugConsts.GLOBAL;
+          return item.Properties?.Key === val;
+        });
       }
 
-      // Match search string on visible things
+      // Per-device minimum log level filter
+      let deviceLevelMatch = true;
+      const messageKey = item.Properties?.Key ?? debugConsts.GLOBAL;
+      const minLevel = deviceLevels[messageKey];
+      if (minLevel !== undefined) {
+        const msgOrder = LOG_LEVEL_ORDER[item.Level] ?? -1;
+        const minOrder = LOG_LEVEL_ORDER[minLevel] ?? 0;
+        deviceLevelMatch = msgOrder >= minOrder;
+      }
+
+      // Text search filter
       let textMatch = true;
       if (searchText.length) {
         const textMatchFields = [
@@ -53,19 +45,19 @@ export function useFilteredMessages(listItems: LogMessage[]) {
           item.Timestamp,
           item.Properties?.Key,
         ];
-        // true if for every search text word, some field contains it
-        textMatch = searchText.every((st) =>
-          textMatchFields.some((f) => f?.toLowerCase().includes(st.toLowerCase()))
-        );
+        textMatch = searchText
+          .split(' ')
+          .filter(Boolean)
+          .every((st: string) =>
+            textMatchFields.some((f) =>
+              f?.toLowerCase().includes(st.toLowerCase())
+            )
+          );
       }
-      return (
-        deviceMatch &&
-        levelMatch &&
-        textMatch
-      ); // && otherMatches
+
+      return deviceMatch && deviceLevelMatch && textMatch;
     });
 
-    // DONE
     return filtered;
-  }, [searchParams, listItems]);
+  }, [listItems, checkedDevices, deviceLevels, searchText]);
 }

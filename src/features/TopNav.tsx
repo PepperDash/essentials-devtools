@@ -1,53 +1,25 @@
 import { useMemo } from "react";
 import { Dropdown, Nav, Navbar } from "react-bootstrap";
 import { NavLink, useLocation } from "react-router-dom";
-import { meetsMinVersion } from '../shared/functions/meetsMinimumVersion';
+import { meetsMinVersion } from "../shared/functions/meetsMinimumVersion";
 import useAppParams from "../shared/hooks/useAppParams";
 import { IconDarkChevronDown, IconDarkEllipse } from "../shared/icons";
 import { useGetVersionsQuery } from "../store/apiSlice";
+import { selectAvailableApps } from "../store/auth/authSelectors";
+import { useAppSelector } from "../store/hooks";
 
 const TopNav = ({ isConnected }: { isConnected: boolean }) => {
   const location = useLocation();
   const params = useAppParams();
+  const availableApps = useAppSelector(selectAvailableApps);
 
-  // make a call to get the version for each appId and for every valid response add the appId to the dropdown options
-  // this will ensure that only appIds with a running instance will be shown in the dropdown
-  const { data: app01versions } = useGetVersionsQuery({ appId: "app01" });
-  const { data: app02versions } = useGetVersionsQuery({ appId: "app02" });
-  const { data: app03versions } = useGetVersionsQuery({ appId: "app03" });
-  const { data: app04versions } = useGetVersionsQuery({ appId: "app04" });
-  const { data: app05versions } = useGetVersionsQuery({ appId: "app05" });
-  const { data: app06versions } = useGetVersionsQuery({ appId: "app06" });
-  const { data: app07versions } = useGetVersionsQuery({ appId: "app07" });
-  const { data: app08versions } = useGetVersionsQuery({ appId: "app08" });
-  const { data: app09versions } = useGetVersionsQuery({ appId: "app09" });
-  const { data: app10versions } = useGetVersionsQuery({ appId: "app10" });
+  // Single version query for the currently active app only (used for feature flagging)
+  const { data: currentVersions } = useGetVersionsQuery(
+    params.appId ? { appId: params.appId } : { appId: '' },
+    { skip: !params.appId }
+  );
 
-  const appIdOptions = useMemo(() => {
-    const options: appIds[] = [];
-    if (app01versions) options.push("app01");
-    if (app02versions) options.push("app02");
-    if (app03versions) options.push("app03");
-    if (app04versions) options.push("app04");
-    if (app05versions) options.push("app05");
-    if (app06versions) options.push("app06");
-    if (app07versions) options.push("app07");
-    if (app08versions) options.push("app08");
-    if (app09versions) options.push("app09");
-    if (app10versions) options.push("app10");
-    return options;
-  }, [
-    app01versions,
-    app02versions,
-    app03versions,
-    app04versions,
-    app05versions,
-    app06versions,
-    app07versions,
-    app08versions,
-    app09versions,
-    app10versions,
-  ]);
+  const appIdOptions = availableApps;
 
   // Extract the current sub-route (e.g. "routing", "console") so we can
   // preserve it when switching apps. Falls back to "console" if not on an
@@ -57,62 +29,13 @@ const TopNav = ({ isConnected }: { isConnected: boolean }) => {
     return match ? match[1] : "console";
   }, [location.pathname]);
 
-  // based on the curren params.appId, use the matching versions response to determine if the current version of PepperDashEssentials.dll is >= 3.0
   const showInitializationExceptions = useMemo(() => {
-    let versions;
-    switch (params.appId) {
-      case "app01":
-        versions = app01versions;
-        break;
-      case "app02":
-        versions = app02versions;
-        break;
-      case "app03":
-        versions = app03versions;
-        break;
-      case "app04":
-        versions = app04versions;
-        break;
-      case "app05":
-        versions = app05versions;
-        break;
-      case "app06":
-        versions = app06versions;
-        break;
-      case "app07":
-        versions = app07versions;
-        break;
-      case "app08":
-        versions = app08versions;
-        break;
-      case "app09":
-        versions = app09versions;
-        break;
-      case "app10":
-        versions = app10versions;
-        break;
-      default:
-        return false;
-    }
-    const essentialsVersion = versions?.find(
+    const essentialsVersion = currentVersions?.find(
       (v) => v.Name === "PepperDashEssentials.dll",
     )?.Version;
     if (!essentialsVersion) return false;
-   
     return meetsMinVersion(essentialsVersion, "3.0.0");
-  }, [
-    params.appId,
-    app01versions,
-    app02versions,
-    app03versions,
-    app04versions,
-    app05versions,
-    app06versions,
-    app07versions,
-    app08versions,
-    app09versions,
-    app10versions,
-  ]);
+  }, [currentVersions]);
 
   return (
     <Navbar
@@ -135,7 +58,7 @@ const TopNav = ({ isConnected }: { isConnected: boolean }) => {
               <IconDarkChevronDown />
             </Dropdown.Toggle>
             <Dropdown.Menu>
-              {appIdOptions.map((id) => (
+              {appIdOptions.map((id: string) => (
                 <Dropdown.Item
                   key={id}
                   as={NavLink}
@@ -158,10 +81,20 @@ const TopNav = ({ isConnected }: { isConnected: boolean }) => {
           >
             Versions
           </NavLink>
+          <NavLink
+            className={
+              location.pathname.includes(`/${params.appId}/apiPaths`)
+                ? "text-secondary me-3"
+                : "me-3"
+            }
+            to={`/${params.appId}/apiPaths`}
+          >
+            API Paths
+          </NavLink>
           {showInitializationExceptions && (
             <NavLink
-                className={
-                  location.pathname.includes(
+              className={
+                location.pathname.includes(
                   `/${params.appId}/initializationExceptions`,
                 )
                   ? "text-secondary me-3"
@@ -247,15 +180,3 @@ const TopNav = ({ isConnected }: { isConnected: boolean }) => {
 };
 
 export default TopNav;
-
-type appIds =
-  | "app01"
-  | "app02"
-  | "app03"
-  | "app04"
-  | "app05"
-  | "app06"
-  | "app07"
-  | "app08"
-  | "app09"
-  | "app10";

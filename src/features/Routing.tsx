@@ -249,7 +249,7 @@ const Routing = () => {
   const [deviceSearch, setDeviceSearch] = useState("");
   const [hideUnconnectedPorts, setHideUnconnectedPorts] = useState(false);
   const [selectedEdgeId, setSelectedEdgeId] = useState<string | null>(null);
-  const [darkMode, setDarkMode] = useState(false);
+  const [darkMode, setDarkMode] = useState(true);
 
   const sortedDevices = useMemo(
     () =>

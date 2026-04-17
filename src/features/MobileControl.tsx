@@ -116,12 +116,12 @@ const MobileControl = () => {
                 <th>#</th>
                 <th>Room Key</th>
                 <th>Touchpanel Key</th>
-                <th className="d-flex align-items-center justify-content-between gap-2">
+                <th>
                   Token
                 </th>
                 <th>URL</th>
                 <th>
-                  <div className="d-flex gap-1">
+                  <div className="d-flex justify-content-end gap-1">
                     <Button
                       size="sm"
                       variant="outline-primary"
@@ -156,7 +156,7 @@ const MobileControl = () => {
                       {client.url}
                     </a>
                   </td>
-                  <td>
+                  <td className='d-flex justify-content-end'>
                     <Button
                       size="sm"
                       variant="outline-danger"

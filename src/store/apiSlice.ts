@@ -28,6 +28,14 @@ const apiSlice = createApi({
     "MobileControlInfo",
   ],
   endpoints: (builder) => ({
+    getPaths: builder.query<PathsReturn, { appId: string }>({
+      query: ({ appId }) => ({
+        url: `/${appId}/api/apiPaths`,
+        method: "GET",
+      }),
+    }),
+
+
     getVersions: builder.query<Version[], { appId: string }>({
       query: ({ appId }) => ({
         url: `/${appId}/api/versions`,
@@ -167,6 +175,17 @@ const apiSlice = createApi({
       providesTags: ["MinimumLogLevel"],
     }),
 
+    setLoginCredentials: builder.mutation<
+      void,
+      { appId: string; username: string; password: string }
+    >({
+      query: ({ appId, username, password }) => ({
+        url: `/${appId}/api/login`,
+        method: "POST",
+        data: { username, password },
+      }),
+    }),
+
     setMinimumLogLevel: builder.mutation<
       void,
       { appId: string; minimumLevel: LogEventLevel }
@@ -261,6 +280,7 @@ const apiSlice = createApi({
 });
 
 export const {
+  useGetPathsQuery,
   useGetVersionsQuery,
   useGetInitializationExceptionsQuery,
   useGetDevicesQuery,
@@ -284,6 +304,7 @@ export const {
   useCreateMobileControlUiClientMutation,
   useDeleteMobileControlUiClientMutation,
   useDeleteAllMobileControlUiClientsMutation,
+  useSetLoginCredentialsMutation,
 } = apiSlice;
 
 export const oneSliceToRuleThemAll = {
@@ -291,6 +312,20 @@ export const oneSliceToRuleThemAll = {
   /** @deprecated */
   getBaseApiPath,
 };
+
+export interface PathsReturn {
+  url: string;
+  routes: Route[];
+}
+
+export interface Route {
+  DataTokens: {
+    Name: string;
+  };
+  Url: string;
+  Name: string;
+  RouteHandler: unknown;
+}
 
 export interface EssentialsExceptionReturn {
   Exceptions: EssentialsException[];

@@ -1,48 +1,44 @@
 
 import { skipToken } from '@reduxjs/toolkit/query';
 import { useMemo } from 'react';
-import { FilterClearButton } from '../../shared/FilterClearButton';
-import { FilterDropdownSearchParams } from '../../shared/FilterDropdownSearchParams';
+import { Button } from 'react-bootstrap';
 import useAppParams from '../../shared/hooks/useAppParams';
 import { IdLabel } from '../../shared/types/IdLabel';
 import { useGetDevicesQuery } from '../../store/apiSlice';
-import { debugConsts, debugSearchParams, logLevelOpts } from "./debugConsts";
+import { debugConsoleActions } from '../../store/debugConsole/debugConsoleSlice';
+import { useAppDispatch } from '../../store/hooks';
+import { debugConsts } from './debugConsts';
+import { DeviceFilterDropdown } from './DeviceFilterDropdown';
 
 
 export const DebugFilters = () => {
   const { appId } = useAppParams();
   const { data: devices } = useGetDevicesQuery(appId ? { appId } : skipToken);
+  const dispatch = useAppDispatch();
 
   const items = useMemo(() => {
-    if (!devices) return [{ id: debugConsts.GLOBAL, label: "Global"}];
+    if (!devices) return [{ id: debugConsts.GLOBAL, label: 'Global' }];
 
-    let fullList: IdLabel[] = [
-      { id: debugConsts.GLOBAL, label: "Global"}
-    ];
+    const deviceItems: IdLabel[] = devices
+      .map((d) => ({ id: d.Key, label: d.Name || d.Key }))
+      .sort((a, b) => a.label.localeCompare(b.label));
 
-    devices.forEach((d) => {
-      fullList.push({ id: d.Key, label: d.Name});
-    });
-
-    return fullList;
+    return [{ id: debugConsts.GLOBAL, label: 'Global' }, ...deviceItems];
   }, [devices]);
 
- if (!devices) return null;
+  if (!devices) return null;
 
   return (
     <div className="row row-cols-sm-auto g-3 user-select-none">
       <div className="col-12 d-none d-lg-block">
-            <FilterDropdownSearchParams
-              paramName={debugConsts.DEVICE}
-              buttonLabel="Devices"
-              items={items}
-            />
-            <FilterDropdownSearchParams
-              paramName={debugConsts.LOG_LEVEL}
-              buttonLabel="Log Level"
-              items={logLevelOpts}
-              />
-        <FilterClearButton allParams={Object.values(debugSearchParams)} />
+        <DeviceFilterDropdown items={items} />
+        <Button
+          variant="outline"
+          className="py-1 ms-1"
+          onClick={() => dispatch(debugConsoleActions.clearAllFilters())}
+        >
+          Clear Filters
+        </Button>
       </div>
     </div>
   );
