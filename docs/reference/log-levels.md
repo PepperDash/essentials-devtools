@@ -37,7 +37,41 @@
 - **Filtered out**: None
 - **Use case**: Deep debugging, code-level analysis
 
-## Message Classification
+## Client-Side Filtering
+
+### Per-Device Minimum Log Level Filter
+
+Each device checked in the Debug Console Devices dropdown has its own minimum log level threshold. Messages from that device are only shown if they meet or exceed that device's threshold.
+
+**Default**: `Information` when a device is first checked
+
+**Severity comparison**: `LOG_LEVEL_ORDER[message.Level] >= LOG_LEVEL_ORDER[deviceMinLevel]`
+
+where `LOG_LEVEL_ORDER` is:
+
+| Level | Order Value |
+|-------|-------------|
+| Verbose | 0 |
+| Debug | 1 |
+| Information | 2 |
+| Warning | 3 |
+| Error | 4 |
+| Fatal | 5 |
+
+**Example**: Device set to `Warning` — shows Warning, Error, Fatal; hides Information, Debug, Verbose
+
+**State**: Stored in Redux `debugConsole.deviceLevels` as `Record<deviceId, levelName>`; persists across navigation within the session
+
+### Filter Combination Logic
+
+All client-side filters use AND logic:
+- **Device filter**: Message key must match a checked device (or `Global`)
+- **Per-device minimum level**: Message severity must meet the device's threshold
+- **Text search**: All search terms must appear somewhere in the message fields
+
+### Server-Side Minimum Log Level
+
+The **Minimum Log Level** dropdown in the Debug Console session panel sets the server-side floor for all messages the processor sends to the client. Messages below this level are never transmitted, regardless of the client-side per-device settings. This controls what the processor captures and streams, while per-device levels control what the client displays after receipt.
 
 ### System-Level Messages
 

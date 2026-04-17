@@ -1,11 +1,17 @@
 import { Suspense } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Navigate, Route, Routes } from "react-router-dom";
+import { ApiPaths } from './features/ApiPaths';
 import ConfigFile from "./features/ConfigFile";
 import DebugConsole from "./features/DebugConsole/DebugConsole";
 import DeviceList from "./features/DeviceList";
+import ErrorBoundary from "./features/ErrorBoundary";
+import InitializationExceptions from "./features/InitializationExceptions";
+import LoginForm from "./features/LoginForm";
 import MainLayout from "./features/MainLayout";
 import MobileControl from './features/MobileControl';
+import RequireAuth from "./features/RequireAuth";
+import Routing from './features/Routing';
 import Types from "./features/Types";
 import Versions from "./features/Versions";
 import {
@@ -42,29 +48,41 @@ function App() {
   };
 
   return (
-    <Suspense fallback={null}>
-      <Routes>
-        <Route path="/" element={<Navigate to="/app01/versions" replace />} />
-        <Route path=":appId" element={<MainLayout isConnected={isConnected} />}>
-          <Route path="versions" element={<Versions />} />
-          <Route path="config" element={<ConfigFile />} />
-          <Route path="devices" element={<DeviceList />} />
-          <Route path="types" element={<Types />} />
-          <Route path="mobileControl" element={<MobileControl />} />
-          <Route
-            path="console"
-            element={
-              <DebugConsole
-                isConnected={isConnected}
-                join={join}
-                stop={stop}
-                clear={clear}
-              />
-            }
-          />
+    <ErrorBoundary>
+      <Suspense fallback={null}>
+        <Routes>
+        <Route path="/" element={<Navigate to="/login" replace />} />
+        <Route path="/login" element={<MainLayout isConnected={isConnected} />}>
+          <Route index element={<LoginForm />} />
         </Route>
-      </Routes>
-    </Suspense>
+          
+        <Route path=":appId" element={<MainLayout isConnected={isConnected} />}>
+          <Route path="login" element={<LoginForm />} />
+          <Route element={<RequireAuth />}>
+            <Route path="versions" element={<Versions />} />
+            <Route path="apiPaths" element={<ApiPaths />} />
+            <Route path="initializationExceptions" element={<InitializationExceptions />} />
+            <Route path="config" element={<ConfigFile />} />
+            <Route path="devices" element={<DeviceList />} />
+            <Route path="types" element={<Types />} />
+            <Route path="routing" element={<Routing />} />
+            <Route path="mobileControl" element={<MobileControl />} />
+            <Route
+              path="console"
+              element={
+                <DebugConsole
+                  isConnected={isConnected}
+                  join={join}
+                  stop={stop}
+                  clear={clear}
+                />
+              }
+            />
+          </Route>
+        </Route>
+        </Routes>
+      </Suspense>
+    </ErrorBoundary>
   );
 }
 

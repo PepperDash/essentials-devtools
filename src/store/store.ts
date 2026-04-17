@@ -1,13 +1,17 @@
 import { AnyAction, Reducer, combineReducers, configureStore } from '@reduxjs/toolkit';
 import { oneSliceToRuleThemAll } from './apiSlice';
+import { authReducer } from './auth/authSlice';
 import { commonUiReducer } from './commonUi/commonUiSlice';
+import { debugConsoleReducer } from './debugConsole/debugConsoleSlice';
 import { websocketMiddleware } from './websocketMiddleware';
 import websocketReducer from './websocketSlice';
 
 const allReducers = combineReducers({
     [oneSliceToRuleThemAll.apiSlice.reducerPath]:
     oneSliceToRuleThemAll.apiSlice.reducer,
-    commonUi: commonUiReducer, 
+    auth: authReducer,
+    commonUi: commonUiReducer,
+    debugConsole: debugConsoleReducer,
     websocket: websocketReducer,
 })
 

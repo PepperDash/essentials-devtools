@@ -78,8 +78,13 @@ The web application serves several specific roles within this ecosystem:
 
 **State Management Strategy**:
 - **RTK Query**: Server state management and caching
-- **URL-based filters**: Filter state persisted in URL parameters
-- **Local component state**: UI-specific state like modals and selections
+- **Redux Toolkit**: Client state management for authentication, debug console filters, and UI state
+  - `auth` slice: global authentication state and available app slot list
+  - `debugConsole` slice: per-device minimum log level, checked device filters, and search text
+  - `websocket` slice: WebSocket connection state and received log messages
+  - `commonUi` slice: shared UI state such as the active room ID
+- **Local component state**: Transient UI state such as modals, drawer open/close, and form inputs
+- Filter state lives in Redux (not URL parameters) so selections are preserved when navigating between routes
 
 ### API Layer (RESTful Services)
 
@@ -194,10 +199,20 @@ Framework Logging ──► Message Buffer ──► WebSocket ──► Client 
 
 ### Authentication Model
 
-**Processor-Based Security**:
-The web app leverages the processor's built-in security system:
+**Application-Level Authentication**:
+The web app implements its own credential-based authentication flow on top of the processor's built-in security:
 
-- **No Independent Authentication**: Web app doesn't implement its own user system
+- **Login Form**: Users provide a username and password before accessing any app data
+- **Credential Validation**: Credentials are submitted to the processor via `POST /:appId/api/loginCredentials`
+- **Server-Side Single Auth**: The backend has one shared authentication mechanism regardless of which `appId` is used in the request
+- **Global Session**: A successful login with any app slot authenticates the session for all running app slots
+- **Redux Auth State**: `isAuthenticated` boolean and `availableApps` list are stored in Redux in-memory (resets on page reload)
+- **Route Protection**: A `RequireAuth` layout route wraps all `/:appId/*` sub-routes; unauthenticated requests are redirected to `/:appId/login`
+
+**App Slot Discovery**:
+After credentials are validated, the application probes all 10 possible slots (`app01`–`app10`) in parallel using `Promise.allSettled`. Slots that respond successfully are stored as `availableApps` and populate the app selector dropdown in the top navigation bar.
+
+**No Independent Authentication**: Web app doesn't implement its own persistent user system
 - **Processor Integration**: Uses whatever authentication the processor has configured
 - **Session Management**: Relies on processor's session handling
 

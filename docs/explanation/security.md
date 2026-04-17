@@ -90,34 +90,21 @@ Web interface could be overwhelmed by requests:
 
 ### Authentication Model
 
-**Certificate-Based Authentication**:
-The system relies on the processor's built-in authentication:
-- Client certificates validate user identity
-- Self-signed certificates common in internal deployments
-- Certificate trust requires explicit user acceptance
-- Certificate revocation through processor management
+**Credential-Based Authentication**:
+The web app implements a credential-based login flow that gates access to all application features:
+
+- **Login Form**: Before any processor data is accessible, users must provide a username and password
+- **API Validation**: Credentials are submitted to `POST /cws/:appId/api/loginCredentials` on the processor
+- **Shared Authentication**: The processor backend uses a single authentication mechanism for all program slots — a successful login with any `appId` authenticates the entire session
+- **Global Session State**: Authentication state (`isAuthenticated: boolean`) is stored in Redux. A `RequireAuth` layout route protects all `/:appId/*` sub-routes and redirects unauthenticated users to the login page
+- **In-Memory Only**: The authentication state is not persisted to `localStorage` or cookies. Reloading the page requires re-authentication, providing natural session expiry
+- **App Discovery at Login**: After validating credentials, all 10 possible program slots are probed in parallel. Only slots that respond successfully are shown in the application selector
 
 **Session Management**:
-Web sessions are managed securely:
-- Session tokens generated using cryptographically secure random numbers
-- Session data stored server-side, not in cookies
-- Automatic session expiration after inactivity
-- Session invalidation on logout or timeout
-
-### Authorization Framework
-
-**Role-Based Access Control**:
-Access is controlled through processor-level permissions:
-- **System Administrator**: Full access to all features and data
-- **Operator**: Read access to operational data and controls
-- **Viewer**: Read-only access to status and configuration information
-- **Guest**: Minimal access to basic system information
-
-**Permission Inheritance**:
-Permissions are inherited from the processor's user management:
-- Web app does not maintain separate user database
-- Authorization decisions delegated to Essentials framework
-- Consistent access control across all system interfaces
+Web sessions are managed through the Redux store:
+- Session exists for the lifetime of the browser tab
+- Logging out (or reloading) resets all auth state
+- No session tokens are stored client-side beyond the duration of the session
 
 ## Data Protection
 

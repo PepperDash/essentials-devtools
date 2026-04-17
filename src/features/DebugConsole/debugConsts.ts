@@ -17,6 +17,15 @@ const DEBUG = "Debug";
 
 const LOG_LEVELS = [ERROR, WARNING, INFORMATION, FATAL, VERBOSE, DEBUG];
 
+export const LOG_LEVEL_ORDER: Record<string, number> = {
+  [VERBOSE]: 0,
+  [DEBUG]: 1,
+  [INFORMATION]: 2,
+  [WARNING]: 3,
+  [ERROR]: 4,
+  [FATAL]: 5,
+};
+
 export const logLevelOpts: IdLabel[] = [
   { id: FATAL, label: "Fatal" },
   { id: ERROR, label: "Error" },

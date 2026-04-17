@@ -8,9 +8,33 @@
 
 **For immediate results:**
 1. **Device filter**: Click "Devices" dropdown → Select specific devices
-2. **Log level filter**: Click "Log Level" dropdown → Select "Warning" and "Error" only  
+2. **Per-device level**: Once a device is checked, use its inline level dropdown to set a minimum severity
 3. **Search box**: Type keywords related to your issue
-4. **Clear all**: Click "Clear" button to reset
+4. **Clear all**: Click "Clear Filters" button to reset all filters
+
+## Understanding the Filter Controls
+
+### Device Filter and Per-Device Minimum Level
+
+The Devices dropdown combines two capabilities:
+
+- **Checkbox per device**: Check a device to include its messages in the view
+- **Level dropdown per device**: When checked, each device gets an inline level dropdown defaulting to `Information`
+
+**To show only warnings and above from a specific device**:
+1. Click the **Devices** dropdown
+2. Check the device
+3. Click its inline level dropdown and select **Warning**
+4. Messages from that device below `Warning` are now hidden
+
+Multiple devices can each have different thresholds. For example:
+- `Display-Room1` → `Error` (only show errors from this noisy device)
+- `Codec-Main` → `Information` (show all normal activity)
+- Global → `Warning` (only warnings from system-level messages)
+
+### Text Search
+
+Type keywords in the search box to find messages whose rendered text, template, timestamp, or device key contains the term(s).
 
 ## Effective Search Strategies
 

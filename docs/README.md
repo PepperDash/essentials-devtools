@@ -61,11 +61,19 @@ To understand the underlying concepts, read the **[Explanation](./explanation/)*
 
 The PepperDash Essentials Web Config App provides several key features:
 
-- **🔍 Debug Console**: Real-time log monitoring with filtering and search
-- **⚙️ Device Management**: Inspect and interact with connected devices  
+- **� Authentication**: Secure login required before accessing any app data
+- **🔍 Debug Console**: Real-time log monitoring with per-device minimum log level filtering
+- **⚙️ Device Management**: Inspect and interact with connected devices
 - **📄 Configuration Viewer**: View and analyze merged configuration files
 - **📦 Version Information**: Check loaded assemblies and versions
+- **🔀 Routing**: Visual signal routing diagram between devices and tie lines
+- **📱 Mobile Control**: Mobile control interface management
+- **🗺️ API Paths**: Browse all available REST API routes on the processor
 - **🏷️ Type Registry**: Browse supported device types and their properties
+
+## Multi-Application Support
+
+The app supports up to 10 simultaneous PepperDash Essentials program slots (`app01` through `app10`). After logging in, available program slots are automatically discovered and populated in the application selector dropdown in the top navigation bar. Navigating between app slots does not require re-authentication.
 
 ## System Requirements
 

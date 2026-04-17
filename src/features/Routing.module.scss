@@ -1,0 +1,79 @@
+.signalTypesLabel {
+  font-size: 0.8rem;
+}
+
+.dropdownToggle {
+  font-size: 0.75rem;
+}
+
+.dropdownMenu {
+  width: 280px;
+  padding: 0;
+}
+
+.dropdownAction {
+  font-size: 0.75rem;
+}
+
+.deviceListScroller {
+  overflow-y: auto;
+  max-height: 320px;
+}
+
+.deviceItem {
+  font-size: 0.78rem;
+  padding-left: 2rem !important;
+}
+
+.deviceKeyLabel {
+  font-size: 0.7rem;
+}
+
+.noDevicesMessage {
+  font-size: 0.78rem;
+}
+
+// Signal type toggle buttons.
+// --signal-color is set as an inline CSS variable per button.
+.signalTypeBtn {
+  font-size: 0.75rem;
+  padding: 2px 10px;
+  border-color: var(--signal-color) !important;
+  background-color: var(--signal-color) !important;
+  color: #fff !important;
+
+  &.signalTypeBtnHidden {
+    background-color: transparent !important;
+    color: var(--signal-color) !important;
+  }
+}
+
+.hideUnconnectedSwitch {
+  font-size: 0.8rem;
+}
+
+.tieLineTooltip {
+  position: absolute;
+  background: rgba(30, 30, 30, 0.92);
+  color: #f0f0f0;
+  border-radius: 5px;
+  padding: 6px 10px;
+  font-size: 0.72rem;
+  pointer-events: none;
+  white-space: nowrap;
+  z-index: 10;
+  line-height: 1.6;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+}
+
+.tieLineTooltipRow {
+  display: flex;
+  gap: 8px;
+}
+
+.tieLineTooltipLabel {
+  color: #aaa;
+  min-width: 52px;
+  text-align: right;
+  flex-shrink: 0;
+}

@@ -1,0 +1,92 @@
+.nodeCard {
+  width: 280px;
+  font-size: 0.72rem;
+}
+
+.nodeCardDark {
+  background-color: #1e1e1e !important;
+  border-color: #444 !important;
+  color: #e0e0e0;
+}
+
+.nodeHeader {
+  line-height: 1.4;
+  overflow: hidden;
+}
+
+.nodeHeaderDark {
+  background-color: #2c2c2c;
+  color: #e0e0e0;
+}
+
+.hideBtn {
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  padding: 0 2px;
+  margin-top: 1px;
+  line-height: 1;
+  font-size: 1.1rem;
+  color: #555;
+  cursor: pointer;
+
+  &:hover {
+    color: #dc3545;
+  }
+}
+
+.nodeKeyLabel {
+  font-size: 0.65rem;
+}
+
+.handle {
+  background: #555;
+}
+
+// Border added between port rows via adjacent-sibling selector,
+// removing the need for a conditional inline style.
+.portRow {
+  & + & {
+    border-top: 1px solid #f0f0f0;
+  }
+}
+
+.portRowDark {
+  & + & {
+    border-top: 1px solid #333;
+  }
+}
+
+.portLabelWrap {
+  position: relative;
+  max-width: 46%;
+  min-width: 0;
+
+  &:hover .portTooltip {
+    opacity: 1;
+  }
+}
+
+.portLabelText {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.portTooltip {
+  position: absolute;
+  bottom: calc(100% + 4px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(30, 30, 30, 0.92);
+  color: #f0f0f0;
+  border-radius: 4px;
+  padding: 3px 8px;
+  font-size: 0.68rem;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 100;
+  opacity: 0;
+  transition: opacity 0.12s;
+}
