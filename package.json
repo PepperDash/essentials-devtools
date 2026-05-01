@@ -1,6 +1,6 @@
 {
   "name": "essentials-web-config-app",
-  "version": "0.1.0",
+  "version": "1.0.0-local",
   "type": "module",
   "private": true,
   "dependencies": {

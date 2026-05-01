@@ -8,15 +8,48 @@ import { useGetVersionsQuery } from "../store/apiSlice";
 import { selectAvailableApps } from "../store/auth/authSelectors";
 import { useAppSelector } from "../store/hooks";
 
+const AppNavLink = ({
+  appId,
+  path,
+  children,
+}: {
+  appId: string | undefined;
+  path: string;
+  children: React.ReactNode;
+}) => {
+  if (!appId) {
+    return (
+      <span
+        className="me-3 text-muted nav-link-disabled"
+        role="link"
+        aria-disabled="true"
+        tabIndex={-1}
+      >
+        {children}
+      </span>
+    );
+  }
+  return (
+    <NavLink
+      className={({ isActive }) => (isActive ? "me-3 text-secondary" : "me-3")}
+      to={`/${appId}/${path}`}
+    >
+      {children}
+    </NavLink>
+  );
+};
+
 const TopNav = ({ isConnected }: { isConnected: boolean }) => {
   const location = useLocation();
   const params = useAppParams();
   const availableApps = useAppSelector(selectAvailableApps);
 
+  const reactAppVersion = APP_VERSION;
+
   // Single version query for the currently active app only (used for feature flagging)
   const { data: currentVersions } = useGetVersionsQuery(
-    params.appId ? { appId: params.appId } : { appId: '' },
-    { skip: !params.appId }
+    params.appId ? { appId: params.appId } : { appId: "" },
+    { skip: !params.appId },
   );
 
   const appIdOptions = availableApps;
@@ -71,108 +104,47 @@ const TopNav = ({ isConnected }: { isConnected: boolean }) => {
           </Dropdown>
         )}
         <Nav className="me-auto">
-          <NavLink
-            className={
-              location.pathname.includes(`/${params.appId}/versions`)
-                ? "text-secondary me-3"
-                : "me-3"
-            }
-            to={`/${params.appId}/versions`}
-          >
+          <AppNavLink appId={params.appId} path="versions">
             Versions
-          </NavLink>
-          <NavLink
-            className={
-              location.pathname.includes(`/${params.appId}/apiPaths`)
-                ? "text-secondary me-3"
-                : "me-3"
-            }
-            to={`/${params.appId}/apiPaths`}
-          >
+          </AppNavLink>
+          <AppNavLink appId={params.appId} path="apiPaths">
             API Paths
-          </NavLink>
+          </AppNavLink>
           {showInitializationExceptions && (
-            <NavLink
-              className={
-                location.pathname.includes(
-                  `/${params.appId}/initializationExceptions`,
-                )
-                  ? "text-secondary me-3"
-                  : "me-3"
-              }
-              to={`/${params.appId}/initializationExceptions`}
-            >
+            <AppNavLink appId={params.appId} path="initializationExceptions">
               Initialization Exceptions
-            </NavLink>
+            </AppNavLink>
           )}
-          <NavLink
-            className={
-              location.pathname.includes(`/${params.appId}/console`)
-                ? "text-secondary me-3"
-                : "me-3"
-            }
-            to={`/${params.appId}/console`}
-          >
+          <AppNavLink appId={params.appId} path="console">
             Debug Console
-          </NavLink>
-          <NavLink
-            className={
-              location.pathname.includes(`/${params.appId}/config`)
-                ? "text-secondary me-3"
-                : "me-3"
-            }
-            to={`/${params.appId}/config`}
-          >
+          </AppNavLink>
+          <AppNavLink appId={params.appId} path="config">
             Config File
-          </NavLink>
-          <NavLink
-            className={
-              location.pathname.includes(`/${params.appId}/devices`)
-                ? "text-secondary me-3"
-                : "me-3"
-            }
-            to={`/${params.appId}/devices`}
-          >
+          </AppNavLink>
+          <AppNavLink appId={params.appId} path="devices">
             Devices
-          </NavLink>
-          <NavLink
-            className={
-              location.pathname.includes(`/${params.appId}/types`)
-                ? "text-secondary me-3"
-                : "me-3"
-            }
-            to={`/${params.appId}/types`}
-          >
+          </AppNavLink>
+          <AppNavLink appId={params.appId} path="types">
             Types
-          </NavLink>
-          <NavLink
-            className={
-              location.pathname.includes(`/${params.appId}/routing`)
-                ? "text-secondary me-3"
-                : "me-3"
-            }
-            to={`/${params.appId}/routing`}
-          >
+          </AppNavLink>
+          <AppNavLink appId={params.appId} path="routing">
             Routing
-          </NavLink>
-          <NavLink
-            className={
-              location.pathname.includes(`/${params.appId}/mobileControl`)
-                ? "text-secondary me-3"
-                : "me-3"
-            }
-            to={`/${params.appId}/mobileControl`}
-          >
+          </AppNavLink>
+          <AppNavLink appId={params.appId} path="mobileControl">
             Mobile Control
-          </NavLink>
+          </AppNavLink>
         </Nav>
-        <div className="d-flex align-items-center">
-          <IconDarkEllipse
-            className={isConnected ? "text-success" : "text-danger"}
-          />
-          <span className="ms-2">
-            Debug Console {isConnected ? "Connected" : "Disconnected"}
-          </span>
+        <div className="d-flex flex-column align-items-end">
+          <span>Version: {reactAppVersion}</span>
+
+          <div className="d-flex align-items-center">
+            <IconDarkEllipse
+              className={isConnected ? "text-success" : "text-danger"}
+            />
+            <span className="ms-2">
+              Debug Console {isConnected ? "Connected" : "Disconnected"}
+            </span>
+          </div>
         </div>
       </div>
     </Navbar>

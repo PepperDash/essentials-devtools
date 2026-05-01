@@ -17,7 +17,7 @@ import dagre from "dagre";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Dropdown } from "react-bootstrap";
 
-import { meetsMinVersion } from '../shared/functions/meetsMinimumVersion';
+import { meetsMinVersion } from "../shared/functions/meetsMinimumVersion";
 import useAppParams from "../shared/hooks/useAppParams";
 import {
   RoutingDevice,
@@ -125,13 +125,20 @@ function buildGraph(
       : d,
   );
 
+  const effectiveDeviceKeys = new Set(effectiveDevices.map((d) => d.key));
   // Collect one unique device-pair edge per source→destination (dagre only
-  // needs connectivity, not multiplicity, for rank assignment).
+  // needs connectivity, not multiplicity, for rank assignment). Only use
+  // visible tie lines whose endpoints are present in the visible device set
+  // so hidden devices cannot be implicitly added to the layout graph.
   const uniquePairs = [
     ...new Set(
-      data.tieLines.map(
-        (tl) => `${tl.sourceDeviceKey}|${tl.destinationDeviceKey}`,
-      ),
+      visibleTieLines
+        .filter(
+          (tl) =>
+            effectiveDeviceKeys.has(tl.sourceDeviceKey) &&
+            effectiveDeviceKeys.has(tl.destinationDeviceKey),
+        )
+        .map((tl) => `${tl.sourceDeviceKey}|${tl.destinationDeviceKey}`),
     ),
   ];
 
@@ -172,18 +179,20 @@ function buildGraph(
   dagre.layout(g);
 
   // Map dagre positions → React Flow nodes
-  const nodes: Node<RoutingDeviceNodeData>[] = effectiveDevices.map((device) => {
-    const pos = g.node(device.key);
-    return {
-      id: device.key,
-      type: "routingDevice",
-      position: {
-        x: pos.x - NODE_WIDTH / 2,
-        y: pos.y - nodeHeight(device) / 2,
-      },
-      data: { device },
-    };
-  });
+  const nodes: Node<RoutingDeviceNodeData>[] = effectiveDevices.map(
+    (device) => {
+      const pos = g.node(device.key);
+      return {
+        id: device.key,
+        type: "routingDevice",
+        position: {
+          x: pos.x - NODE_WIDTH / 2,
+          y: pos.y - nodeHeight(device) / 2,
+        },
+        data: { device },
+      };
+    },
+  );
 
   // Map tieLines → React Flow edges, filtering by hidden signal types and hidden devices.
   // All tie lines are rendered regardless of whether they were excluded from
@@ -222,7 +231,6 @@ function buildGraph(
 function uniqueSignalTypes(tieLines: TieLine[]): string[] {
   return [...new Set(tieLines.map((tl) => tl.signalType))].sort();
 }
-
 
 // ─── Node types registry (stable reference outside component) ────────────────
 
@@ -305,7 +313,16 @@ const Routing = () => {
     );
     setEdges(layoutEdges);
     setSelectedEdgeId(null);
-  }, [data, hiddenTypes, hideUnconnected, hiddenDevices, hideUnconnectedPorts, darkMode, setNodes, setEdges]);
+  }, [
+    data,
+    hiddenTypes,
+    hideUnconnected,
+    hiddenDevices,
+    hideUnconnectedPorts,
+    darkMode,
+    setNodes,
+    setEdges,
+  ]);
 
   // Re-style edges when selection changes without triggering a layout rebuild.
   useEffect(() => {
@@ -401,7 +418,6 @@ const Routing = () => {
   if (isLoading) return <div className="p-3">Loading routing data…</div>;
   if (isError || !data)
     return <div className="p-3 text-danger">Failed to load routing data.</div>;
-
 
   if (
     versions &&
@@ -572,7 +588,9 @@ const Routing = () => {
       </div>
 
       {/* React Flow canvas */}
-      <div className={`flex-grow-1 position-relative${darkMode ? " bg-dark" : ""}`}>
+      <div
+        className={`flex-grow-1 position-relative${darkMode ? " bg-dark" : ""}`}
+      >
         <ReactFlow
           nodes={nodes}
           edges={edges}

@@ -1,5 +1,5 @@
 import { skipToken } from "@reduxjs/toolkit/query";
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import useAppParams from "../shared/hooks/useAppParams";
 import {
   EssentialsException,
@@ -11,8 +11,6 @@ const InitializationExceptions = () => {
   const { data, isLoading, isError } = useGetInitializationExceptionsQuery(
     appId ? { appId } : skipToken,
   );
-
-  console.log("Initialization exceptions:", data?.Exceptions);
 
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
 
@@ -48,8 +46,8 @@ const InitializationExceptions = () => {
             {data.Exceptions.map((ex: EssentialsException, idx: number) => {
               const isExpanded = expandedIndex === idx;
               return (
-                <>
-                  <tr key={`ex-${idx}`}>
+                <Fragment key={`ex-${idx}`}>
+                  <tr>
                     <td className="text-muted">{idx + 1}</td>
                     <td>
                       <span className="text-danger fw-semibold">
@@ -70,7 +68,7 @@ const InitializationExceptions = () => {
                     </td>
                   </tr>
                   {isExpanded && ex.StackTrace && (
-                    <tr key={`ex-${idx}-trace`}>
+                    <tr>
                       <td colSpan={3} className="p-0">
                         <pre
                           className="m-0 p-3 bg-light text-muted"
@@ -81,7 +79,7 @@ const InitializationExceptions = () => {
                       </td>
                     </tr>
                   )}
-                </>
+                </Fragment>
               );
             })}
           </tbody>
