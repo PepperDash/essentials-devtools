@@ -15,7 +15,7 @@ const ALL_APP_IDS = [
 const LoginForm = () => {
   const { appId } = useAppParams();
   const isAuthenticated = useAppSelector(selectIsAuthenticated);
-  const availableApps = useAppSelector(selectAvailableApps);
+  const discoveredApps = useAppSelector(selectAvailableApps);
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const location = useLocation();
@@ -31,7 +31,7 @@ const LoginForm = () => {
 
   const isValidAppId = appId && ALL_APP_IDS.includes(appId);
   const probeAppId = isValidAppId ? appId : ALL_APP_IDS[0];
-  const safeAppId = isValidAppId ? appId : (availableApps[0] ?? probeAppId);
+  const safeAppId = isValidAppId ? appId : (discoveredApps[0] ?? probeAppId);
 
   if (isAuthenticated) {
     return <Navigate to={from ?? `/${safeAppId}/versions`} replace />;

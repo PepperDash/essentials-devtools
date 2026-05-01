@@ -19,11 +19,21 @@ const AppNavLink = ({
 }) => {
   if (!appId) {
     return (
-      <span className="me-3 text-muted nav-link-disabled">{children}</span>
+      <span
+        className="me-3 text-muted nav-link-disabled"
+        role="link"
+        aria-disabled="true"
+        tabIndex={-1}
+      >
+        {children}
+      </span>
     );
   }
   return (
-    <NavLink className="me-3" to={`/${appId}/${path}`}>
+    <NavLink
+      className={({ isActive }) => (isActive ? "me-3 text-secondary" : "me-3")}
+      to={`/${appId}/${path}`}
+    >
       {children}
     </NavLink>
   );
