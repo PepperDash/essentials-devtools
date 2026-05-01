@@ -18,7 +18,9 @@ const AppNavLink = ({
   children: React.ReactNode;
 }) => {
   if (!appId) {
-    return <span className="me-3 text-muted nav-link-disabled">{children}</span>;
+    return (
+      <span className="me-3 text-muted nav-link-disabled">{children}</span>
+    );
   }
   return (
     <NavLink className="me-3" to={`/${appId}/${path}`}>
@@ -32,10 +34,12 @@ const TopNav = ({ isConnected }: { isConnected: boolean }) => {
   const params = useAppParams();
   const availableApps = useAppSelector(selectAvailableApps);
 
+  const reactAppVersion = APP_VERSION;
+
   // Single version query for the currently active app only (used for feature flagging)
   const { data: currentVersions } = useGetVersionsQuery(
-    params.appId ? { appId: params.appId } : { appId: '' },
-    { skip: !params.appId }
+    params.appId ? { appId: params.appId } : { appId: "" },
+    { skip: !params.appId },
   );
 
   const appIdOptions = availableApps;
@@ -90,27 +94,47 @@ const TopNav = ({ isConnected }: { isConnected: boolean }) => {
           </Dropdown>
         )}
         <Nav className="me-auto">
-          <AppNavLink appId={params.appId} path="versions">Versions</AppNavLink>
-          <AppNavLink appId={params.appId} path="apiPaths">API Paths</AppNavLink>
+          <AppNavLink appId={params.appId} path="versions">
+            Versions
+          </AppNavLink>
+          <AppNavLink appId={params.appId} path="apiPaths">
+            API Paths
+          </AppNavLink>
           {showInitializationExceptions && (
             <AppNavLink appId={params.appId} path="initializationExceptions">
               Initialization Exceptions
             </AppNavLink>
           )}
-          <AppNavLink appId={params.appId} path="console">Debug Console</AppNavLink>
-          <AppNavLink appId={params.appId} path="config">Config File</AppNavLink>
-          <AppNavLink appId={params.appId} path="devices">Devices</AppNavLink>
-          <AppNavLink appId={params.appId} path="types">Types</AppNavLink>
-          <AppNavLink appId={params.appId} path="routing">Routing</AppNavLink>
-          <AppNavLink appId={params.appId} path="mobileControl">Mobile Control</AppNavLink>
+          <AppNavLink appId={params.appId} path="console">
+            Debug Console
+          </AppNavLink>
+          <AppNavLink appId={params.appId} path="config">
+            Config File
+          </AppNavLink>
+          <AppNavLink appId={params.appId} path="devices">
+            Devices
+          </AppNavLink>
+          <AppNavLink appId={params.appId} path="types">
+            Types
+          </AppNavLink>
+          <AppNavLink appId={params.appId} path="routing">
+            Routing
+          </AppNavLink>
+          <AppNavLink appId={params.appId} path="mobileControl">
+            Mobile Control
+          </AppNavLink>
         </Nav>
-        <div className="d-flex align-items-center">
-          <IconDarkEllipse
-            className={isConnected ? "text-success" : "text-danger"}
-          />
-          <span className="ms-2">
-            Debug Console {isConnected ? "Connected" : "Disconnected"}
-          </span>
+        <div className="d-flex flex-column align-items-end">
+          <span>Version: {reactAppVersion}</span>
+
+          <div className="d-flex align-items-center">
+            <IconDarkEllipse
+              className={isConnected ? "text-success" : "text-danger"}
+            />
+            <span className="ms-2">
+              Debug Console {isConnected ? "Connected" : "Disconnected"}
+            </span>
+          </div>
         </div>
       </div>
     </Navbar>
