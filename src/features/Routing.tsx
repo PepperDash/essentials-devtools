@@ -125,13 +125,20 @@ function buildGraph(
       : d,
   );
 
+   const effectiveDeviceKeys = new Set(effectiveDevices.map((d) => d.key));
   // Collect one unique device-pair edge per source→destination (dagre only
-  // needs connectivity, not multiplicity, for rank assignment).
+  // needs connectivity, not multiplicity, for rank assignment). Only use
+  // visible tie lines whose endpoints are present in the visible device set
+  // so hidden devices cannot be implicitly added to the layout graph.
   const uniquePairs = [
     ...new Set(
-      data.tieLines.map(
-        (tl) => `${tl.sourceDeviceKey}|${tl.destinationDeviceKey}`,
-      ),
+      visibleTieLines
+        .filter(
+          (tl) =>
+            effectiveDeviceKeys.has(tl.sourceDeviceKey) &&
+            effectiveDeviceKeys.has(tl.destinationDeviceKey),
+        )
+        .map((tl) => `${tl.sourceDeviceKey}|${tl.destinationDeviceKey}`),
     ),
   ];
 

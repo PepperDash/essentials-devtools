@@ -8,6 +8,25 @@ import { useGetVersionsQuery } from "../store/apiSlice";
 import { selectAvailableApps } from "../store/auth/authSelectors";
 import { useAppSelector } from "../store/hooks";
 
+const AppNavLink = ({
+  appId,
+  path,
+  children,
+}: {
+  appId: string | undefined;
+  path: string;
+  children: React.ReactNode;
+}) => {
+  if (!appId) {
+    return <span className="me-3 text-muted nav-link-disabled">{children}</span>;
+  }
+  return (
+    <NavLink className="me-3" to={`/${appId}/${path}`}>
+      {children}
+    </NavLink>
+  );
+};
+
 const TopNav = ({ isConnected }: { isConnected: boolean }) => {
   const location = useLocation();
   const params = useAppParams();
@@ -71,100 +90,19 @@ const TopNav = ({ isConnected }: { isConnected: boolean }) => {
           </Dropdown>
         )}
         <Nav className="me-auto">
-          <NavLink
-            className={
-              location.pathname.includes(`/${params.appId}/versions`)
-                ? "text-secondary me-3"
-                : "me-3"
-            }
-            to={`/${params.appId}/versions`}
-          >
-            Versions
-          </NavLink>
-          <NavLink
-            className={
-              location.pathname.includes(`/${params.appId}/apiPaths`)
-                ? "text-secondary me-3"
-                : "me-3"
-            }
-            to={`/${params.appId}/apiPaths`}
-          >
-            API Paths
-          </NavLink>
+          <AppNavLink appId={params.appId} path="versions">Versions</AppNavLink>
+          <AppNavLink appId={params.appId} path="apiPaths">API Paths</AppNavLink>
           {showInitializationExceptions && (
-            <NavLink
-              className={
-                location.pathname.includes(
-                  `/${params.appId}/initializationExceptions`,
-                )
-                  ? "text-secondary me-3"
-                  : "me-3"
-              }
-              to={`/${params.appId}/initializationExceptions`}
-            >
+            <AppNavLink appId={params.appId} path="initializationExceptions">
               Initialization Exceptions
-            </NavLink>
+            </AppNavLink>
           )}
-          <NavLink
-            className={
-              location.pathname.includes(`/${params.appId}/console`)
-                ? "text-secondary me-3"
-                : "me-3"
-            }
-            to={`/${params.appId}/console`}
-          >
-            Debug Console
-          </NavLink>
-          <NavLink
-            className={
-              location.pathname.includes(`/${params.appId}/config`)
-                ? "text-secondary me-3"
-                : "me-3"
-            }
-            to={`/${params.appId}/config`}
-          >
-            Config File
-          </NavLink>
-          <NavLink
-            className={
-              location.pathname.includes(`/${params.appId}/devices`)
-                ? "text-secondary me-3"
-                : "me-3"
-            }
-            to={`/${params.appId}/devices`}
-          >
-            Devices
-          </NavLink>
-          <NavLink
-            className={
-              location.pathname.includes(`/${params.appId}/types`)
-                ? "text-secondary me-3"
-                : "me-3"
-            }
-            to={`/${params.appId}/types`}
-          >
-            Types
-          </NavLink>
-          <NavLink
-            className={
-              location.pathname.includes(`/${params.appId}/routing`)
-                ? "text-secondary me-3"
-                : "me-3"
-            }
-            to={`/${params.appId}/routing`}
-          >
-            Routing
-          </NavLink>
-          <NavLink
-            className={
-              location.pathname.includes(`/${params.appId}/mobileControl`)
-                ? "text-secondary me-3"
-                : "me-3"
-            }
-            to={`/${params.appId}/mobileControl`}
-          >
-            Mobile Control
-          </NavLink>
+          <AppNavLink appId={params.appId} path="console">Debug Console</AppNavLink>
+          <AppNavLink appId={params.appId} path="config">Config File</AppNavLink>
+          <AppNavLink appId={params.appId} path="devices">Devices</AppNavLink>
+          <AppNavLink appId={params.appId} path="types">Types</AppNavLink>
+          <AppNavLink appId={params.appId} path="routing">Routing</AppNavLink>
+          <AppNavLink appId={params.appId} path="mobileControl">Mobile Control</AppNavLink>
         </Nav>
         <div className="d-flex align-items-center">
           <IconDarkEllipse

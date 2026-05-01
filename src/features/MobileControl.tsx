@@ -16,7 +16,6 @@ import {
 
 const MobileControl = () => {
   const { appId } = useAppParams();
-  console.log("AppId in MobileControl", appId);
 
   const { data: info } = useGetMobileControlInfoQuery(
     appId ? { appId, deviceKey: "appServer" } : skipToken,

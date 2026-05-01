@@ -33,7 +33,7 @@ export const DebugFilters = () => {
       <div className="col-12 d-none d-lg-block">
         <DeviceFilterDropdown items={items} />
         <Button
-          variant="outline"
+          variant="outline-secondary"
           className="py-1 ms-1"
           onClick={() => dispatch(debugConsoleActions.clearAllFilters())}
         >
