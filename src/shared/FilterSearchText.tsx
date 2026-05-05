@@ -1,6 +1,6 @@
-import { ChangeEvent, useEffect, useState } from 'react';
-import { FormControl } from 'react-bootstrap';
-import { useSearchParams } from 'react-router-dom';
+import { ChangeEvent, useEffect, useRef, useState } from "react";
+import { FormControl } from "react-bootstrap";
+import { useSearchParams } from "react-router-dom";
 
 export const FilterSearchText = ({
   disabled,
@@ -9,19 +9,19 @@ export const FilterSearchText = ({
   onChangeValue,
 }: FilterSearchTextProps) => {
   /* HOOKS ***********************************************************/
-  /** Debounce timer for search box */
-  let searchTimerHandle: NodeJS.Timeout;
-  const PARAM = 'searchText';
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const PARAM = "searchText";
   const [searchParams, setSearchParams] = useSearchParams();
-  const [searchText, setSearchText] = useState<string>(controlledValue ?? '');
+  const [searchText, setSearchText] = useState<string>(controlledValue ?? "");
 
   /* FUNCTIONS *******************************************************/
   /** Handles search text change, after 1s debounce */
   function searchTextChange(change: ChangeEvent<HTMLInputElement>) {
     setSearchText(change.target.value);
 
-    if (searchTimerHandle) clearTimeout(searchTimerHandle);
-    searchTimerHandle = setTimeout(() => {
+    if (timerRef.current) clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(() => {
+      timerRef.current = null;
       const val: string = change.target.value.trim();
 
       if (onChangeValue) {
@@ -29,7 +29,7 @@ export const FilterSearchText = ({
         onChangeValue(val);
       } else {
         // URL params mode (default)
-        const tokens = val.split(' ');
+        const tokens = val.split(" ");
         searchParams.delete(PARAM);
         if (val.length) tokens.forEach((t) => searchParams.append(PARAM, t));
         setSearchParams(searchParams);
@@ -38,14 +38,21 @@ export const FilterSearchText = ({
   }
 
   /* EFFECTS *********************************************************/
+  /** Clear any pending debounce timer on unmount */
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
+  }, []);
+
   /** In URL-params mode, sync local state from params. In controlled mode, sync from prop. **/
   useEffect(() => {
     if (onChangeValue) {
-      setSearchText(controlledValue ?? '');
+      setSearchText(controlledValue ?? "");
     } else {
-      setSearchText(searchParams.getAll(PARAM).join(' '));
+      setSearchText(searchParams.getAll(PARAM).join(" "));
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [controlledValue, searchParams]);
 
   /* RENDER **********************************************************/
@@ -63,11 +70,20 @@ export const FilterSearchText = ({
   );
 };
 
-interface FilterSearchTextProps {
+type FilterSearchTextBaseProps = {
   disabled?: boolean;
   placeholder?: string;
-  /** Controlled value (Redux mode). When provided, `onChangeValue` is also required. */
-  value?: string;
-  /** Called with the debounced text when in controlled mode. */
-  onChangeValue?: (val: string) => void;
-}
+};
+type FilterSearchTextControlledProps = FilterSearchTextBaseProps & {
+  /** Controlled value (Redux mode). */
+  value: string;
+  onChangeValue: (val: string) => void;
+};
+type FilterSearchTextUncontrolledProps = FilterSearchTextBaseProps & {
+  value?: undefined;
+  onChangeValue?: undefined;
+};
+
+type FilterSearchTextProps =
+  | FilterSearchTextControlledProps
+  | FilterSearchTextUncontrolledProps;
