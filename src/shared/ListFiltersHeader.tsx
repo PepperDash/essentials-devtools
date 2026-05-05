@@ -12,7 +12,7 @@ const ListFiltersHeader = ({
   rightContent,
 }: ListFiltersHeaderProps) => {
   return (
-    <div className="d-flex justify-content-between mb-2 user-select-none align-items-center flex-nowrap">
+    <div className="ps-2 d-flex justify-content-between mb-2 user-select-none align-items-center flex-nowrap">
       <div className="row row-cols-sm-auto g-3 user-select-none flex-nowrap">
         {showSearch && (
           <div className="col-8">
