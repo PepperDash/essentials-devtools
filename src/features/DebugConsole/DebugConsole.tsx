@@ -10,6 +10,9 @@ import {
   useSetLoadConfigMutation,
   useSetRestartMutation
 } from "../../store/apiSlice";
+import { selectSearchText } from '../../store/debugConsole/debugConsoleSelectors';
+import { debugConsoleActions } from '../../store/debugConsole/debugConsoleSlice';
+import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import { RootState } from '../../store/store';
 import ConsoleWindow from "./ConsoleWindow";
 import { DebugFilters } from "./DebugFilters";
@@ -21,8 +24,10 @@ const DebugConsole = ({isConnected, join, stop, clear}: DebugConsoleProps) => {
   //* HOOKS ***********************************************************/
   const [showModal, setShowModal] = useState(false);
   const { appId } = useAppParams();
+  const dispatch = useAppDispatch();
   const messages = useSelector((state: RootState) => state.websocket.messages);
   const failedUrl = useSelector((state: RootState) => state.websocket.failedUrl);
+  const searchText = useAppSelector(selectSearchText);
   const certUrl = failedUrl
     ? new URL(failedUrl).origin.replace(/^wss:/, 'https:').replace(/^ws:/, 'http:')
     : null;
@@ -119,7 +124,12 @@ const DebugConsole = ({isConnected, join, stop, clear}: DebugConsoleProps) => {
             {', accept the certificate, then try "Start Debug Session" again.'}
           </Alert>
         )}
-        <ListFiltersHeader showSearch filters={<DebugFilters />} />
+        <ListFiltersHeader
+          showSearch
+          searchValue={searchText}
+          onSearchChange={(val) => dispatch(debugConsoleActions.setSearchText(val))}
+          filters={<DebugFilters />}
+        />
         <ConsoleWindow filteredItems={filteredItems}/>
       </div>
 
