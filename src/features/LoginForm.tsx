@@ -70,7 +70,8 @@ const LoginForm = () => {
   }
 
   return (
-    <div className="d-flex flex-column justify-content-center align-items-center h-100">
+    <div className="d-flex flex-column justify-content-center align-items-center h-100 position-relative">      
+      <span className="position-absolute top-0 end-0 p-2 text-muted small">Version: {APP_VERSION}</span>
       <h1 className="mb-5 text-center">PepperDash Essentials Developer Tools</h1>
       <div className="w-100" style={{ maxWidth: '360px' }}>
         <h2 className="mb-4">Sign In</h2>
