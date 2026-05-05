@@ -16,7 +16,9 @@ const ListFiltersHeader = ({
       <div className="row row-cols-sm-auto g-3 user-select-none flex-nowrap">
         {showSearch && (
           <div className="col-8">
-            <FilterSearchText value={searchValue} onChangeValue={onSearchChange} />
+            {onSearchChange !== undefined
+              ? <FilterSearchText value={searchValue ?? ''} onChangeValue={onSearchChange} />
+              : <FilterSearchText />}
           </div>
         )}
         <div className="col-16 d-none d-lg-block">{filters}</div>
