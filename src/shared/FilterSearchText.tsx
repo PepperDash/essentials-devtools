@@ -1,6 +1,6 @@
-import { ChangeEvent, useEffect, useRef, useState } from "react";
-import { FormControl } from "react-bootstrap";
-import { useSearchParams } from "react-router-dom";
+import { ChangeEvent, useEffect, useRef, useState } from 'react';
+import { FormControl } from 'react-bootstrap';
+import { useSearchParams } from 'react-router-dom';
 
 export const FilterSearchText = ({
   disabled,

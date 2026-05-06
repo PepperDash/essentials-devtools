@@ -1,9 +1,9 @@
-import { Editor, OnMount, useMonaco } from "@monaco-editor/react";
-import { skipToken } from "@reduxjs/toolkit/query";
-import { useEffect, useRef } from "react";
-import { Button } from "react-bootstrap";
-import useAppParams from "../shared/hooks/useAppParams";
-import { useGetConfigQuery } from "../store/apiSlice";
+import { Editor, OnMount, useMonaco } from '@monaco-editor/react';
+import { skipToken } from '@reduxjs/toolkit/query';
+import { useEffect, useRef } from 'react';
+import { Button } from 'react-bootstrap';
+import useAppParams from '../shared/hooks/useAppParams';
+import { useGetConfigQuery } from '../store/apiSlice';
 
 type IConfigViewer = Parameters<OnMount>[0];
 

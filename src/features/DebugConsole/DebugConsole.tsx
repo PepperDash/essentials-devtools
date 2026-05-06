@@ -1,7 +1,6 @@
 import { skipToken } from '@reduxjs/toolkit/query';
 import { useState } from "react";
 import { Alert, Button, Form } from "react-bootstrap";
-import { useSelector } from 'react-redux';
 import ListFiltersHeader from "../../shared/ListFiltersHeader";
 import useAppParams from '../../shared/hooks/useAppParams';
 import {
@@ -13,7 +12,7 @@ import {
 import { selectSearchText } from '../../store/debugConsole/debugConsoleSelectors';
 import { debugConsoleActions } from '../../store/debugConsole/debugConsoleSlice';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
-import { RootState } from '../../store/store';
+import type { RootState } from '../../store/store';
 import ConsoleWindow from "./ConsoleWindow";
 import { DebugFilters } from "./DebugFilters";
 import MinimumLogLevelDropdown from './MinimumLogLevelDropdown';
@@ -25,8 +24,8 @@ const DebugConsole = ({isConnected, join, stop, clear}: DebugConsoleProps) => {
   const [showModal, setShowModal] = useState(false);
   const { appId } = useAppParams();
   const dispatch = useAppDispatch();
-  const messages = useSelector((state: RootState) => state.websocket.messages);
-  const failedUrl = useSelector((state: RootState) => state.websocket.failedUrl);
+  const messages = useAppSelector((state: RootState) => state.websocket.messages);
+  const failedUrl = useAppSelector((state: RootState) => state.websocket.failedUrl);
   const searchText = useAppSelector(selectSearchText);
   const certUrl = failedUrl
     ? new URL(failedUrl).origin.replace(/^wss:/, 'https:').replace(/^ws:/, 'http:')
