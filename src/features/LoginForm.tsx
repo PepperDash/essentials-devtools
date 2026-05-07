@@ -53,20 +53,7 @@ const LoginForm = () => {
     setError(null);
     setIsLoading(true);
 
-    try {
-      // First authenticate using the current (or first) appId to confirm credentials are valid
-      await setLoginCredentials({
-        appId: probeAppId,
-        username,
-        password,
-      }).unwrap();
-    } catch {
-      setIsLoading(false);
-      setError("Invalid credentials. Please try again.");
-      return;
-    }
-
-    // Credentials are valid — now probe all slots in parallel to discover which are running
+    // Probe all slots in parallel — credentials are valid if at least one succeeds
     const results = await Promise.allSettled(
       ALL_APP_IDS.map((id) =>
         setLoginCredentials({ appId: id, username, password }).unwrap(),
@@ -76,6 +63,12 @@ const LoginForm = () => {
     const availableApps = ALL_APP_IDS.filter(
       (_, i) => results[i].status === "fulfilled",
     );
+
+    if (availableApps.length === 0) {
+      setIsLoading(false);
+      setError("Invalid credentials. Please try again.");
+      return;
+    }
 
     setIsLoading(false);
     dispatch(authActions.loginSuccess(availableApps));
