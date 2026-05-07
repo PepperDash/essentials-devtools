@@ -1,15 +1,26 @@
-import { FormEvent, useState } from 'react';
-import { Alert, Button, Form, Spinner } from 'react-bootstrap';
-import { Navigate, useLocation, useNavigate } from 'react-router-dom';
-import useAppParams from '../shared/hooks/useAppParams';
-import { useSetLoginCredentialsMutation } from '../store/apiSlice';
-import { selectAvailableApps, selectIsAuthenticated } from '../store/auth/authSelectors';
-import { authActions } from '../store/auth/authSlice';
-import { useAppDispatch, useAppSelector } from '../store/hooks';
+import { FormEvent, useState } from "react";
+import { Alert, Button, Form, Spinner } from "react-bootstrap";
+import { Navigate, useLocation, useNavigate } from "react-router-dom";
+import useAppParams from "../shared/hooks/useAppParams";
+import { useSetLoginCredentialsMutation } from "../store/apiSlice";
+import {
+  selectAvailableApps,
+  selectIsAuthenticated,
+} from "../store/auth/authSelectors";
+import { authActions } from "../store/auth/authSlice";
+import { useAppDispatch, useAppSelector } from "../store/hooks";
 
 const ALL_APP_IDS = [
-  'app01', 'app02', 'app03', 'app04', 'app05',
-  'app06', 'app07', 'app08', 'app09', 'app10',
+  "app01",
+  "app02",
+  "app03",
+  "app04",
+  "app05",
+  "app06",
+  "app07",
+  "app08",
+  "app09",
+  "app10",
 ];
 
 const LoginForm = () => {
@@ -20,8 +31,8 @@ const LoginForm = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -42,25 +53,22 @@ const LoginForm = () => {
     setError(null);
     setIsLoading(true);
 
-    try {
-      // First authenticate using the current (or first) appId to confirm credentials are valid
-      await setLoginCredentials({ appId: probeAppId, username, password }).unwrap();
-    } catch {
-      setIsLoading(false);
-      setError('Invalid credentials. Please try again.');
-      return;
-    }
-
-    // Credentials are valid — now probe all slots in parallel to discover which are running
+    // Probe all slots in parallel — credentials are valid if at least one succeeds
     const results = await Promise.allSettled(
       ALL_APP_IDS.map((id) =>
-        setLoginCredentials({ appId: id, username, password }).unwrap()
-      )
+        setLoginCredentials({ appId: id, username, password }).unwrap(),
+      ),
     );
 
     const availableApps = ALL_APP_IDS.filter(
-      (_, i) => results[i].status === 'fulfilled'
+      (_, i) => results[i].status === "fulfilled",
     );
+
+    if (availableApps.length === 0) {
+      setIsLoading(false);
+      setError("Invalid credentials. Please try again.");
+      return;
+    }
 
     setIsLoading(false);
     dispatch(authActions.loginSuccess(availableApps));
@@ -70,9 +78,14 @@ const LoginForm = () => {
   }
 
   return (
-    <div className="d-flex flex-column justify-content-center align-items-center h-100">
-      <h1 className="mb-5 text-center">PepperDash Essentials Developer Tools</h1>
-      <div className="w-100" style={{ maxWidth: '360px' }}>
+    <div className="d-flex flex-column justify-content-center align-items-center h-100 position-relative">
+      <span className="position-absolute top-0 end-0 p-2 text-muted small">
+        Version: {APP_VERSION}
+      </span>
+      <h1 className="mb-5 text-center">
+        PepperDash Essentials Developer Tools
+      </h1>
+      <div className="w-100" style={{ maxWidth: "360px" }}>
         <h2 className="mb-4">Sign In</h2>
         {error && <Alert variant="danger">{error}</Alert>}
         <Form onSubmit={handleSubmit}>
@@ -105,7 +118,7 @@ const LoginForm = () => {
                 Signing in…
               </>
             ) : (
-              'Sign In'
+              "Sign In"
             )}
           </Button>
         </Form>

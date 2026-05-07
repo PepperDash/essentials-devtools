@@ -1,20 +1,32 @@
-import { Editor, OnMount, useMonaco } from "@monaco-editor/react";
-import { skipToken } from "@reduxjs/toolkit/query";
-import { useEffect, useRef } from "react";
-import useAppParams from "../shared/hooks/useAppParams";
-import { useGetConfigQuery } from "../store/apiSlice";
+import { Editor, OnMount, useMonaco } from '@monaco-editor/react';
+import { skipToken } from '@reduxjs/toolkit/query';
+import { useEffect, useRef } from 'react';
+import { Button } from 'react-bootstrap';
+import useAppParams from '../shared/hooks/useAppParams';
+import { useGetConfigQuery } from '../store/apiSlice';
 
 type IConfigViewer = Parameters<OnMount>[0];
 
 const ConfigFile = () => {
   const { appId } = useAppParams();
-  const { data: config } = useGetConfigQuery(appId ? { appId } : skipToken);
+  const { data: config, refetch, isFetching } = useGetConfigQuery(appId ? { appId } : skipToken);
 
   if (!config) {
     return <div>Config Data Loading or Not Available</div>;
   }
 
-  return <ConfigFileRender config={config} />;
+  return (
+    <div className="d-flex flex-column h-100">
+      <div className="mb-2 d-flex justify-content-end">
+        <Button variant="outline-secondary" size="sm" onClick={refetch} disabled={isFetching}>
+          {isFetching ? 'Refreshing…' : 'Refresh Config'}
+        </Button>
+      </div>
+      <div className="flex-grow-1 overflow-hidden">
+        <ConfigFileRender config={config} />
+      </div>
+    </div>
+  );
 };
 
 export default ConfigFile;

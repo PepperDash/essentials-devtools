@@ -7,14 +7,18 @@ const ListFiltersHeader = ({
   groupBy,
   listTypeButtons,
   showSearch,
+  searchValue,
+  onSearchChange,
   rightContent,
 }: ListFiltersHeaderProps) => {
   return (
-    <div className="d-flex justify-content-between mb-2 user-select-none align-items-center flex-nowrap">
+    <div className="ps-2 d-flex justify-content-between mb-2 user-select-none align-items-center flex-nowrap">
       <div className="row row-cols-sm-auto g-3 user-select-none flex-nowrap">
         {showSearch && (
           <div className="col-8">
-            <FilterSearchText />
+            {onSearchChange !== undefined
+              ? <FilterSearchText value={searchValue ?? ''} onChangeValue={onSearchChange} />
+              : <FilterSearchText />}
           </div>
         )}
         <div className="col-16 d-none d-lg-block">{filters}</div>
@@ -37,6 +41,8 @@ export default ListFiltersHeader;
 
 interface ListFiltersHeaderProps {
   showSearch?: boolean;
+  searchValue?: string;
+  onSearchChange?: (val: string) => void;
   filters: ReactNode;
   groupBy?: ReactNode;
   listTypeButtons?: ReactNode;
