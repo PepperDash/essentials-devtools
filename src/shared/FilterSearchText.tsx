@@ -29,7 +29,7 @@ export const FilterSearchText = ({
         onChangeValue(val);
       } else {
         // URL params mode (default)
-        const tokens = val.split(" ");
+        const tokens = val.split(" ").filter((t) => t.length > 0);
         searchParams.delete(PARAM);
         if (val.length) tokens.forEach((t) => searchParams.append(PARAM, t));
         setSearchParams(searchParams);
