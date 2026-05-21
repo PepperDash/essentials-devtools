@@ -41,6 +41,19 @@ const DebugConsole = ({isConnected, join, stop, clear}: DebugConsoleProps) => {
   //* EFFECTS *********************************************************/
   const filteredItems = useFilteredMessages(messages);
 
+  const exportFilteredItems = () => {
+    const content = filteredItems
+      .map((item) => `${item.Timestamp} [${item.Level}]${item.Properties?.Key ? ` [${item.Properties.Key}]` : ''} ${item.RenderedMessage}`)
+      .join('\n');
+    const blob = new Blob([content], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `debug-log-${new Date().toISOString().replace(/[:.]/g, '-')}.log`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   const clickRestart = () => {
     setShowModal(true);
   };
@@ -103,6 +116,15 @@ const DebugConsole = ({isConnected, join, stop, clear}: DebugConsoleProps) => {
             onClick={clear}
           >
             Clear Console Trace
+          </Button>
+          <Button
+            className="mx-1"
+            variant="primary"
+            size="sm"
+            onClick={exportFilteredItems}
+            disabled={filteredItems.length === 0}
+          >
+            Export Log
           </Button>
           <Button
             className="mx-1"
