@@ -1,23 +1,23 @@
 import { skipToken } from '@reduxjs/toolkit/query';
-import { useState } from "react";
-import { Alert, Button, Form } from "react-bootstrap";
-import ListFiltersHeader from "../../shared/ListFiltersHeader";
+import { useState } from 'react';
+import { Alert, Button, Form } from 'react-bootstrap';
+import ListFiltersHeader from '../../shared/ListFiltersHeader';
 import useAppParams from '../../shared/hooks/useAppParams';
 import {
   useGetDoNotLoadConfigOnNextBootQuery,
   useSetDoNotLoadConfigOnNextBootMutation,
   useSetLoadConfigMutation,
   useSetRestartMutation
-} from "../../store/apiSlice";
+} from '../../store/apiSlice';
 import { selectSearchText } from '../../store/debugConsole/debugConsoleSelectors';
 import { debugConsoleActions } from '../../store/debugConsole/debugConsoleSlice';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import type { RootState } from '../../store/store';
-import ConsoleWindow from "./ConsoleWindow";
-import { DebugFilters } from "./DebugFilters";
+import ConsoleWindow from './ConsoleWindow';
+import { DebugFilters } from './DebugFilters';
 import MinimumLogLevelDropdown from './MinimumLogLevelDropdown';
-import RestartConfirmModal from "./RestartConfirmModal";
-import { useFilteredMessages } from "./hooks/useFilteredMessages";
+import RestartConfirmModal from './RestartConfirmModal';
+import { useFilteredMessages } from './hooks/useFilteredMessages';
 
 const DebugConsole = ({isConnected, join, stop, clear}: DebugConsoleProps) => {
   //* HOOKS ***********************************************************/

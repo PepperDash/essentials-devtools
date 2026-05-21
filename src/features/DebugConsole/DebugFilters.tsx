@@ -21,7 +21,7 @@ export const DebugFilters = () => {
 
     const deviceItems: IdLabel[] = devices
       .map((d) => ({ id: d.Key, label: d.Name || d.Key }))
-      .sort((a, b) => a.label.localeCompare(b.label));
+      .sort((a, b) => a.id.localeCompare(b.id));
 
     return [{ id: debugConsts.GLOBAL, label: 'Global' }, ...deviceItems];
   }, [devices]);

@@ -1,14 +1,14 @@
-import { FormEvent, useState } from "react";
-import { Alert, Button, Form, Spinner } from "react-bootstrap";
-import { Navigate, useLocation, useNavigate } from "react-router-dom";
-import useAppParams from "../shared/hooks/useAppParams";
-import { useSetLoginCredentialsMutation } from "../store/apiSlice";
+import { FormEvent, useState } from 'react';
+import { Alert, Button, Form, Spinner } from 'react-bootstrap';
+import { Navigate, useLocation, useNavigate } from 'react-router-dom';
+import useAppParams from '../shared/hooks/useAppParams';
+import { useSetLoginCredentialsMutation } from '../store/apiSlice';
 import {
   selectAvailableApps,
   selectIsAuthenticated,
-} from "../store/auth/authSelectors";
-import { authActions } from "../store/auth/authSlice";
-import { useAppDispatch, useAppSelector } from "../store/hooks";
+} from '../store/auth/authSelectors';
+import { authActions } from '../store/auth/authSlice';
+import { useAppDispatch, useAppSelector } from '../store/hooks';
 
 const ALL_APP_IDS = [
   "app01",
@@ -53,7 +53,7 @@ const LoginForm = () => {
     setError(null);
     setIsLoading(true);
 
-    // Probe all slots in parallel — credentials are valid if at least one succeeds
+    // Send login to all program slots in parallel
     const results = await Promise.allSettled(
       ALL_APP_IDS.map((id) =>
         setLoginCredentials({ appId: id, username, password }).unwrap(),
@@ -64,13 +64,13 @@ const LoginForm = () => {
       (_, i) => results[i].status === "fulfilled",
     );
 
+    setIsLoading(false);
+
     if (availableApps.length === 0) {
-      setIsLoading(false);
       setError("Invalid credentials. Please try again.");
       return;
     }
 
-    setIsLoading(false);
     dispatch(authActions.loginSuccess(availableApps));
 
     const destination = from ?? `/${availableApps[0] ?? probeAppId}/versions`;
