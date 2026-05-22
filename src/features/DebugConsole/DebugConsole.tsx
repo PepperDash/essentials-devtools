@@ -50,8 +50,12 @@ const DebugConsole = ({isConnected, join, stop, clear}: DebugConsoleProps) => {
     const a = document.createElement('a');
     a.href = url;
     a.download = `debug-log-${new Date().toISOString().replace(/[:.]/g, '-')}.log`;
+    document.body.appendChild(a);
     a.click();
-    URL.revokeObjectURL(url);
+    setTimeout(() => {
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }, 0);
   };
 
   const clickRestart = () => {
