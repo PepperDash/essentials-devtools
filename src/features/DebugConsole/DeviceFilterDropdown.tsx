@@ -66,7 +66,7 @@ export const DeviceFilterDropdown = ({ items }: DeviceFilterDropdownProps) => {
               <Form.Check
                 type="checkbox"
                 id={`device-check-${stringId}`}
-                label={item.label}
+                label={`${item.label} (${stringId})`}
                 checked={isChecked}
                 onChange={(e) => handleCheckChange(e, stringId)}
                 className="flex-grow-1 m-0"
