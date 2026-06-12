@@ -4,13 +4,13 @@ import { LogMessage } from "../shared/types/LogMessage";
 interface WebsocketState {
   messages: LogMessage[];
   isConnected: boolean;
-  failedUrl: string | null;
+  failedUrls: string[] | null;
 }
 
 const initialState: WebsocketState = {
   messages: [],
   isConnected: false,
-  failedUrl: null,
+  failedUrls: null,
 };
 
 const websocketSlice = createSlice({
@@ -34,12 +34,12 @@ const websocketSlice = createSlice({
       state.messages = [];
     },
     /** Dispatched by the middleware when a connection attempt fails */
-    connectionFailed(state, action: PayloadAction<string>) {
-      state.failedUrl = action.payload;
+    connectionFailed(state, action: PayloadAction<string[]>) {
+      state.failedUrls = action.payload;
     },
     /** Dispatched by the middleware when a new connection attempt starts */
     connectionAttemptStarted(state) {
-      state.failedUrl = null;
+      state.failedUrls = null;
     },
   },
 });
@@ -57,7 +57,7 @@ export const WS_DISCONNECT = "websocket/disconnect";
 
 export interface WsConnectAction {
   type: typeof WS_CONNECT;
-  payload: { url: string };
+  payload: { url: string; fallbackUrl?: string };
 }
 
 export interface WsDisconnectAction {

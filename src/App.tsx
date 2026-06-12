@@ -32,8 +32,10 @@ function App() {
   const join = async (appId: string) => {
     if (!appId) return;
     const res = await startSession({ appId }).unwrap();
-    console.log("Joining debug session at " + res.url);
-    dispatch({ type: WS_CONNECT, payload: { url: res.url } });
+    const primaryUrl = res.fallbackUrl || res.url;
+    const fallbackUrl = res.fallbackUrl ? res.url : undefined;
+    console.log("Joining debug session at " + primaryUrl + (fallbackUrl ? " (fallback: " + fallbackUrl + ")" : ""));
+    dispatch({ type: WS_CONNECT, payload: { url: primaryUrl, fallbackUrl } });
   };
 
   const stop = (appId: string) => {
