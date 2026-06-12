@@ -57,7 +57,7 @@ export const WS_DISCONNECT = "websocket/disconnect";
 
 export interface WsConnectAction {
   type: typeof WS_CONNECT;
-  payload: { url: string };
+  payload: { url: string; fallbackUrl?: string };
 }
 
 export interface WsDisconnectAction {

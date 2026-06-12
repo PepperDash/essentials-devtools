@@ -18,7 +18,7 @@ export const websocketMiddleware: Middleware = (store) => {
     const { type } = action as WsConnectAction | WsDisconnectAction;
 
     if (type === WS_CONNECT) {
-      const { url } = (action as WsConnectAction).payload;
+      const { url, fallbackUrl } = (action as WsConnectAction).payload;
 
       console.log("[ws] Connecting to", url);
 
@@ -29,23 +29,32 @@ export const websocketMiddleware: Middleware = (store) => {
         socket.close();
       }
 
-      socket = new WebSocket(url);
-      socket.onopen = () => store.dispatch(connected());
-      socket.onclose = () => {
-        store.dispatch(disconnected());
-        socket = null;
+      const connectToUrl = (targetUrl: string, fallback?: string) => {
+        socket = new WebSocket(targetUrl);
+        socket.onopen = () => store.dispatch(connected());
+        socket.onclose = () => {
+          store.dispatch(disconnected());
+          socket = null;
+        };
+        socket.onerror = (err) => {
+          console.error("WebSocket error", err);
+          if (fallback) {
+            console.log("[ws] Primary connection failed, falling back to", fallback);
+            connectToUrl(fallback);
+          } else {
+            store.dispatch(connectionFailed(targetUrl));
+          }
+        };
+        socket.onmessage = (event: MessageEvent<string>) => {
+          try {
+            store.dispatch(messageReceived(JSON.parse(event.data)));
+          } catch (e) {
+            console.error("Failed to parse WebSocket message", e);
+          }
+        };
       };
-      socket.onerror = (err) => {
-        console.error("WebSocket error", err);
-        store.dispatch(connectionFailed(url));
-      };
-      socket.onmessage = (event: MessageEvent<string>) => {
-        try {
-          store.dispatch(messageReceived(JSON.parse(event.data)));
-        } catch (e) {
-          console.error("Failed to parse WebSocket message", e);
-        }
-      };
+
+      connectToUrl(url, fallbackUrl);
 
       return;
     }
