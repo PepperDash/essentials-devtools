@@ -25,10 +25,10 @@ const DebugConsole = ({isConnected, join, stop, clear}: DebugConsoleProps) => {
   const { appId } = useAppParams();
   const dispatch = useAppDispatch();
   const messages = useAppSelector((state: RootState) => state.websocket.messages);
-  const failedUrl = useAppSelector((state: RootState) => state.websocket.failedUrl);
+  const failedUrls = useAppSelector((state: RootState) => state.websocket.failedUrls);
   const searchText = useAppSelector(selectSearchText);
-  const certUrl = failedUrl
-    ? new URL(failedUrl).origin.replace(/^wss:/, 'https:').replace(/^ws:/, 'http:')
+  const certUrls = failedUrls
+    ? failedUrls.map((u: string) => new URL(u).origin.replace(/^wss:/, 'https:').replace(/^ws:/, 'http:'))
     : null;
 
   const { data: doNotLoadConfigOnNextBoot } =
@@ -140,12 +140,17 @@ const DebugConsole = ({isConnected, join, stop, clear}: DebugConsoleProps) => {
           </Button>
           <span className="ps-2">Message Count: {messages.length}</span>
         </div>
-        {certUrl && (
+        {certUrls && certUrls.length > 0 && (
           <Alert variant="warning" className="py-2 px-3 mb-2" style={{ fontSize: '0.82rem' }}>
             <strong>Connection failed.</strong> The debug server may have an untrusted certificate.{' '}
-            <Alert.Link href={certUrl} target="_blank" rel="noreferrer">
-              Open {certUrl} in a new tab
-            </Alert.Link>
+            {certUrls.map((certUrl: string, i: number) => (
+              <span key={certUrl}>
+                {i > 0 && ' or '}
+                <Alert.Link href={certUrl} target="_blank" rel="noreferrer">
+                  Open {certUrl} in a new tab
+                </Alert.Link>
+              </span>
+            ))}
             {', accept the certificate, then try "Start Debug Session" again.'}
           </Alert>
         )}

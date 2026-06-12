@@ -42,7 +42,11 @@ export const websocketMiddleware: Middleware = (store) => {
             console.log("[ws] Primary connection failed, falling back to", fallback);
             connectToUrl(fallback);
           } else {
-            store.dispatch(connectionFailed(targetUrl));
+            // Report all attempted URLs (primary + fallback that was tried)
+            const attemptedUrls = fallbackUrl && targetUrl === fallbackUrl
+              ? [url, fallbackUrl]
+              : [targetUrl];
+            store.dispatch(connectionFailed(attemptedUrls));
           }
         };
         socket.onmessage = (event: MessageEvent<string>) => {
