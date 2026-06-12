@@ -388,7 +388,7 @@ interface MethodParam {
 
 interface DebugSession {
   url: string;
-  csLanUrl: string;
+  fallbackUrl?: string;
 }
 
 export interface MobileControlClient {
