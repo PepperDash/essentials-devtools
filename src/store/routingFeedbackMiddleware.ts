@@ -23,6 +23,7 @@ export const routingFeedbackMiddleware: Middleware = (store) => {
   let reconnectAttempts = 0;
   let currentUrl: string | null = null;
   let fallbackUrl: string | null = null;
+  let attemptedUrls: string[] = [];
 
   function cleanup() {
     if (reconnectTimer) {
@@ -40,6 +41,7 @@ export const routingFeedbackMiddleware: Middleware = (store) => {
     reconnectAttempts = 0;
     currentUrl = null;
     fallbackUrl = null;
+    attemptedUrls = [];
   }
 
   function connectToUrl(url: string, fallback?: string) {
@@ -53,10 +55,12 @@ export const routingFeedbackMiddleware: Middleware = (store) => {
     }
 
     currentUrl = url;
+    if (!attemptedUrls.includes(url)) attemptedUrls.push(url);
     socket = new WebSocket(url);
 
     socket.onopen = () => {
       reconnectAttempts = 0;
+      attemptedUrls = [];
       store.dispatch(routingWsConnected());
     };
 
@@ -97,7 +101,7 @@ export const routingFeedbackMiddleware: Middleware = (store) => {
   function attemptReconnect() {
     if (!currentUrl) return;
     if (reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
-      store.dispatch(routingWsConnectionFailed(currentUrl));
+      store.dispatch(routingWsConnectionFailed([...attemptedUrls]));
       return;
     }
     reconnectAttempts++;

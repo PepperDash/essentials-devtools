@@ -11,14 +11,14 @@ export interface RoutingFeedbackState {
   midpointRoutes: Record<string, MidpointRoute[]>;
   sinkRoutes: Record<string, SinkRoute>;
   connected: boolean;
-  failedUrl: string | null;
+  failedUrls: string[];
 }
 
 const initialState: RoutingFeedbackState = {
   midpointRoutes: {},
   sinkRoutes: {},
   connected: false,
-  failedUrl: null,
+  failedUrls: [],
 };
 
 const routingFeedbackSlice = createSlice({
@@ -27,13 +27,13 @@ const routingFeedbackSlice = createSlice({
   reducers: {
     routingWsConnected(state) {
       state.connected = true;
-      state.failedUrl = null;
+      state.failedUrls = [];
     },
     routingWsDisconnected(state) {
       state.connected = false;
     },
-    routingWsConnectionFailed(state, action: PayloadAction<string>) {
-      state.failedUrl = action.payload;
+    routingWsConnectionFailed(state, action: PayloadAction<string[]>) {
+      state.failedUrls = action.payload;
     },
     routingSnapshotReceived(
       state,

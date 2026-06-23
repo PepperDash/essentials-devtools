@@ -15,7 +15,7 @@ import {
 } from "@xyflow/react";
 import dagre from "dagre";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Dropdown } from "react-bootstrap";
+import { Alert, Dropdown } from "react-bootstrap";
 
 import { meetsMinVersion } from "../shared/functions/meetsMinimumVersion";
 import useAppParams from "../shared/hooks/useAppParams";
@@ -338,6 +338,7 @@ const Routing = () => {
   const dispatch = useAppDispatch();
   const midpointRoutes = useAppSelector((s) => s.routingFeedback.midpointRoutes);
   const routingWsConnected = useAppSelector((s) => s.routingFeedback.connected);
+  const failedUrls = useAppSelector((s) => s.routingFeedback.failedUrls);
   const { data: versions } = useGetVersionsQuery(appId ? { appId } : skipToken);
   const { data, isLoading, isError } = useGetRoutingDevicesAndTieLinesQuery(
     appId ? { appId } : skipToken,
@@ -685,8 +686,28 @@ const Routing = () => {
     );
   }
 
+  const certUrls = failedUrls.length > 0
+    ? [...new Set<string>(failedUrls.map((u: string) =>
+        new URL(u).origin.replace(/^wss:/, "https:").replace(/^ws:/, "http:"),
+      ))]
+    : null;
+
   return (
     <div className="h-100 d-flex flex-column overflow-hidden">
+      {certUrls && certUrls.length > 0 && (
+        <Alert variant="warning" className="py-2 px-3 mb-0 rounded-0" style={{ fontSize: '0.82rem' }}>
+          <strong>Live feedback connection failed.</strong> The routing feedback server may have an untrusted certificate.{' '}
+          {certUrls.map((certUrl, i) => (
+            <span key={certUrl}>
+              {i > 0 && ' or '}
+              <Alert.Link href={certUrl} target="_blank" rel="noreferrer">
+                Open {certUrl}
+              </Alert.Link>
+            </span>
+          ))}
+          {' in a new tab, accept the certificate, then reload this page.'}
+        </Alert>
+      )}
       {/* Signal type filter bar */}
       <div className="d-flex flex-wrap gap-2 p-2 border-bottom align-items-center gap-3">
         <div className="d-flex align-items-center gap-1">
