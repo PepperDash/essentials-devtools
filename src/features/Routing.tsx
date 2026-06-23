@@ -30,6 +30,7 @@ import { useAppDispatch, useAppSelector } from "../store/hooks";
 import {
   ROUTING_WS_CONNECT,
   ROUTING_WS_DISCONNECT,
+  routingSnapshotReceived,
 } from "../store/routingFeedbackSlice";
 import styles from "./Routing.module.scss";
 import RoutingDeviceNode, {
@@ -356,6 +357,45 @@ const Routing = () => {
     )?.Version;
     return essentialsVersion ? meetsMinVersion(essentialsVersion, "3.0.0") : false;
   }, [versions]);
+
+  // Seed routing feedback state from the HTTP response before the WebSocket connects
+  useEffect(() => {
+    if (!data?.currentRoutes || !isV3) return;
+    const midpoints: Record<string, { inputPortKey: string; outputPortKey: string; signalType: string }[]> = {};
+    const sinks: Record<string, { inputPortKey: string; sourceDeviceKey: string; signalType: string }> = {};
+
+    for (const group of data.currentRoutes) {
+      for (const route of group.routes) {
+        // Each step is a switching device in the route path
+        for (const step of route.steps) {
+          if (!midpoints[step.switchingDeviceKey]) {
+            midpoints[step.switchingDeviceKey] = [];
+          }
+          midpoints[step.switchingDeviceKey].push({
+            inputPortKey: step.inputPortKey,
+            outputPortKey: step.outputPortKey,
+            signalType: group.signalType,
+          });
+        }
+        // The destination device is a sink
+        if (route.destinationDeviceKey && route.destinationInputPortKey) {
+          sinks[route.destinationDeviceKey] = {
+            inputPortKey: route.destinationInputPortKey,
+            sourceDeviceKey: route.sourceDeviceKey,
+            signalType: group.signalType,
+          };
+        }
+      }
+    }
+
+    dispatch(
+      routingSnapshotReceived({
+        type: "snapshot",
+        midpointRoutes: midpoints,
+        sinkRoutes: sinks,
+      }),
+    );
+  }, [data?.currentRoutes, isV3, dispatch]);
 
   // Connect to routing feedback WebSocket when data is available (v3+ only)
   useEffect(() => {
