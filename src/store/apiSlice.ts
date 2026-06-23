@@ -459,10 +459,68 @@ export interface TieLine {
   isInternal: boolean;
 }
 
+export interface RouteSwitchStepInfo {
+  switchingDeviceKey: string;
+  inputPortKey: string;
+  outputPortKey: string;
+}
+
+export interface ActiveRouteInfo {
+  sourceDeviceKey: string;
+  destinationDeviceKey: string;
+  destinationInputPortKey: string;
+  steps: RouteSwitchStepInfo[];
+}
+
+export interface CurrentRouteGroupInfo {
+  signalType: string;
+  routes: ActiveRouteInfo[];
+}
+
 export interface RoutingDevicesAndTieLines {
   devices: RoutingDevice[];
   tieLines: TieLine[];
+  currentRoutes: CurrentRouteGroupInfo[];
 }
+
+// ─── Live routing feedback (WebSocket) types ─────────────────────────────────
+
+export interface MidpointRoute {
+  inputPortKey: string;
+  outputPortKey: string;
+  signalType: string;
+}
+
+export interface SinkRoute {
+  inputPortKey: string;
+  sourceDeviceKey: string;
+  signalType: string;
+}
+
+export interface RoutingSnapshotMessage {
+  type: "snapshot";
+  midpointRoutes: Record<string, MidpointRoute[]>;
+  sinkRoutes: Record<string, SinkRoute>;
+}
+
+export interface MidpointRouteChangedMessage {
+  type: "midpointRouteChanged";
+  deviceKey: string;
+  routes: MidpointRoute[];
+}
+
+export interface SinkInputChangedMessage {
+  type: "sinkInputChanged";
+  deviceKey: string;
+  inputPortKey: string;
+  sourceDeviceKey: string;
+  signalType: string;
+}
+
+export type RoutingFeedbackMessage =
+  | RoutingSnapshotMessage
+  | MidpointRouteChangedMessage
+  | SinkInputChangedMessage;
 
 export type LogEventLevel =
   | "Verbose"

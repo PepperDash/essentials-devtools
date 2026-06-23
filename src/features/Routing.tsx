@@ -14,7 +14,7 @@ import {
   useNodesState,
 } from "@xyflow/react";
 import dagre from "dagre";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Dropdown } from "react-bootstrap";
 
 import { meetsMinVersion } from "../shared/functions/meetsMinimumVersion";
@@ -26,6 +26,11 @@ import {
   useGetRoutingDevicesAndTieLinesQuery,
   useGetVersionsQuery,
 } from "../store/apiSlice";
+import { useAppDispatch, useAppSelector } from "../store/hooks";
+import {
+  ROUTING_WS_CONNECT,
+  ROUTING_WS_DISCONNECT,
+} from "../store/routingFeedbackSlice";
 import styles from "./Routing.module.scss";
 import RoutingDeviceNode, {
   HEADER_PX,
@@ -232,6 +237,89 @@ function uniqueSignalTypes(tieLines: TieLine[]): string[] {
   return [...new Set(tieLines.map((tl) => tl.signalType))].sort();
 }
 
+// ─── Signal path tracing ─────────────────────────────────────────────────────
+
+import type { MidpointRoute } from "../store/apiSlice";
+
+/**
+ * Given a clicked edge, traces the full signal path from source to sink through
+ * midpoint devices using midpointRoutes data.  Returns a Set of edge IDs that
+ * form the continuous path.
+ */
+function traceSignalPath(
+  edges: Edge[],
+  clickedEdgeId: string,
+  midpointRoutes: Record<string, MidpointRoute[]>,
+): Set<string> {
+  interface EdgeData {
+    sourceDeviceKey?: string;
+    sourcePortKey?: string;
+    destinationDeviceKey?: string;
+    destinationPortKey?: string;
+  }
+
+  const result = new Set<string>();
+  const clickedEdge = edges.find((e) => e.id === clickedEdgeId);
+  if (!clickedEdge) return result;
+
+  result.add(clickedEdgeId);
+
+  const d = (e: Edge) => (e.data ?? {}) as EdgeData;
+
+  // Build lookup maps:
+  // "deviceKey:portKey" → edge that ARRIVES at that input port
+  const edgeByDestPort = new Map<string, Edge>();
+  // "deviceKey:portKey" → edge that LEAVES from that output port
+  const edgeBySrcPort = new Map<string, Edge>();
+
+  for (const e of edges) {
+    const ed = d(e);
+    const srcKey = `${ed.sourceDeviceKey}:${ed.sourcePortKey}`;
+    const dstKey = `${ed.destinationDeviceKey}:${ed.destinationPortKey}`;
+    edgeBySrcPort.set(srcKey, e);
+    edgeByDestPort.set(dstKey, e);
+  }
+
+  // Trace upstream from the clicked edge's source
+  function traceUpstream(deviceKey: string | undefined, outputPortKey: string | undefined) {
+    if (!deviceKey || !outputPortKey) return;
+    const routes = midpointRoutes[deviceKey];
+    if (!routes) return;
+    // Find ALL input ports that feed this output port
+    const matchingRoutes = routes.filter((r) => r.outputPortKey === outputPortKey);
+    for (const route of matchingRoutes) {
+      const incomingEdge = edgeByDestPort.get(`${deviceKey}:${route.inputPortKey}`);
+      if (!incomingEdge || result.has(incomingEdge.id)) continue;
+      result.add(incomingEdge.id);
+      const ed = d(incomingEdge);
+      traceUpstream(ed.sourceDeviceKey, ed.sourcePortKey);
+    }
+  }
+
+  // Trace downstream from the clicked edge's destination
+  function traceDownstream(deviceKey: string | undefined, inputPortKey: string | undefined) {
+    if (!deviceKey || !inputPortKey) return;
+    const routes = midpointRoutes[deviceKey]; 
+    if (!routes) return;
+    // Find ALL output ports that this input port feeds
+    const matchingRoutes = routes.filter((r) => r.inputPortKey === inputPortKey);
+    for (const route of matchingRoutes) {
+      const outgoingEdge = edgeBySrcPort.get(`${deviceKey}:${route.outputPortKey}`);
+      if (!outgoingEdge || result.has(outgoingEdge.id)) continue;
+      result.add(outgoingEdge.id);
+      const ed = d(outgoingEdge);
+      traceDownstream(ed.destinationDeviceKey, ed.destinationPortKey);
+    }
+  }
+
+  // Start tracing in both directions from the clicked edge
+  const clickedData = d(clickedEdge);
+  traceUpstream(clickedData.sourceDeviceKey, clickedData.sourcePortKey);
+  traceDownstream(clickedData.destinationDeviceKey, clickedData.destinationPortKey);
+
+  return result;
+}
+
 // ─── Node types registry (stable reference outside component) ────────────────
 
 const nodeTypes: NodeTypes = {
@@ -246,6 +334,9 @@ const edgeTypes: EdgeTypes = {
 
 const Routing = () => {
   const { appId } = useAppParams();
+  const dispatch = useAppDispatch();
+  const midpointRoutes = useAppSelector((s) => s.routingFeedback.midpointRoutes);
+  const routingWsConnected = useAppSelector((s) => s.routingFeedback.connected);
   const { data: versions } = useGetVersionsQuery(appId ? { appId } : skipToken);
   const { data, isLoading, isError } = useGetRoutingDevicesAndTieLinesQuery(
     appId ? { appId } : skipToken,
@@ -256,8 +347,44 @@ const Routing = () => {
   const [hiddenDevices, setHiddenDevices] = useState<Set<string>>(new Set());
   const [deviceSearch, setDeviceSearch] = useState("");
   const [hideUnconnectedPorts, setHideUnconnectedPorts] = useState(false);
-  const [selectedEdgeId, setSelectedEdgeId] = useState<string | null>(null);
+  const [selectedEdgeIds, setSelectedEdgeIds] = useState<Set<string>>(new Set());
   const [darkMode, setDarkMode] = useState(true);
+
+  const isV3 = useMemo(() => {
+    const essentialsVersion = versions?.find(
+      (v) => v.Name === "PepperDashEssentials.dll",
+    )?.Version;
+    return essentialsVersion ? meetsMinVersion(essentialsVersion, "3.0.0") : false;
+  }, [versions]);
+
+  // Connect to routing feedback WebSocket when data is available (v3+ only)
+  useEffect(() => {
+    if (!appId || !isV3) return;
+    // Fetch the routing feedback session URL from the API, then connect
+    const baseUrl = `/cws/${appId}/api/routingFeedbackSession`;
+    let cancelled = false;
+
+    fetch(baseUrl)
+      .then((res) => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.json();
+      })
+      .then((session: { url: string; fallbackUrl?: string }) => {
+        if (cancelled) return;
+        dispatch({
+          type: ROUTING_WS_CONNECT,
+          payload: { url: session.url, fallbackUrl: session.fallbackUrl },
+        });
+      })
+      .catch((err) => {
+        console.warn("[routing-ws] Failed to start feedback session:", err);
+      });
+
+    return () => {
+      cancelled = true;
+      dispatch({ type: ROUTING_WS_DISCONNECT });
+    };
+  }, [appId, isV3, dispatch]);
 
   const sortedDevices = useMemo(
     () =>
@@ -302,6 +429,7 @@ const Routing = () => {
         data: {
           ...n.data,
           darkMode,
+          currentRoutes: midpointRoutes[n.id],
           onHide: () =>
             setHiddenDevices((prev) => {
               const next = new Set(prev);
@@ -312,7 +440,7 @@ const Routing = () => {
       })),
     );
     setEdges(layoutEdges);
-    setSelectedEdgeId(null);
+    setSelectedEdgeIds(new Set());
   }, [
     data,
     hiddenTypes,
@@ -320,19 +448,20 @@ const Routing = () => {
     hiddenDevices,
     hideUnconnectedPorts,
     darkMode,
+    midpointRoutes,
     setNodes,
     setEdges,
   ]);
 
-  // Re-style edges when selection changes without triggering a layout rebuild.
+  // Re-style edges and update node highlights when selection changes.
   useEffect(() => {
     setEdges((eds) =>
       eds.map((e) => {
         const baseColor =
           (e.data as { signalColor?: string } | undefined)?.signalColor ??
           FALLBACK_COLOR;
-        const isSelected = selectedEdgeId !== null && e.id === selectedEdgeId;
-        if (selectedEdgeId === null) {
+        const isSelected = selectedEdgeIds.size > 0 && selectedEdgeIds.has(e.id);
+        if (selectedEdgeIds.size === 0) {
           return {
             ...e,
             data: { ...e.data, selected: false },
@@ -350,15 +479,97 @@ const Routing = () => {
         };
       }),
     );
-  }, [selectedEdgeId, setEdges]);
 
+    // Compute which internal routes on each midpoint node are part of the path
+    if (selectedEdgeIds.size === 0) {
+      setNodes((nds) =>
+        nds.map((n) => ({
+          ...n,
+          data: { ...n.data, highlightedRouteKeys: null },
+        })),
+      );
+    } else {
+      const selectedDestPorts = new Set<string>();
+      const selectedSrcPorts = new Set<string>();
+      for (const e of edgesRef.current) {
+        if (selectedEdgeIds.has(e.id)) {
+          const ed = e.data as { sourceDeviceKey?: string; sourcePortKey?: string; destinationDeviceKey?: string; destinationPortKey?: string } | undefined;
+          if (ed?.destinationDeviceKey && ed?.destinationPortKey) {
+            selectedDestPorts.add(`${ed.destinationDeviceKey}:${ed.destinationPortKey}`);
+          }
+          if (ed?.sourceDeviceKey && ed?.sourcePortKey) {
+            selectedSrcPorts.add(`${ed.sourceDeviceKey}:${ed.sourcePortKey}`);
+          }
+        }
+      }
+
+      setNodes((nds) =>
+        nds.map((n) => {
+          const routes = midpointRoutes[n.id];
+          if (!routes || routes.length === 0) {
+            return { ...n, data: { ...n.data, highlightedRouteKeys: new Set<string>() } };
+          }
+          const highlighted = new Set<string>();
+          for (const r of routes) {
+            const inputInPath = selectedDestPorts.has(`${n.id}:${r.inputPortKey}`);
+            const outputInPath = selectedSrcPorts.has(`${n.id}:${r.outputPortKey}`);
+            if (inputInPath && outputInPath) {
+              highlighted.add(`${r.inputPortKey}:${r.outputPortKey}`);
+            }
+          }
+          return { ...n, data: { ...n.data, highlightedRouteKeys: highlighted } };
+        }),
+      );
+    }
+  }, [selectedEdgeIds, setEdges, setNodes, midpointRoutes]);
+
+  // Keep a ref to current edges for path tracing without triggering re-renders
+  const edgesRef = useRef<Edge[]>([]);
+  useEffect(() => {
+    edgesRef.current = edges;
+  }, [edges]);
+
+  // Edge click: highlight only the single clicked edge
   const onEdgeClick = useCallback(
     (_: React.MouseEvent, edge: Edge) =>
-      setSelectedEdgeId((prev) => (prev === edge.id ? null : edge.id)),
+      setSelectedEdgeIds((prev) => {
+        if (prev.has(edge.id)) return new Set();
+        return new Set([edge.id]);
+      }),
     [],
   );
 
-  const onPaneClick = useCallback(() => setSelectedEdgeId(null), []);
+  // Node click: trace all signal paths through/from/to the clicked device
+  const onNodeClick = useCallback(
+    (_: React.MouseEvent, node: Node) => {
+      const currentEdges = edgesRef.current;
+      const allPathEdges = new Set<string>();
+
+      // Find all edges connected to this device and trace each one
+      for (const e of currentEdges) {
+        const ed = e.data as { sourceDeviceKey?: string; destinationDeviceKey?: string } | undefined;
+        if (ed?.sourceDeviceKey === node.id || ed?.destinationDeviceKey === node.id) {
+          const pathFromEdge = traceSignalPath(currentEdges, e.id, midpointRoutes);
+          for (const id of pathFromEdge) {
+            allPathEdges.add(id);
+          }
+        }
+      }
+
+      setSelectedEdgeIds((prev) => {
+        // Toggle off if clicking the same node again
+        if (prev.size > 0 && allPathEdges.size > 0) {
+          const prevArr = [...prev];
+          const allMatch = prevArr.every((id) => allPathEdges.has(id)) && prevArr.length === allPathEdges.size;
+          if (allMatch) return new Set();
+        }
+        return allPathEdges;
+      });
+    },
+    [midpointRoutes],
+  );
+
+  const onPaneClick = useCallback(() => setSelectedEdgeIds(new Set()), []);
 
   const onEdgeMouseEnter = useCallback(
     (_: React.MouseEvent, edge: Edge) =>
@@ -584,6 +795,12 @@ const Routing = () => {
               Dark mode
             </label>
           </div>
+          <span
+            className={`badge ${routingWsConnected ? "bg-success" : "bg-secondary"}`}
+            title={routingWsConnected ? "Live routing feedback connected" : "Live routing feedback disconnected"}
+          >
+            {routingWsConnected ? "Live" : "Offline"}
+          </span>
         </div>
       </div>
 
@@ -595,6 +812,7 @@ const Routing = () => {
           nodes={nodes}
           edges={edges}
           onNodesChange={onNodesChange}
+          onNodeClick={onNodeClick}
           onEdgeClick={onEdgeClick}
           onEdgeMouseEnter={onEdgeMouseEnter}
           onEdgeMouseLeave={onEdgeMouseLeave}

@@ -1,18 +1,32 @@
 import { Handle, NodeProps, Position } from "@xyflow/react";
-import { RoutingDevice } from "../store/apiSlice";
+import { MidpointRoute, RoutingDevice } from "../store/apiSlice";
 import styles from "./RoutingDeviceNode.module.scss";
+
+const SIGNAL_COLORS: Record<string, string> = {
+  AudioVideo: "#6f42c1",
+  Video: "#0d6efd",
+  Audio: "#dc3545",
+  "Audio, SecondaryAudio": "#dc3545",
+  "UsbOutput, UsbInput": "#fd7e14",
+  UsbOutput: "#fd7e14",
+  UsbInput: "#fd7e14",
+};
+const FALLBACK_COLOR = "#adb5bd";
 
 export type RoutingDeviceNodeData = {
   device: RoutingDevice;
   onHide?: () => void;
   darkMode?: boolean;
+  currentRoutes?: MidpointRoute[];
+  /** When edges are selected, contains the set of "inputPortKey:outputPortKey" pairs on this node that are part of the path. null = no selection active. */
+  highlightedRouteKeys?: Set<string> | null;
 };
 
 const PORT_ROW_PX = 28;
 const HEADER_PX = 38;
 
 const RoutingDeviceNode = ({ data }: NodeProps) => {
-  const { device, onHide, darkMode } = data as RoutingDeviceNodeData;
+  const { device, onHide, darkMode, currentRoutes, highlightedRouteKeys } = data as RoutingDeviceNodeData;
   const inputPorts = device.inputPorts ?? [];
   const outputPorts = device.outputPorts ?? [];
   const portRows = Math.max(inputPorts.length, outputPorts.length, 1);
@@ -93,6 +107,47 @@ const RoutingDeviceNode = ({ data }: NodeProps) => {
             </div>
           );
         })}
+
+        {/* Internal route SVG overlay */}
+        {currentRoutes && currentRoutes.length > 0 && (
+          <svg
+            className={styles.internalRouteSvg}
+            width="100%"
+            height={bodyHeight}
+            style={{ position: "absolute", top: 0, left: 0, pointerEvents: "none" }}
+          >
+            {currentRoutes.map((route, idx) => {
+              const inIdx = inputPorts.findIndex((p) => p.key === route.inputPortKey);
+              const outIdx = outputPorts.findIndex((p) => p.key === route.outputPortKey);
+              if (inIdx === -1 || outIdx === -1) return null;
+
+              const inY = ((inIdx + 0.5) / portRows) * bodyHeight;
+              const outY = ((outIdx + 0.5) / portRows) * bodyHeight;
+              const color = SIGNAL_COLORS[route.signalType] ?? FALLBACK_COLOR;
+
+              // Determine if this route is highlighted or dimmed
+              const routeKey = `${route.inputPortKey}:${route.outputPortKey}`;
+              const isHighlighted = highlightedRouteKeys == null || highlightedRouteKeys.has(routeKey);
+
+              // Bezier control points for a smooth S-curve
+              const x1 = 24;
+              const x2 = 256;
+              const cx1 = x1 + (x2 - x1) * 0.4;
+              const cx2 = x2 - (x2 - x1) * 0.4;
+
+              return (
+                <path
+                  key={`route-${idx}`}
+                  d={`M ${x1} ${inY} C ${cx1} ${inY}, ${cx2} ${outY}, ${x2} ${outY}`}
+                  stroke={isHighlighted ? color : "#ccc"}
+                  strokeWidth={isHighlighted && highlightedRouteKeys != null ? 3 : 2}
+                  strokeOpacity={isHighlighted ? 0.7 : 0.2}
+                  fill="none"
+                />
+              );
+            })}
+          </svg>
+        )}
 
         {/* Output port handles (right side) */}
         {outputPorts.map((port, i) => {
