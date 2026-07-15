@@ -1,6 +1,7 @@
 import { FormEvent, useState } from 'react';
-import { Alert, Button, Form, Spinner } from 'react-bootstrap';
+import { Alert, Button, Form, InputGroup, Spinner } from 'react-bootstrap';
 import { Navigate, useLocation, useNavigate } from 'react-router-dom';
+import EyeIcon from '../shared/components/EyeIcon';
 import useAppParams from '../shared/hooks/useAppParams';
 import { useSetLoginCredentialsMutation } from '../store/apiSlice';
 import {
@@ -33,6 +34,7 @@ const LoginForm = () => {
 
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -102,14 +104,26 @@ const LoginForm = () => {
           </Form.Group>
           <Form.Group className="mb-4" controlId="password">
             <Form.Label>Password</Form.Label>
-            <Form.Control
-              type="password"
-              autoComplete="current-password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              disabled={isLoading}
-            />
+            <InputGroup>
+              <Form.Control
+                type={showPassword ? "text" : "password"}
+                autoComplete="current-password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                disabled={isLoading}
+              />
+              <Button
+                type="button"
+                variant="outline-secondary"
+                onClick={() => setShowPassword((prev) => !prev)}
+                disabled={isLoading}
+                aria-label={showPassword ? "Hide password" : "Show password"}
+                tabIndex={-1}
+              >
+                <EyeIcon slashed={showPassword} />
+              </Button>
+            </InputGroup>
           </Form.Group>
           <Button type="submit" className="w-100" disabled={isLoading}>
             {isLoading ? (

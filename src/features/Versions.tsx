@@ -24,24 +24,26 @@ const Versions = () => {
   });
 
   return (
-    <div className="d-flex flex-column overflow-hidden h-100">
-      <h2 className='mb-2'>Loaded Assemblies and Versions</h2>
-      <table className="table table-striped">
-        <thead>
-          <tr>
-            <th>Name</th>
-            <th>Version</th>
-          </tr>
-        </thead>
-        <tbody>
-          {sorted?.map((i) => (
-            <tr key={i.Name}>
-              <td>{i.Name}</td>
-              <td>{i.Version}</td>
+    <div className="d-flex flex-column h-100" style={{ minHeight: 0 }}>
+      <h2 className="mb-2 flex-shrink-0">Loaded Assemblies and Versions</h2>
+      <div className="flex-grow-1 overflow-auto" style={{ minHeight: 0 }}>
+        <table className="table table-striped">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Version</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {sorted?.map((i) => (
+              <tr key={i.Name}>
+                <td>{i.Name}</td>
+                <td>{i.Version}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 };

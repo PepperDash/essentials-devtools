@@ -477,10 +477,21 @@ export interface CurrentRouteGroupInfo {
   routes: ActiveRouteInfo[];
 }
 
+export interface SinkCurrentSourceInfo {
+  deviceKey: string;
+  inputPortKey: string;
+  sourceDeviceKey: string;
+  signalType: string;
+}
+
 export interface RoutingDevicesAndTieLines {
   devices: RoutingDevice[];
   tieLines: TieLine[];
   currentRoutes: CurrentRouteGroupInfo[];
+  // Current source per sink device, read directly from each sink's own current-source
+  // bookkeeping. Covers routes made via device-specific bulk APIs (e.g. dynamic multiview
+  // layouts) that currentRoutes does not, since those never create a RouteDescriptor/TieLine.
+  sinkCurrentSources: SinkCurrentSourceInfo[];
 }
 
 // ─── Live routing feedback (WebSocket) types ─────────────────────────────────
@@ -500,7 +511,10 @@ export interface SinkRoute {
 export interface RoutingSnapshotMessage {
   type: "snapshot";
   midpointRoutes: Record<string, MidpointRoute[]>;
-  sinkRoutes: Record<string, SinkRoute>;
+  // A device implementing IRoutingSinkWithLayouts (e.g. a multiview decoder) can have multiple
+  // simultaneous tile routes reported under its one device key, so this is a list per device
+  // rather than a single route.
+  sinkRoutes: Record<string, SinkRoute[]>;
 }
 
 export interface MidpointRouteChangedMessage {

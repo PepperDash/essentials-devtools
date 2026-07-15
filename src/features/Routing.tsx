@@ -2,16 +2,16 @@ import "@xyflow/react/dist/style.css";
 
 import { skipToken } from "@reduxjs/toolkit/query";
 import {
-  Background,
-  Controls,
-  Edge,
-  EdgeTypes,
-  MiniMap,
-  Node,
-  NodeTypes,
-  ReactFlow,
-  useEdgesState,
-  useNodesState,
+    Background,
+    Controls,
+    Edge,
+    EdgeTypes,
+    MiniMap,
+    Node,
+    NodeTypes,
+    ReactFlow,
+    useEdgesState,
+    useNodesState,
 } from "@xyflow/react";
 import dagre from "dagre";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -20,23 +20,24 @@ import { Alert, Dropdown } from "react-bootstrap";
 import { meetsMinVersion } from "../shared/functions/meetsMinimumVersion";
 import useAppParams from "../shared/hooks/useAppParams";
 import {
-  RoutingDevice,
-  RoutingDevicesAndTieLines,
-  TieLine,
-  useGetRoutingDevicesAndTieLinesQuery,
-  useGetVersionsQuery,
+    RoutingDevice,
+    RoutingDevicesAndTieLines,
+    SinkRoute,
+    TieLine,
+    useGetRoutingDevicesAndTieLinesQuery,
+    useGetVersionsQuery,
 } from "../store/apiSlice";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
 import {
-  ROUTING_WS_CONNECT,
-  ROUTING_WS_DISCONNECT,
-  routingSnapshotReceived,
+    ROUTING_WS_CONNECT,
+    ROUTING_WS_DISCONNECT,
+    routingSnapshotReceived,
 } from "../store/routingFeedbackSlice";
 import styles from "./Routing.module.scss";
 import RoutingDeviceNode, {
-  HEADER_PX,
-  PORT_ROW_PX,
-  RoutingDeviceNodeData,
+    HEADER_PX,
+    PORT_ROW_PX,
+    RoutingDeviceNodeData,
 } from "./RoutingDeviceNode";
 import TieLineEdge from "./TieLineEdge";
 
@@ -86,16 +87,51 @@ function buildGraph(
   hideUnconnected: boolean,
   hiddenDevices: Set<string>,
   hideUnconnectedPorts: boolean,
+  sinkRoutes: Record<string, SinkRoute[]>,
 ): { nodes: Node[]; edges: Edge[] } {
-  // Devices that appear in at least one *visible* tie line endpoint
+  // Live, tile-aware current-source feedback (sinkRoutes) reflects routes made via
+  // device-specific bulk APIs (e.g. ApplyDynamicLayout) that never create a real TieLine. Turn
+  // these into synthetic tie-line-shaped edges so they're visualized just like static wiring -
+  // but only where no real tie line already targets that exact device+port (a real tie line's
+  // active route is already covered by midpointRoutes/tie-line tracing).
+  const realTieLineDestinations = new Set(
+    data.tieLines.map((tl) => `${tl.destinationDeviceKey}:${tl.destinationPortKey}`),
+  );
+  const deviceOutputPortKey = new Map<string, string>(
+    data.devices
+      .filter((d) => (d.outputPorts ?? []).length > 0)
+      .map((d) => [d.key, d.outputPorts![0].key]),
+  );
+  const syntheticTieLines: TieLine[] = Object.entries(sinkRoutes).flatMap(
+    ([deviceKey, routes]) =>
+      routes
+        .filter((r) => !realTieLineDestinations.has(`${deviceKey}:${r.inputPortKey}`))
+        .filter((r) => deviceOutputPortKey.has(r.sourceDeviceKey))
+        .map((r) => ({
+          sourceDeviceKey: r.sourceDeviceKey,
+          sourcePortKey: deviceOutputPortKey.get(r.sourceDeviceKey)!,
+          destinationDeviceKey: deviceKey,
+          destinationPortKey: r.inputPortKey,
+          signalType: r.signalType,
+          isInternal: false,
+        })),
+  );
+  const allTieLines = [...data.tieLines, ...syntheticTieLines];
+  const syntheticTieLineKeys = new Set(
+    syntheticTieLines.map(
+      (tl) => `${tl.sourceDeviceKey}|${tl.sourcePortKey}|${tl.destinationDeviceKey}|${tl.destinationPortKey}`,
+    ),
+  );
+
+  // Devices that appear in at least one *visible* tie line endpoint (real or synthetic)
   const connectedKeys = new Set<string>(
-    data.tieLines
+    allTieLines
       .filter((tl) => !hiddenTypes.has(tl.signalType))
       .flatMap((tl) => [tl.sourceDeviceKey, tl.destinationDeviceKey]),
   );
 
-  // Tie lines that pass all active filters (used for port-level filtering)
-  const visibleTieLines = data.tieLines.filter(
+  // Tie lines (real or synthetic) that pass all active filters (used for port-level filtering)
+  const visibleTieLines = allTieLines.filter(
     (tl) =>
       !hiddenTypes.has(tl.signalType) &&
       !hiddenDevices.has(tl.sourceDeviceKey) &&
@@ -200,34 +236,44 @@ function buildGraph(
     },
   );
 
-  // Map tieLines → React Flow edges, filtering by hidden signal types and hidden devices.
-  // All tie lines are rendered regardless of whether they were excluded from
-  // the layout pass — backwards edges still appear as connections on the canvas.
-  const edges: Edge[] = data.tieLines
+  // Map tieLines (real + synthetic sink-route edges) → React Flow edges, filtering by hidden
+  // signal types and hidden devices. All tie lines are rendered regardless of whether they were
+  // excluded from the layout pass — backwards edges still appear as connections on the canvas.
+  const edges: Edge[] = allTieLines
     .filter(
       (tl) =>
         !hiddenTypes.has(tl.signalType) &&
         !hiddenDevices.has(tl.sourceDeviceKey) &&
         !hiddenDevices.has(tl.destinationDeviceKey),
     )
-    .map((tl, idx) => ({
-      id: `tl-${idx}-${tl.sourceDeviceKey}-${tl.sourcePortKey}-${tl.destinationDeviceKey}-${tl.destinationPortKey}`,
-      source: tl.sourceDeviceKey,
-      sourceHandle: tl.sourcePortKey,
-      target: tl.destinationDeviceKey,
-      targetHandle: tl.destinationPortKey,
-      style: { stroke: signalColor(tl.signalType), strokeWidth: 1.5 },
-      data: {
-        signalColor: signalColor(tl.signalType),
-        sourceDeviceKey: tl.sourceDeviceKey,
-        sourcePortKey: tl.sourcePortKey,
-        destinationDeviceKey: tl.destinationDeviceKey,
-        destinationPortKey: tl.destinationPortKey,
-        signalType: tl.signalType,
-      },
-      type: "tieLine",
-      animated: false,
-    }));
+    .map((tl, idx) => {
+      const isLiveOnly = syntheticTieLineKeys.has(
+        `${tl.sourceDeviceKey}|${tl.sourcePortKey}|${tl.destinationDeviceKey}|${tl.destinationPortKey}`,
+      );
+      return {
+        id: `tl-${idx}-${tl.sourceDeviceKey}-${tl.sourcePortKey}-${tl.destinationDeviceKey}-${tl.destinationPortKey}`,
+        source: tl.sourceDeviceKey,
+        sourceHandle: tl.sourcePortKey,
+        target: tl.destinationDeviceKey,
+        targetHandle: tl.destinationPortKey,
+        style: {
+          stroke: signalColor(tl.signalType),
+          strokeWidth: 1.5,
+          ...(isLiveOnly ? { strokeDasharray: "6 4" } : {}),
+        },
+        data: {
+          signalColor: signalColor(tl.signalType),
+          sourceDeviceKey: tl.sourceDeviceKey,
+          sourcePortKey: tl.sourcePortKey,
+          destinationDeviceKey: tl.destinationDeviceKey,
+          destinationPortKey: tl.destinationPortKey,
+          signalType: tl.signalType,
+          isLiveOnly,
+        },
+        type: "tieLine",
+        animated: false,
+      };
+    });
 
   return { nodes, edges };
 }
@@ -337,6 +383,7 @@ const Routing = () => {
   const { appId } = useAppParams();
   const dispatch = useAppDispatch();
   const midpointRoutes = useAppSelector((s) => s.routingFeedback.midpointRoutes);
+  const sinkRoutes = useAppSelector((s) => s.routingFeedback.sinkRoutes);
   const routingWsConnected = useAppSelector((s) => s.routingFeedback.connected);
   const failedUrls = useAppSelector((s) => s.routingFeedback.failedUrls);
   const { data: versions } = useGetVersionsQuery(appId ? { appId } : skipToken);
@@ -361,11 +408,10 @@ const Routing = () => {
 
   // Seed routing feedback state from the HTTP response before the WebSocket connects
   useEffect(() => {
-    if (!data?.currentRoutes || !isV3) return;
+    if (!data || !isV3) return;
     const midpoints: Record<string, { inputPortKey: string; outputPortKey: string; signalType: string }[]> = {};
-    const sinks: Record<string, { inputPortKey: string; sourceDeviceKey: string; signalType: string }> = {};
 
-    for (const group of data.currentRoutes) {
+    for (const group of data.currentRoutes ?? []) {
       for (const route of group.routes) {
         // Each step is a switching device in the route path
         for (const step of route.steps) {
@@ -378,15 +424,25 @@ const Routing = () => {
             signalType: group.signalType,
           });
         }
-        // The destination device is a sink
-        if (route.destinationDeviceKey && route.destinationInputPortKey) {
-          sinks[route.destinationDeviceKey] = {
-            inputPortKey: route.destinationInputPortKey,
-            sourceDeviceKey: route.sourceDeviceKey,
-            signalType: group.signalType,
-          };
-        }
       }
+    }
+
+    // Sink current sources come from sinkCurrentSources, read directly from each sink's own
+    // current-source bookkeeping on the backend - unlike currentRoutes, this also reflects routes
+    // made via device-specific bulk APIs (e.g. dynamic multiview layouts) that never create a
+    // RouteDescriptor/TieLine at all. A device implementing IRoutingSinkWithLayouts (e.g. a
+    // multiview decoder) can have multiple simultaneous tile routes under its one device key, so
+    // this is a list per device.
+    const sinks: Record<string, { inputPortKey: string; sourceDeviceKey: string; signalType: string }[]> = {};
+    for (const source of data.sinkCurrentSources ?? []) {
+      if (!sinks[source.deviceKey]) {
+        sinks[source.deviceKey] = [];
+      }
+      sinks[source.deviceKey].push({
+        inputPortKey: source.inputPortKey,
+        sourceDeviceKey: source.sourceDeviceKey,
+        signalType: source.signalType,
+      });
     }
 
     dispatch(
@@ -396,7 +452,7 @@ const Routing = () => {
         sinkRoutes: sinks,
       }),
     );
-  }, [data?.currentRoutes, isV3, dispatch]);
+  }, [data, isV3, dispatch]);
 
   // Connect to routing feedback WebSocket when data is available (v3+ only)
   useEffect(() => {
@@ -463,6 +519,7 @@ const Routing = () => {
       hideUnconnected,
       hiddenDevices,
       hideUnconnectedPorts,
+      sinkRoutes,
     );
     setNodes(
       layoutNodes.map((n) => ({
@@ -490,6 +547,7 @@ const Routing = () => {
     hideUnconnectedPorts,
     darkMode,
     midpointRoutes,
+    sinkRoutes,
     setNodes,
     setEdges,
   ]);
@@ -501,12 +559,16 @@ const Routing = () => {
         const baseColor =
           (e.data as { signalColor?: string } | undefined)?.signalColor ??
           FALLBACK_COLOR;
+        const isLiveOnly = Boolean(
+          (e.data as { isLiveOnly?: boolean } | undefined)?.isLiveOnly,
+        );
+        const dash = isLiveOnly ? { strokeDasharray: "6 4" } : {};
         const isSelected = selectedEdgeIds.size > 0 && selectedEdgeIds.has(e.id);
         if (selectedEdgeIds.size === 0) {
           return {
             ...e,
             data: { ...e.data, selected: false },
-            style: { stroke: baseColor, strokeWidth: 1.5 },
+            style: { stroke: baseColor, strokeWidth: 1.5, ...dash },
           };
         }
         return {
@@ -516,6 +578,7 @@ const Routing = () => {
             stroke: isSelected ? baseColor : "#ccc",
             strokeWidth: isSelected ? 3.5 : 1.5,
             opacity: isSelected ? 1 : 0.35,
+            ...dash,
           },
         };
       }),

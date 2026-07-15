@@ -1,15 +1,17 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import {
-  MidpointRoute,
-  MidpointRouteChangedMessage,
-  RoutingSnapshotMessage,
-  SinkInputChangedMessage,
-  SinkRoute,
+    MidpointRoute,
+    MidpointRouteChangedMessage,
+    RoutingSnapshotMessage,
+    SinkInputChangedMessage,
+    SinkRoute,
 } from "./apiSlice";
 
 export interface RoutingFeedbackState {
   midpointRoutes: Record<string, MidpointRoute[]>;
-  sinkRoutes: Record<string, SinkRoute>;
+  // A device implementing IRoutingSinkWithLayouts (e.g. a multiview decoder) can have multiple
+  // simultaneous tile routes under its one device key, so this is a list per device.
+  sinkRoutes: Record<string, SinkRoute[]>;
   connected: boolean;
   failedUrls: string[];
 }
@@ -49,11 +51,17 @@ const routingFeedbackSlice = createSlice({
       state.midpointRoutes[action.payload.deviceKey] = action.payload.routes;
     },
     sinkInputChanged(state, action: PayloadAction<SinkInputChangedMessage>) {
-      state.sinkRoutes[action.payload.deviceKey] = {
-        inputPortKey: action.payload.inputPortKey,
-        sourceDeviceKey: action.payload.sourceDeviceKey,
-        signalType: action.payload.signalType,
-      };
+      const { deviceKey, inputPortKey, sourceDeviceKey, signalType } =
+        action.payload;
+      const existing = state.sinkRoutes[deviceKey] ?? [];
+      const updated: SinkRoute = { inputPortKey, sourceDeviceKey, signalType };
+      const idx = existing.findIndex((r) => r.inputPortKey === inputPortKey);
+      if (idx >= 0) {
+        existing[idx] = updated;
+      } else {
+        existing.push(updated);
+      }
+      state.sinkRoutes[deviceKey] = existing;
     },
     routingFeedbackReset() {
       return initialState;
