@@ -1,7 +1,9 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import {
+    LayoutChangedMessage,
     MidpointRoute,
     MidpointRouteChangedMessage,
+    MultiviewLayoutState,
     RoutingSnapshotMessage,
     SinkInputChangedMessage,
     SinkRoute,
@@ -12,6 +14,9 @@ export interface RoutingFeedbackState {
   // A device implementing IRoutingSinkWithLayouts (e.g. a multiview decoder) can have multiple
   // simultaneous tile routes under its one device key, so this is a list per device.
   sinkRoutes: Record<string, SinkRoute[]>;
+  // Current multiview canvas/tile layout for every device implementing
+  // IRoutingSinkWithLayoutState, keyed by device key.
+  layouts: Record<string, MultiviewLayoutState>;
   connected: boolean;
   failedUrls: string[];
 }
@@ -19,6 +24,7 @@ export interface RoutingFeedbackState {
 const initialState: RoutingFeedbackState = {
   midpointRoutes: {},
   sinkRoutes: {},
+  layouts: {},
   connected: false,
   failedUrls: [],
 };
@@ -43,6 +49,7 @@ const routingFeedbackSlice = createSlice({
     ) {
       state.midpointRoutes = action.payload.midpointRoutes;
       state.sinkRoutes = action.payload.sinkRoutes;
+      state.layouts = action.payload.layouts ?? {};
     },
     midpointRouteChanged(
       state,
@@ -63,6 +70,9 @@ const routingFeedbackSlice = createSlice({
       }
       state.sinkRoutes[deviceKey] = existing;
     },
+    layoutChanged(state, action: PayloadAction<LayoutChangedMessage>) {
+      state.layouts[action.payload.deviceKey] = action.payload.layout;
+    },
     routingFeedbackReset() {
       return initialState;
     },
@@ -76,6 +86,7 @@ export const {
   routingSnapshotReceived,
   midpointRouteChanged,
   sinkInputChanged,
+  layoutChanged,
   routingFeedbackReset,
 } = routingFeedbackSlice.actions;
 

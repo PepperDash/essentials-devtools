@@ -2,16 +2,16 @@ import "@xyflow/react/dist/style.css";
 
 import { skipToken } from "@reduxjs/toolkit/query";
 import {
-    Background,
-    Controls,
-    Edge,
-    EdgeTypes,
-    MiniMap,
-    Node,
-    NodeTypes,
-    ReactFlow,
-    useEdgesState,
-    useNodesState,
+  Background,
+  Controls,
+  Edge,
+  EdgeTypes,
+  MiniMap,
+  Node,
+  NodeTypes,
+  ReactFlow,
+  useEdgesState,
+  useNodesState,
 } from "@xyflow/react";
 import dagre from "dagre";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -20,24 +20,25 @@ import { Alert, Dropdown } from "react-bootstrap";
 import { meetsMinVersion } from "../shared/functions/meetsMinimumVersion";
 import useAppParams from "../shared/hooks/useAppParams";
 import {
-    RoutingDevice,
-    RoutingDevicesAndTieLines,
-    SinkRoute,
-    TieLine,
-    useGetRoutingDevicesAndTieLinesQuery,
-    useGetVersionsQuery,
+  RoutingDevice,
+  RoutingDevicesAndTieLines,
+  SinkRoute,
+  TieLine,
+  useGetRoutingDevicesAndTieLinesQuery,
+  useGetVersionsQuery,
 } from "../store/apiSlice";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
 import {
-    ROUTING_WS_CONNECT,
-    ROUTING_WS_DISCONNECT,
-    routingSnapshotReceived,
+  ROUTING_WS_CONNECT,
+  ROUTING_WS_DISCONNECT,
+  routingSnapshotReceived,
 } from "../store/routingFeedbackSlice";
+import MultiviewLayoutPanel, { MultiviewLayoutPanelPosition } from "./MultiviewLayoutPanel";
 import styles from "./Routing.module.scss";
 import RoutingDeviceNode, {
-    HEADER_PX,
-    PORT_ROW_PX,
-    RoutingDeviceNodeData,
+  HEADER_PX,
+  PORT_ROW_PX,
+  RoutingDeviceNodeData,
 } from "./RoutingDeviceNode";
 import TieLineEdge from "./TieLineEdge";
 
@@ -384,10 +385,11 @@ const Routing = () => {
   const dispatch = useAppDispatch();
   const midpointRoutes = useAppSelector((s) => s.routingFeedback.midpointRoutes);
   const sinkRoutes = useAppSelector((s) => s.routingFeedback.sinkRoutes);
+  const layouts = useAppSelector((s) => s.routingFeedback.layouts);
   const routingWsConnected = useAppSelector((s) => s.routingFeedback.connected);
   const failedUrls = useAppSelector((s) => s.routingFeedback.failedUrls);
   const { data: versions } = useGetVersionsQuery(appId ? { appId } : skipToken);
-  const { data, isLoading, isError } = useGetRoutingDevicesAndTieLinesQuery(
+  const { data, isLoading, isError, refetch } = useGetRoutingDevicesAndTieLinesQuery(
     appId ? { appId } : skipToken,
   );
 
@@ -398,6 +400,40 @@ const Routing = () => {
   const [hideUnconnectedPorts, setHideUnconnectedPorts] = useState(false);
   const [selectedEdgeIds, setSelectedEdgeIds] = useState<Set<string>>(new Set());
   const [darkMode, setDarkMode] = useState(true);
+
+  // Floating, freely-draggable multiview layout panels - independent of graph node positions
+  // (which move whenever dagre re-runs in response to routing/filter changes). Keyed by device
+  // key; presence in the record means the panel is open. Persists until explicitly closed.
+  const [layoutPanels, setLayoutPanels] = useState<Record<string, MultiviewLayoutPanelPosition>>({});
+  // Tile number to highlight in each device's open layout panel, based on the current graph
+  // edge/path selection (see the selection-highlight effect below).
+  const [selectedTileNumberByDevice, setSelectedTileNumberByDevice] = useState<Record<string, number>>({});
+
+  const toggleLayoutPanel = useCallback((deviceKey: string) => {
+    setLayoutPanels((prev) => {
+      if (prev[deviceKey]) {
+        const next = { ...prev };
+        delete next[deviceKey];
+        return next;
+      }
+      // Cascade new panels so they don't stack exactly on top of one another.
+      const count = Object.keys(prev).length;
+      return { ...prev, [deviceKey]: { x: 40 + count * 24, y: 40 + count * 24 } };
+    });
+  }, []);
+
+  const closeLayoutPanel = useCallback((deviceKey: string) => {
+    setLayoutPanels((prev) => {
+      if (!(deviceKey in prev)) return prev;
+      const next = { ...prev };
+      delete next[deviceKey];
+      return next;
+    });
+  }, []);
+
+  const moveLayoutPanel = useCallback((deviceKey: string, position: MultiviewLayoutPanelPosition) => {
+    setLayoutPanels((prev) => (prev[deviceKey] ? { ...prev, [deviceKey]: position } : prev));
+  }, []);
 
   const isV3 = useMemo(() => {
     const essentialsVersion = versions?.find(
@@ -450,38 +486,57 @@ const Routing = () => {
         type: "snapshot",
         midpointRoutes: midpoints,
         sinkRoutes: sinks,
+        layouts: data.multiviewLayouts ?? {},
       }),
     );
   }, [data, isV3, dispatch]);
 
+  // Fetches the routing feedback session URL from the API, then connects the WebSocket. Shared
+  // by the mount effect below and the manual refresh button.
+  const connectRoutingWebSocket = useCallback(
+    (onCancelledRef?: { current: boolean }) => {
+      if (!appId || !isV3) return;
+      const baseUrl = `/cws/${appId}/api/routingFeedbackSession`;
+
+      fetch(baseUrl)
+        .then((res) => {
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          return res.json();
+        })
+        .then((session: { url: string; fallbackUrl?: string }) => {
+          if (onCancelledRef?.current) return;
+          dispatch({
+            type: ROUTING_WS_CONNECT,
+            payload: { url: session.url, fallbackUrl: session.fallbackUrl },
+          });
+        })
+        .catch((err) => {
+          console.warn("[routing-ws] Failed to start feedback session:", err);
+        });
+    },
+    [appId, isV3, dispatch],
+  );
+
   // Connect to routing feedback WebSocket when data is available (v3+ only)
   useEffect(() => {
     if (!appId || !isV3) return;
-    // Fetch the routing feedback session URL from the API, then connect
-    const baseUrl = `/cws/${appId}/api/routingFeedbackSession`;
-    let cancelled = false;
-
-    fetch(baseUrl)
-      .then((res) => {
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        return res.json();
-      })
-      .then((session: { url: string; fallbackUrl?: string }) => {
-        if (cancelled) return;
-        dispatch({
-          type: ROUTING_WS_CONNECT,
-          payload: { url: session.url, fallbackUrl: session.fallbackUrl },
-        });
-      })
-      .catch((err) => {
-        console.warn("[routing-ws] Failed to start feedback session:", err);
-      });
+    const cancelledRef = { current: false };
+    connectRoutingWebSocket(cancelledRef);
 
     return () => {
-      cancelled = true;
+      cancelledRef.current = true;
       dispatch({ type: ROUTING_WS_DISCONNECT });
     };
-  }, [appId, isV3, dispatch]);
+  }, [appId, isV3, dispatch, connectRoutingWebSocket]);
+
+  // Manual refresh: reloads the routing devices/tie-lines snapshot over HTTP and forces the
+  // WebSocket to disconnect and reconnect (e.g. after the routing feedback server was restarted,
+  // or its connection got stuck).
+  const handleRefreshClick = useCallback(() => {
+    refetch();
+    dispatch({ type: ROUTING_WS_DISCONNECT });
+    connectRoutingWebSocket();
+  }, [refetch, dispatch, connectRoutingWebSocket]);
 
   const sortedDevices = useMemo(
     () =>
@@ -508,6 +563,56 @@ const Routing = () => {
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
   const [edges, setEdges] = useEdgesState<Edge>([]);
 
+  // Keep a ref to current edges for path tracing without triggering re-renders
+  const edgesRef = useRef<Edge[]>([]);
+  useEffect(() => {
+    edgesRef.current = edges;
+  }, [edges]);
+
+  // Resolves a device key (e.g. a multiview tile's routed source) to a display name.
+  const deviceNameByKey = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const d of data?.devices ?? []) {
+      map.set(d.key, d.name || d.key);
+    }
+    return map;
+  }, [data]);
+  const resolveSourceName = useCallback(
+    (key: string) => deviceNameByKey.get(key) ?? key,
+    [deviceNameByKey],
+  );
+
+  // Tile click (from a device node's layout popover): find the tie-line/synthetic edge feeding
+  // that tile (its destination port is qualified as "tile{N}:...", per RoutingGraphHelpers on the
+  // backend) and trace/highlight its signal path the same way clicking a graph edge/node does.
+  const handleTileClick = useCallback(
+    (deviceKey: string, tile: { tileNumber: number }) => {
+      const currentEdges = edgesRef.current;
+      const targetEdge = currentEdges.find((e) => {
+        const ed = e.data as
+          | { destinationDeviceKey?: string; destinationPortKey?: string }
+          | undefined;
+        return (
+          ed?.destinationDeviceKey === deviceKey &&
+          ed?.destinationPortKey?.startsWith(`tile${tile.tileNumber}:`)
+        );
+      });
+
+      if (!targetEdge) {
+        setSelectedEdgeIds(new Set());
+        return;
+      }
+
+      const pathEdges = traceSignalPath(currentEdges, targetEdge.id, midpointRoutes);
+      setSelectedEdgeIds((prev) => {
+        const allMatch =
+          prev.size === pathEdges.size && [...prev].every((id) => pathEdges.has(id));
+        return allMatch ? new Set() : pathEdges;
+      });
+    },
+    [midpointRoutes],
+  );
+
   // Re-run dagre layout only when the source data or filters change.
   // Using useEffect (not useMemo) means React Flow owns the node array
   // between renders, so drag positions are preserved.
@@ -528,6 +633,8 @@ const Routing = () => {
           ...n.data,
           darkMode,
           currentRoutes: midpointRoutes[n.id],
+          hasLayout: Boolean(layouts[n.id]),
+          onToggleLayoutPanel: () => toggleLayoutPanel(n.id),
           onHide: () =>
             setHiddenDevices((prev) => {
               const next = new Set(prev);
@@ -548,6 +655,9 @@ const Routing = () => {
     darkMode,
     midpointRoutes,
     sinkRoutes,
+    layouts,
+    resolveSourceName,
+    handleTileClick,
     setNodes,
     setEdges,
   ]);
@@ -592,14 +702,20 @@ const Routing = () => {
           data: { ...n.data, highlightedRouteKeys: null },
         })),
       );
+      setSelectedTileNumberByDevice({});
     } else {
       const selectedDestPorts = new Set<string>();
       const selectedSrcPorts = new Set<string>();
+      const selectedTileNumberByDevice = new Map<string, number>();
       for (const e of edgesRef.current) {
         if (selectedEdgeIds.has(e.id)) {
           const ed = e.data as { sourceDeviceKey?: string; sourcePortKey?: string; destinationDeviceKey?: string; destinationPortKey?: string } | undefined;
           if (ed?.destinationDeviceKey && ed?.destinationPortKey) {
             selectedDestPorts.add(`${ed.destinationDeviceKey}:${ed.destinationPortKey}`);
+            const tileMatch = /^tile(\d+):/.exec(ed.destinationPortKey);
+            if (tileMatch) {
+              selectedTileNumberByDevice.set(ed.destinationDeviceKey, Number(tileMatch[1]));
+            }
           }
           if (ed?.sourceDeviceKey && ed?.sourcePortKey) {
             selectedSrcPorts.add(`${ed.sourceDeviceKey}:${ed.sourcePortKey}`);
@@ -624,14 +740,9 @@ const Routing = () => {
           return { ...n, data: { ...n.data, highlightedRouteKeys: highlighted } };
         }),
       );
+      setSelectedTileNumberByDevice(Object.fromEntries(selectedTileNumberByDevice));
     }
   }, [selectedEdgeIds, setEdges, setNodes, midpointRoutes]);
-
-  // Keep a ref to current edges for path tracing without triggering re-renders
-  const edgesRef = useRef<Edge[]>([]);
-  useEffect(() => {
-    edgesRef.current = edges;
-  }, [edges]);
 
   // Edge click: highlight only the single clicked edge
   const onEdgeClick = useCallback(
@@ -925,6 +1036,16 @@ const Routing = () => {
           >
             {routingWsConnected ? "Live" : "Offline"}
           </span>
+          <button
+            className="btn btn-sm btn-outline-secondary py-0 px-1 d-flex align-items-center"
+            onClick={handleRefreshClick}
+            title="Refresh routing data and reconnect"
+          >
+            <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+              <path d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z" />
+              <path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z" />
+            </svg>
+          </button>
         </div>
       </div>
 
@@ -956,6 +1077,27 @@ const Routing = () => {
           <Controls showInteractive={false} />
           <MiniMap nodeStrokeWidth={3} zoomable pannable />
         </ReactFlow>
+
+        {/* Floating multiview layout panels - siblings of the React Flow canvas (not graph
+            nodes), so their position is independent of node positions/dagre re-layout. */}
+        {Object.entries(layoutPanels).map(([deviceKey, position]) => {
+          const layout = layouts[deviceKey];
+          if (!layout) return null;
+          return (
+            <MultiviewLayoutPanel
+              key={deviceKey}
+              title={resolveSourceName(deviceKey)}
+              layout={layout}
+              position={position}
+              darkMode={darkMode}
+              selectedTileNumber={selectedTileNumberByDevice[deviceKey] ?? null}
+              resolveSourceName={resolveSourceName}
+              onTileClick={(tile) => handleTileClick(deviceKey, tile)}
+              onClose={() => closeLayoutPanel(deviceKey)}
+              onMove={(nextPosition) => moveLayoutPanel(deviceKey, nextPosition)}
+            />
+          );
+        })}
       </div>
     </div>
   );

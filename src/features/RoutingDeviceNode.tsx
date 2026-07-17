@@ -1,4 +1,5 @@
 import { Handle, NodeProps, Position } from "@xyflow/react";
+
 import { MidpointRoute, RoutingDevice } from "../store/apiSlice";
 import styles from "./RoutingDeviceNode.module.scss";
 
@@ -20,13 +21,25 @@ export type RoutingDeviceNodeData = {
   currentRoutes?: MidpointRoute[];
   /** When edges are selected, contains the set of "inputPortKey:outputPortKey" pairs on this node that are part of the path. null = no selection active. */
   highlightedRouteKeys?: Set<string> | null;
+  /** Whether this device has an active multiview canvas/tile layout (IRoutingSinkWithLayoutState). */
+  hasLayout?: boolean;
+  /** Called when the layout toggle button is clicked - shows/hides this device's floating layout panel (see Routing.tsx). */
+  onToggleLayoutPanel?: () => void;
 };
 
 const PORT_ROW_PX = 28;
 const HEADER_PX = 38;
 
 const RoutingDeviceNode = ({ data }: NodeProps) => {
-  const { device, onHide, darkMode, currentRoutes, highlightedRouteKeys } = data as RoutingDeviceNodeData;
+  const {
+    device,
+    onHide,
+    darkMode,
+    currentRoutes,
+    highlightedRouteKeys,
+    hasLayout,
+    onToggleLayoutPanel,
+  } = data as RoutingDeviceNodeData;
   const inputPorts = device.inputPorts ?? [];
   const outputPorts = device.outputPorts ?? [];
   const portRows = Math.max(inputPorts.length, outputPorts.length, 1);
@@ -50,6 +63,23 @@ const RoutingDeviceNode = ({ data }: NodeProps) => {
             </div>
           )}
         </div>
+        {hasLayout && (
+          <button
+            className={`nodrag ${styles.layoutToggleBtn}`}
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggleLayoutPanel?.();
+            }}
+            title="Show/hide window layout"
+          >
+            <svg width="13" height="13" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="1" y="1" width="6.5" height="6.5" rx="1" fill="currentColor" opacity="0.85" />
+              <rect x="8.5" y="1" width="6.5" height="6.5" rx="1" fill="currentColor" opacity="0.55" />
+              <rect x="1" y="8.5" width="6.5" height="6.5" rx="1" fill="currentColor" opacity="0.55" />
+              <rect x="8.5" y="8.5" width="6.5" height="6.5" rx="1" fill="currentColor" opacity="0.85" />
+            </svg>
+          </button>
+        )}
         {onHide && (
           <button
             className={`nodrag ${styles.hideBtn}`}

@@ -1,17 +1,18 @@
 import { Middleware } from "@reduxjs/toolkit";
 import { RoutingFeedbackMessage } from "./apiSlice";
 import {
-  midpointRouteChanged,
-  ROUTING_WS_CONNECT,
-  ROUTING_WS_DISCONNECT,
-  routingFeedbackReset,
-  routingSnapshotReceived,
-  RoutingWsConnectAction,
-  routingWsConnected,
-  routingWsConnectionFailed,
-  RoutingWsDisconnectAction,
-  routingWsDisconnected,
-  sinkInputChanged,
+    layoutChanged,
+    midpointRouteChanged,
+    ROUTING_WS_CONNECT,
+    ROUTING_WS_DISCONNECT,
+    routingFeedbackReset,
+    routingSnapshotReceived,
+    RoutingWsConnectAction,
+    routingWsConnected,
+    routingWsConnectionFailed,
+    RoutingWsDisconnectAction,
+    routingWsDisconnected,
+    sinkInputChanged,
 } from "./routingFeedbackSlice";
 
 const RECONNECT_DELAY_MS = 3000;
@@ -90,6 +91,9 @@ export const routingFeedbackMiddleware: Middleware = (store) => {
             break;
           case "sinkInputChanged":
             store.dispatch(sinkInputChanged(msg));
+            break;
+          case "layoutChanged":
+            store.dispatch(layoutChanged(msg));
             break;
         }
       } catch (e) {
