@@ -109,6 +109,9 @@ export const routingFeedbackMiddleware: Middleware = (store) => {
       return;
     }
     reconnectAttempts++;
+    if (reconnectTimer) {
+      clearTimeout(reconnectTimer);
+    }
     reconnectTimer = setTimeout(() => {
       if (currentUrl) connectToUrl(currentUrl);
     }, RECONNECT_DELAY_MS);
