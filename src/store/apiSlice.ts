@@ -459,10 +459,125 @@ export interface TieLine {
   isInternal: boolean;
 }
 
+export interface RouteSwitchStepInfo {
+  switchingDeviceKey: string;
+  inputPortKey: string;
+  outputPortKey: string;
+}
+
+export interface ActiveRouteInfo {
+  sourceDeviceKey: string;
+  destinationDeviceKey: string;
+  destinationInputPortKey: string;
+  steps: RouteSwitchStepInfo[];
+}
+
+export interface CurrentRouteGroupInfo {
+  signalType: string;
+  routes: ActiveRouteInfo[];
+}
+
+export interface SinkCurrentSourceInfo {
+  deviceKey: string;
+  inputPortKey: string;
+  sourceDeviceKey: string;
+  signalType: string;
+}
+
 export interface RoutingDevicesAndTieLines {
   devices: RoutingDevice[];
   tieLines: TieLine[];
+  currentRoutes: CurrentRouteGroupInfo[];
+  // Current source per sink device, read directly from each sink's own current-source
+  // bookkeeping. Covers routes made via device-specific bulk APIs (e.g. dynamic multiview
+  // layouts) that currentRoutes does not, since those never create a RouteDescriptor/TieLine.
+  sinkCurrentSources: SinkCurrentSourceInfo[];
+  // Current multiview canvas/tile layout for every device implementing
+  // IRoutingSinkWithLayoutState, keyed by device key. Devices with no currently active layout
+  // are omitted. Lets the UI render an initial layout mock-up without waiting on the routing
+  // feedback WebSocket.
+  multiviewLayouts?: Record<string, MultiviewLayoutState>;
 }
+
+// ─── Multiview layout/tile mock-up state ─────────────────────────────────────
+
+/**
+ * Describes a single tile/window within a MultiviewLayoutState. Geometry (x/y/width/height) is
+ * expressed in pixels within the same coordinate space as the parent's canvasWidth/canvasHeight.
+ */
+export interface MultiviewTileState {
+  tileNumber: number;
+  tileSinkKey: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  zOrder: number;
+  sourceDeviceKey: string | null;
+}
+
+/**
+ * Describes the current shape of a multiview canvas and every visible tile within it - a
+ * product-agnostic, JSON-serializable snapshot of what is actually displayed on the monitor fed
+ * by a multiview-capable decoder.
+ */
+export interface MultiviewLayoutState {
+  canvasWidth: number;
+  canvasHeight: number;
+  tiles: MultiviewTileState[];
+}
+
+// ─── Live routing feedback (WebSocket) types ─────────────────────────────────
+
+export interface MidpointRoute {
+  inputPortKey: string;
+  outputPortKey: string;
+  signalType: string;
+}
+
+export interface SinkRoute {
+  inputPortKey: string;
+  sourceDeviceKey: string;
+  signalType: string;
+}
+
+export interface RoutingSnapshotMessage {
+  type: "snapshot";
+  midpointRoutes: Record<string, MidpointRoute[]>;
+  // A device implementing IRoutingSinkWithLayouts (e.g. a multiview decoder) can have multiple
+  // simultaneous tile routes reported under its one device key, so this is a list per device
+  // rather than a single route.
+  sinkRoutes: Record<string, SinkRoute[]>;
+  // Current multiview canvas/tile layout for every device implementing
+  // IRoutingSinkWithLayoutState, keyed by device key.
+  layouts: Record<string, MultiviewLayoutState>;
+}
+
+export interface MidpointRouteChangedMessage {
+  type: "midpointRouteChanged";
+  deviceKey: string;
+  routes: MidpointRoute[];
+}
+
+export interface SinkInputChangedMessage {
+  type: "sinkInputChanged";
+  deviceKey: string;
+  inputPortKey: string;
+  sourceDeviceKey: string;
+  signalType: string;
+}
+
+export interface LayoutChangedMessage {
+  type: "layoutChanged";
+  deviceKey: string;
+  layout: MultiviewLayoutState;
+}
+
+export type RoutingFeedbackMessage =
+  | RoutingSnapshotMessage
+  | MidpointRouteChangedMessage
+  | SinkInputChangedMessage
+  | LayoutChangedMessage;
 
 export type LogEventLevel =
   | "Verbose"

@@ -3,6 +3,8 @@ import { oneSliceToRuleThemAll } from './apiSlice';
 import { authReducer } from './auth/authSlice';
 import { commonUiReducer } from './commonUi/commonUiSlice';
 import { debugConsoleReducer } from './debugConsole/debugConsoleSlice';
+import { routingFeedbackMiddleware } from './routingFeedbackMiddleware';
+import routingFeedbackReducer from './routingFeedbackSlice';
 import { websocketMiddleware } from './websocketMiddleware';
 import websocketReducer from './websocketSlice';
 
@@ -13,6 +15,7 @@ const allReducers = combineReducers({
     commonUi: commonUiReducer,
     debugConsole: debugConsoleReducer,
     websocket: websocketReducer,
+    routingFeedback: routingFeedbackReducer,
 })
 
 const rootReducer: Reducer = (state: RootState, action: AnyAction) => {
@@ -27,6 +30,7 @@ export const store = configureStore({
     middleware: (getDefaultMiddleware) => getDefaultMiddleware()
         .concat(oneSliceToRuleThemAll.apiSlice.middleware)
         .concat(websocketMiddleware)
+        .concat(routingFeedbackMiddleware)
 });
 
 export type RootState = ReturnType<typeof store.getState>;
