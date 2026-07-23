@@ -119,7 +119,7 @@ const LoginForm = () => {
                 onClick={() => setShowPassword((prev) => !prev)}
                 disabled={isLoading}
                 aria-label={showPassword ? "Hide password" : "Show password"}
-                tabIndex={-1}
+                aria-pressed={showPassword}
               >
                 <EyeIcon slashed={showPassword} />
               </Button>
