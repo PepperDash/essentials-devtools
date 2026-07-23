@@ -28,7 +28,7 @@ const Versions = () => {
       <h2 className="mb-2 flex-shrink-0">Loaded Assemblies and Versions</h2>
       <div className="flex-grow-1 overflow-auto" style={{ minHeight: 0 }}>
         <table className="table table-striped">
-          <thead>
+          <thead className="sticky-top bg-body">
             <tr>
               <th>Name</th>
               <th>Version</th>
