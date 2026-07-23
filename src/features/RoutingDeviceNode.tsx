@@ -64,14 +64,15 @@ const RoutingDeviceNode = ({ data }: NodeProps) => {
           )}
         </div>
         {hasLayout && (
-          <button
-            className={`nodrag ${styles.layoutToggleBtn}`}
-            onClick={(e) => {
-              e.stopPropagation();
-              onToggleLayoutPanel?.();
-            }}
-            title="Show/hide window layout"
-          >
+        <button
+          className={`nodrag ${styles.layoutToggleBtn}`}
+          onClick={(e) => {
+            e.stopPropagation();
+            onToggleLayoutPanel?.();
+          }}
+          title="Show/hide window layout"
+          aria-label="Show/hide window layout"
+        >
             <svg width="13" height="13" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
               <rect x="1" y="1" width="6.5" height="6.5" rx="1" fill="currentColor" opacity="0.85" />
               <rect x="8.5" y="1" width="6.5" height="6.5" rx="1" fill="currentColor" opacity="0.55" />
