@@ -20,6 +20,7 @@ import { Alert, Dropdown } from "react-bootstrap";
 import { meetsMinVersion } from "../shared/functions/meetsMinimumVersion";
 import useAppParams from "../shared/hooks/useAppParams";
 import {
+  MidpointRoute,
   RoutingDevice,
   RoutingDevicesAndTieLines,
   SinkRoute,
