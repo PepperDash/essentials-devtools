@@ -288,8 +288,6 @@ function uniqueSignalTypes(tieLines: TieLine[]): string[] {
 
 // ─── Signal path tracing ─────────────────────────────────────────────────────
 
-import type { MidpointRoute } from "../store/apiSlice";
-
 /**
  * Given a clicked edge, traces the full signal path from source to sink through
  * midpoint devices using midpointRoutes data.  Returns a Set of edge IDs that
