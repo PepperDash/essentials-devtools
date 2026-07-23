@@ -101,7 +101,7 @@ function buildGraph(
   );
   const deviceOutputPortKey = new Map<string, string>(
     data.devices
-      .filter((d) => (d.outputPorts ?? []).length > 0)
+      .filter((d) => (d.outputPorts ?? []).length === 1)
       .map((d) => [d.key, d.outputPorts![0].key]),
   );
   const syntheticTieLines: TieLine[] = Object.entries(sinkRoutes).flatMap(
