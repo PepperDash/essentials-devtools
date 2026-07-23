@@ -569,6 +569,18 @@ const Routing = () => {
     edgesRef.current = edges;
   }, [edges]);
 
+  // Keep refs to the latest feedback data so the layout effect can read current
+  // values without depending on them (and thus without re-running dagre on every
+  // WebSocket update).
+  const midpointRoutesRef = useRef(midpointRoutes);
+  useEffect(() => {
+    midpointRoutesRef.current = midpointRoutes;
+  }, [midpointRoutes]);
+  const layoutsRef = useRef(layouts);
+  useEffect(() => {
+    layoutsRef.current = layouts;
+  }, [layouts]);
+
   // Resolves a device key (e.g. a multiview tile's routed source) to a display name.
   const deviceNameByKey = useMemo(() => {
     const map = new Map<string, string>();
@@ -632,8 +644,8 @@ const Routing = () => {
         data: {
           ...n.data,
           darkMode,
-          currentRoutes: midpointRoutes[n.id],
-          hasLayout: Boolean(layouts[n.id]),
+          currentRoutes: midpointRoutesRef.current[n.id],
+          hasLayout: Boolean(layoutsRef.current[n.id]),
           onToggleLayoutPanel: () => toggleLayoutPanel(n.id),
           onHide: () =>
             setHiddenDevices((prev) => {
@@ -653,14 +665,27 @@ const Routing = () => {
     hiddenDevices,
     hideUnconnectedPorts,
     darkMode,
-    midpointRoutes,
     sinkRoutes,
-    layouts,
     resolveSourceName,
     handleTileClick,
     setNodes,
     setEdges,
   ]);
+
+  // Keep node data's currentRoutes/hasLayout fresh as feedback arrives, without
+  // re-running dagre or resetting the current selection.
+  useEffect(() => {
+    setNodes((nds) =>
+      nds.map((n) => ({
+        ...n,
+        data: {
+          ...n.data,
+          currentRoutes: midpointRoutes[n.id],
+          hasLayout: Boolean(layouts[n.id]),
+        },
+      })),
+    );
+  }, [midpointRoutes, layouts, setNodes]);
 
   // Re-style edges and update node highlights when selection changes.
   useEffect(() => {
