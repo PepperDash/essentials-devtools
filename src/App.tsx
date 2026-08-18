@@ -6,6 +6,7 @@ import ConfigFile from "./features/ConfigFile";
 import DebugConsole from "./features/DebugConsole/DebugConsole";
 import DeviceList from "./features/DeviceList";
 import ErrorBoundary from "./features/ErrorBoundary";
+import Help from "./features/Help/Help";
 import InitializationExceptions from "./features/InitializationExceptions";
 import LoginForm from "./features/LoginForm";
 import MainLayout from "./features/MainLayout";
@@ -55,6 +56,7 @@ function App() {
         <Routes>
         <Route path="/" element={<Navigate to="/login" replace />} />
         <Route path="/login" element={<LoginForm />} />
+        <Route path="help/*" element={<Help />} />
           
         <Route path=":appId/login" element={<LoginForm />} />
         <Route path=":appId" element={<MainLayout isConnected={isConnected} />}>

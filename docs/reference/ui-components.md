@@ -153,27 +153,88 @@ This document provides detailed information about every UI element, its purpose,
 ## Routing Components
 
 ### Routing Diagram
+**Component**: `Routing`
 **Location**: Routing page (`/:appId/routing`)
-**Purpose**: Visual signal routing diagram showing devices, ports, and tie lines
+**Purpose**: Interactive, auto-laid-out signal routing diagram showing devices, ports, tie lines, and (on supported systems) live current-source feedback
 
-**Technology**: React Flow (@xyflow/react) with Dagre auto-layout
+**Technology**: React Flow (`@xyflow/react`) canvas with Dagre auto-layout (left-to-right column layout, recomputed whenever the device/filter set changes; manually dragged node positions are preserved across live feedback updates)
+
+**Version requirements**:
+| PepperDashEssentials.dll version | Behavior |
+|-----------------------------------|----------|
+| < 2.29 | Routing page shows "Routing feature is not available for this version." |
+| 2.29 – 2.x | Static diagram only: devices, ports, and tie lines render, but there is no live current-source feedback, no internal route curves, no Live/Offline badge activity, and no multiview layout panels |
+| 3.0+ | Full functionality: live WebSocket feedback, signal path tracing, and multiview layout panels (all described below) |
 
 **Elements**:
-- **Device Nodes**: Each routing device shown as a card with input and output ports
-- **Tie Line Edges**: Connections between device ports, color-coded by signal type
-- **MiniMap**: Overview map for orientation in large diagrams
-- **Controls**: Zoom and pan controls
+- **Device Nodes**: Each routing device shown as a card with input ports listed on the left and output ports on the right (see **Device Node Card** below)
+- **Tie Line Edges**: Connections between device ports, color-coded by signal type (see **Tie Line Edges** below)
+- **MiniMap**: Overview map (bottom-right) for orientation in large diagrams
+- **Controls**: Zoom and pan controls (bottom-left)
+- **Multiview Layout Panels**: Optional floating windows showing a device's current tile layout (see below)
 
 **Signal Type Colors**:
 | Signal Type | Color |
 |-------------|-------|
 | AudioVideo | Purple (#6f42c1) |
 | Video | Blue (#0d6efd) |
-| Audio | Red (#dc3545) |
-| UsbOutput / UsbInput | Orange (#fd7e14) |
+| Audio / Audio, SecondaryAudio | Red (#dc3545) |
+| UsbOutput / UsbInput / UsbOutput, UsbInput | Orange (#fd7e14) |
+| Any other signal type | Gray (#adb5bd) fallback |
 
-**Filtering**:
-- A signal type dropdown allows filtering visible tie lines by signal type
+### Toolbar
+
+A single toolbar strip above the diagram canvas holds all filtering and connection controls:
+
+- **Signal type toggle buttons**: One button per signal type present in the system, color-coded to match its edges. Click a button to hide every tie line of that type; click again to show it. This replaces the "signal type dropdown" of earlier versions.
+- **Devices filter dropdown**: Shows "Devices (visible/total)". Opens a menu with:
+  - A search box to filter the device list by name or key
+  - **Select all** / **Deselect all** links
+  - A checkbox per device (checked = visible); unchecking hides that device and its edges from the canvas
+  - The dropdown button turns amber/warning-colored whenever at least one device is hidden
+- **Hide unconnected devices** switch: When on, devices with no visible tie line endpoint (after other filters are applied) are removed from the canvas entirely
+- **Hide unconnected ports** switch: When on, each remaining device card only shows the input/output ports that currently have a visible tie line attached, instead of every port the device exposes
+- **Dark mode** switch: Toggles the canvas and device node cards between dark and light styling (on by default)
+- **Live/Offline badge**: Green "Live" when the routing feedback WebSocket is connected, gray "Offline" otherwise. Only relevant on PepperDashEssentials.dll 3.0+; earlier versions always show "Offline" since there is no live feedback to connect to
+- **Refresh button** (circular-arrow icon): Re-fetches the routing devices/tie-lines snapshot over HTTP and forces the feedback WebSocket to disconnect and reconnect. Use this if the "Live" badge appears stuck on "Offline" or after the routing feedback server has restarted
+
+**Certificate warning**: If the feedback WebSocket fails to connect because its host uses an untrusted/self-signed certificate, a warning banner appears above the toolbar with a link to open that host's URL directly (to accept the certificate) before reloading the page.
+
+### Device Node Card
+
+Each device is drawn as a card with:
+- **Header**: The device's display name (falls back to its key if unnamed), with the key shown as a smaller subtitle when a name is present. Hovering shows the key as a tooltip.
+- **Layout toggle button** (small tile icon, header, only shown for devices with an active multiview canvas): Opens/closes a floating **Multiview Layout Panel** for that device (see below)
+- **Hide button** (`×`, header): Hides just this one device from the canvas (equivalent to unchecking it in the Devices filter dropdown)
+- **Port rows**: Input ports listed on the left edge, output ports on the right edge, one row per port. Hovering a port label shows its signal type as a tooltip
+- **Internal route curves**: On PepperDashEssentials.dll 3.0+, an SVG overlay draws a curve from each currently-active input port to its routed output port inside the card, color-coded by signal type. When a signal path is selected elsewhere in the diagram (see **Signal Path Tracing**), curves that are part of the selected path stay highlighted while all others dim
+
+### Tie Line Edges
+
+- Edges are color-coded by signal type using the palette above
+- **Dashed edges** represent "live-only" routes: connections reported by live feedback (e.g. a route made through a device-specific bulk API such as a dynamic multiview layout) that have no corresponding static tie line in the configuration. Solid edges are real configured tie lines
+- **Hover** an edge to show a tooltip with its signal type, source device/port, and destination device/port
+- **Click** an edge to select it (see **Signal Path Tracing**); click it again, or click empty canvas space, to clear the selection
+
+### Signal Path Tracing
+
+Clicking a tie line edge, a device node, or a tile inside a Multiview Layout Panel highlights the complete signal path and dims everything else, using the live `currentRoutes`/`sinkCurrentSources` feedback (3.0+ only — tracing has no effect on older versions since there is no live route data to trace):
+
+- **Click a tie line edge**: Traces upstream and downstream from that edge through every switching (midpoint) device in the path, highlighting every tie line and internal route curve that carries the same signal end-to-end
+- **Click a device node**: Traces every signal path currently passing into or out of that device
+- **Click a tile in a Multiview Layout Panel**: Traces the path feeding that specific tile
+- Clicking the same selection again, or clicking empty canvas space, clears the highlight
+- While a path is selected, non-path edges and internal route curves are dimmed and thinned so the active path stands out
+
+### Multiview Layout Panels
+
+For devices that implement a multiview/window layout (e.g. a multiview decoder), the layout toggle button on the device card opens a **floating, freely-draggable panel** showing a scaled mock-up of what that device is actually displaying:
+
+- The panel renders the canvas at its real aspect ratio, with one rectangle per tile positioned and sized to match the live layout, labeled with the tile number and the name of the source currently routed to it
+- **Drag** the panel's title bar to reposition it anywhere on screen; its position is independent of the graph layout, so it doesn't move when the diagram re-lays-out
+- **Click a tile** to highlight the full signal path feeding it (see **Signal Path Tracing**) — the tile itself is also highlighted while its path is selected
+- Multiple panels (one per device) can be open and positioned independently at the same time
+- Click the panel's `×` to close it; closed panels stay closed until the layout toggle button is clicked again
 
 ---
 

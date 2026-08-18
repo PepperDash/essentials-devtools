@@ -1,6 +1,6 @@
 import { FormEvent, useState } from 'react';
 import { Alert, Button, Form, InputGroup, Spinner } from 'react-bootstrap';
-import { Navigate, useLocation, useNavigate } from 'react-router-dom';
+import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import EyeIcon from '../shared/components/EyeIcon';
 import useAppParams from '../shared/hooks/useAppParams';
 import { useSetLoginCredentialsMutation } from '../store/apiSlice';
@@ -81,9 +81,12 @@ const LoginForm = () => {
 
   return (
     <div className="d-flex flex-column justify-content-center align-items-center h-100 position-relative">
-      <span className="position-absolute top-0 end-0 p-2 text-muted small">
-        Version: {APP_VERSION}
-      </span>
+      <div className="position-absolute top-0 end-0 p-2 d-flex align-items-center gap-3">
+        <Link to="/help" className="text-muted small">
+          Help
+        </Link>
+        <span className="text-muted small">Version: {APP_VERSION}</span>
+      </div>
       <h1 className="mb-5 text-center">
         PepperDash Essentials Developer Tools
       </h1>

@@ -3,7 +3,7 @@ import { Dropdown, Nav, Navbar } from "react-bootstrap";
 import { NavLink, useLocation } from "react-router-dom";
 import { meetsMinVersion } from "../shared/functions/meetsMinimumVersion";
 import useAppParams from "../shared/hooks/useAppParams";
-import { IconDarkChevronDown, IconDarkEllipse } from "../shared/icons";
+import { IconDarkChevronDown, IconDarkEllipse, IconDarkHelp } from "../shared/icons";
 import { useGetVersionsQuery } from "../store/apiSlice";
 import { selectAvailableApps } from "../store/auth/authSelectors";
 import { useAppSelector } from "../store/hooks";
@@ -133,6 +133,13 @@ const TopNav = ({ isConnected }: { isConnected: boolean }) => {
           <AppNavLink appId={params.appId} path="mobileControl">
             Mobile Control
           </AppNavLink>
+          <NavLink
+            className={({ isActive }) => (isActive ? "me-3 text-secondary" : "me-3")}
+            to="/help"
+          >
+            <IconDarkHelp className="me-1" />
+            Help
+          </NavLink>
         </Nav>
         <div className="d-flex flex-column align-items-end">
           <span>Version: {reactAppVersion}</span>

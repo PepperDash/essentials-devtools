@@ -25,6 +25,7 @@ Practical guides that solve specific problems you might encounter. These assume 
 - **[Export and Analyze Configuration](./how-to/export-configuration.md)**
 - **[Monitor System Performance](./how-to/monitor-performance.md)**
 - **[Restart and Reload Configuration](./how-to/restart-reload-config.md)**
+- **[Trace Signal Routes and Read the Routing Diagram](./how-to/trace-signal-routes.md)**
 
 ### 📚 [Reference](./reference/) - Information-oriented
 **"Tell me the facts"**
@@ -66,7 +67,7 @@ The PepperDash Essentials Web Config App provides several key features:
 - **⚙️ Device Management**: Inspect and interact with connected devices
 - **📄 Configuration Viewer**: View and analyze merged configuration files
 - **📦 Version Information**: Check loaded assemblies and versions
-- **🔀 Routing**: Visual signal routing diagram between devices and tie lines
+- **🔀 Routing**: Interactive signal routing diagram with live current-source feedback, click-to-trace signal paths, and multiview layout panels (PepperDashEssentials.dll 3.0+)
 - **📱 Mobile Control**: Mobile control interface management
 - **🗺️ API Paths**: Browse all available REST API routes on the processor
 - **🏷️ Type Registry**: Browse supported device types and their properties

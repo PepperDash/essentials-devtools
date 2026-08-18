@@ -61,6 +61,25 @@ These guides provide step-by-step solutions to specific problems you might encou
 
 ---
 
+## 🔀 Routing
+
+### [Trace Signal Routes and Read the Routing Diagram](./trace-signal-routes.md)
+**Problem**: Need to find what's feeding a display, verify a route change, or make sense of a busy routing diagram
+
+**Common symptoms:**
+- Wrong source appears on a display or output
+- Need to confirm a route or multiview layout change took effect
+- Routing diagram has too many devices/tie lines to read easily
+- Live feedback badge shows "Offline" or a certificate warning appears
+
+**You'll learn to:**
+- Filter the diagram by signal type and device
+- Trace a signal path by clicking an edge, device, or multiview tile
+- Read and reposition multiview layout panels
+- Troubleshoot the live feedback connection
+
+---
+
 ## ⚡ Performance and Monitoring
 
 ### [Monitor System Performance](./monitor-performance.md)
@@ -105,6 +124,9 @@ Core troubleshooting skills for monitoring and analyzing system behavior
 
 ### Configuration Management (System Understanding)
 Tools for understanding, documenting, and managing system configuration
+
+### Routing (Signal Visibility)
+Filtering, tracing, and troubleshooting the live signal routing diagram
 
 ### Performance and Monitoring (System Health)
 Proactive monitoring and maintenance techniques for system reliability

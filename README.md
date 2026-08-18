@@ -43,6 +43,7 @@ This project uses the [Diataxis framework](https://diataxis.fr/) to provide you 
 - [Export and Analyze Configuration](./docs/how-to/export-configuration.md)
 - [Monitor System Performance](./docs/how-to/monitor-performance.md)
 - [Restart and Reload Configuration](./docs/how-to/restart-reload-config.md)
+- [Trace Signal Routes and Read the Routing Diagram](./docs/how-to/trace-signal-routes.md)
 
 ### 📚 [Reference](./docs/reference/) - Information-oriented
 **"Tell me the facts"**
@@ -66,6 +67,7 @@ This project uses the [Diataxis framework](https://diataxis.fr/) to provide you 
 - **📄 Configuration Viewer**: View and analyze complete system configuration
 - **📦 Version Information**: Check loaded assemblies and software versions
 - **🏷️ Type Registry**: Browse supported device types and capabilities
+- **🔀 Signal Routing**: Interactive routing diagram with live feedback and click-to-trace signal paths (PepperDashEssentials.dll 3.0+)
 - **🔄 System Control**: Restart system and reload configuration safely
 
 ## 🛠️ Development

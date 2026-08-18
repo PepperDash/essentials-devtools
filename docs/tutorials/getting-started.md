@@ -85,8 +85,9 @@ The application has several main sections accessible from the top navigation:
 - Useful for understanding what devices can be configured
 
 ### Routing
-- Visual diagram of signal routing between devices and tie lines
-- Color-coded by signal type
+- Visual diagram of signal routing between devices and tie lines, color-coded by signal type
+- Click a tie line, device, or multiview tile to trace and highlight its full signal path
+- Shows live current-source feedback on systems running PepperDashEssentials.dll 3.0+
 
 ### Mobile Control
 - Management interface for connected mobile control clients
