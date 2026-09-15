@@ -533,6 +533,163 @@ POST /loadConfig
 
 ---
 
+## Routing Endpoints
+
+Requires PepperDashEssentials.dll 3.0 or later.
+
+### Get Routing Devices and Tie Lines
+**Purpose**: Retrieve the complete routing graph — devices, ports, tie lines, and current route state
+
+```http
+GET /routingDevicesAndTieLines
+```
+
+**Response**:
+```json
+{
+  "devices": [
+    {
+      "key": "display-1",
+      "name": "Main Display",
+      "hasInputs": true,
+      "hasOutputs": false,
+      "hasInputsAndOutputs": false,
+      "inputPorts": [
+        { "key": "hdmiIn1", "signalType": "AudioVideo", "connectionType": "Hdmi", "isInternal": false }
+      ]
+    }
+  ],
+  "tieLines": [
+    {
+      "sourceDeviceKey": "laptop-1",
+      "sourcePortKey": "out1",
+      "destinationDeviceKey": "display-1",
+      "destinationPortKey": "hdmiIn1",
+      "signalType": "AudioVideo",
+      "isInternal": false
+    }
+  ],
+  "currentRoutes": [],
+  "sinkCurrentSources": [],
+  "multiviewLayouts": {}
+}
+```
+
+**Device role flags**: `hasInputsAndOutputs` is the literal "is a midpoint" flag. Note that a multiview decoder reports `hasInputs` **and** `hasOutputs` while **not** being a midpoint, so "sink = has inputs and no outputs" is not a safe test — see [UI Components Reference](./ui-components.md#route-popover).
+
+**Multiview tiles**: A multiview decoder's tile child devices are not returned as top-level devices. Each tile is synthesized as an input port on the parent, keyed `tile{N}:{portKey}`, and any tie line or route targeting a tile is remapped onto the parent.
+
+---
+
+### Start Routing Feedback Session
+**Purpose**: Start the routing feedback WebSocket server and obtain its URL
+
+```http
+GET /routingFeedbackSession
+```
+
+**Response**:
+```json
+{
+  "url": "wss://192.168.1.164:65401/routing/join/",
+  "fallbackUrl": "wss://10.0.0.5:65401/routing/join/"
+}
+```
+
+**Usage**: Connect to `url` to receive live route changes. Messages are a discriminated union on `type`: `snapshot`, `midpointRouteChanged`, `sinkInputChanged`, and `layoutChanged`. A `sinkInputChanged` with an empty `sourceDeviceKey` means the route feeding that input was cleared.
+
+---
+
+### Execute Routing Command
+**Purpose**: Make or clear a route, addressed entirely by device and port keys
+
+```http
+POST /routingCommand
+```
+
+Ports are addressed by **key**, never by selector: a routing port's selector is a driver-defined object that cannot be expressed in JSON, so the processor resolves key → port → selector itself.
+
+**Request Body** — one of four commands:
+```json
+{ "command": "sinkRoute", "deviceKey": "display-1", "inputPortKey": "hdmiIn1",
+  "sourceDeviceKey": "laptop-1", "signalType": "AudioVideo" }
+
+{ "command": "midpointSwitch", "deviceKey": "dm-chassis-1",
+  "inputPortKey": "inputCard3", "outputPortKey": "outputCard5", "signalType": "Video" }
+
+{ "command": "clearSink", "deviceKey": "display-1", "inputPortKey": "hdmiIn1",
+  "clearSinkInput": true }
+
+{ "command": "clearMidpointOutput", "deviceKey": "dm-chassis-1",
+  "outputPortKey": "outputCard5", "signalType": "AudioVideo" }
+```
+
+**Request Fields**:
+- `command` (string): `sinkRoute`, `midpointSwitch`, `clearSink` or `clearMidpointOutput`. Case-insensitive
+- `deviceKey` (string): Target device. For sink commands this is the destination — or the multiview parent when addressing a tile
+- `inputPortKey` (string, optional): May be multiview-qualified (`tile2:tileInput`); the processor de-qualifies it to the child tile sink. Optional for `clearSink`, where omitting it clears whatever route the sink has
+- `outputPortKey` (string): Required for the midpoint commands
+- `sourceDeviceKey` (string): Required for `sinkRoute`
+- `sourcePortKey` (string, optional): Omit to let the processor's path discovery choose
+- `signalType` (string): `Audio`, `Video`, `AudioVideo` or `Usb`. Defaults to `AudioVideo`. Numeric values are rejected
+- `releaseOnly` (bool): `clearSink` only — stop usage tracking but leave the signal flowing
+- `clearSinkInput` (bool): `clearSink` only — also deselect the destination's own input. Off by default, because clearing a route otherwise never touches the destination
+- `dryRun` (bool): Validate and compute the path, execute nothing
+
+**Response**:
+```json
+{
+  "status": "accepted",
+  "command": "sinkRoute",
+  "deviceKey": "nvx-decoder-1",
+  "resolvedDeviceKey": "nvx-decoder-1-tile2",
+  "resolvedInputPortKey": "tileInput",
+  "signalType": "AudioVideo",
+  "effectiveSignalType": "AudioVideo",
+  "partial": false,
+  "steps": [
+    { "signalType": "Video", "switchingDeviceKey": "dm-chassis-1",
+      "inputPortKey": "inputCard3", "outputPortKey": "outputCard5" }
+  ]
+}
+```
+
+**Response Fields**:
+- `status`: `executed` (done before the response was written), `accepted` (validated and queued), `validated` (dry run), or `error`
+- `resolvedDeviceKey` / `resolvedInputPortKey`: The real device and port the command ran against. These differ from the requested values only when a `tile{N}:` port was de-qualified
+- `effectiveSignalType`: What was actually handed to the devices. May be **wider** than `signalType` — a pre-mapped route descriptor takes its type from the port's declared type, so an Audio-only request across all-`AudioVideo` ports executes as `AudioVideo` rather than breaking away
+- `steps`: The switch steps that will run, in order. `sinkRoute` only; an `AudioVideo` route is discovered as two independent paths, so each step names its own signal type
+- `partial`: An `AudioVideo` request that found a path for only one half. The half that was found is still routed
+
+**Status Codes**:
+| Status | Meaning |
+|---|---|
+| `200` | `midpointSwitch` / `clearMidpointOutput` executed inline, or a dry run validated |
+| `202` | `sinkRoute` / `clearSink` validated and queued. Confirmation arrives over the feedback WebSocket, not here |
+| `400` | Malformed request: `invalidJson`, `missingField`, `unknownCommand`, `invalidSignalType` |
+| `404` | `deviceNotFound` — the key is wrong |
+| `409` | `noRouteFound` — the keys are valid but no wiring path exists |
+| `422` | `deviceNotRoutable`, `tileNotFound`, `portNotFound`, `signalTypeNotSupportedByPort` — the keys exist but the request is impossible on that device |
+| `500` | `executionError` — the device threw while switching |
+
+**Error Response Body**:
+```json
+{
+  "status": "error",
+  "error": {
+    "code": "noRouteFound",
+    "message": "No Video path exists from 'laptop-1' to 'display-1' input 'hdmiIn1'.",
+    "field": "signalType"
+  }
+}
+```
+
+**Why sink commands return 202**: making a route enqueues onto the processor's single-worker routing queue, and completion is conditional — a destination that is warming or cooling parks its request until the cooldown finishes. The 202 is still meaningful because all validation, including full path discovery, happens synchronously first: a request that provably cannot work returns `409` before anything is queued.
+
+**Capability detection**: this endpoint does not exist on older processors. Probe [Get API Paths](#get-api-paths) for a `routingCommand` route rather than gating on a version number.
+
+---
+
 ## Error Response Format
 
 All endpoints return errors in consistent format:

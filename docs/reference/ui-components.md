@@ -165,6 +165,7 @@ This document provides detailed information about every UI element, its purpose,
 | < 2.29 | Routing page shows "Routing feature is not available for this version." |
 | 2.29 – 2.x | Static diagram only: devices, ports, and tie lines render, but there is no live current-source feedback, no internal route curves, no Live/Offline badge activity, and no multiview layout panels |
 | 3.0+ | Full functionality: live WebSocket feedback, signal path tracing, and multiview layout panels (all described below) |
+| 3.0+ with the `routingCommand` endpoint | Adds route editing (see **Route Popover** below). Detected by probing the processor's live CWS route table via `apiPaths` rather than by version number, so the affordances appear only where the endpoint actually exists |
 
 **Elements**:
 - **Device Nodes**: Each routing device shown as a card with input ports listed on the left and output ports on the right (see **Device Node Card** below)
@@ -206,7 +207,9 @@ Each device is drawn as a card with:
 - **Header**: The device's display name (falls back to its key if unnamed), with the key shown as a smaller subtitle when a name is present. Hovering shows the key as a tooltip.
 - **Layout toggle button** (small tile icon, header, only shown for devices with an active multiview canvas): Opens/closes a floating **Multiview Layout Panel** for that device (see below)
 - **Hide button** (`×`, header): Hides just this one device from the canvas (equivalent to unchecking it in the Devices filter dropdown)
-- **Port rows**: Input ports listed on the left edge, output ports on the right edge, one row per port. Hovering a port label shows its signal type as a tooltip
+- **Port rows**: Input ports listed on the left edge, output ports on the right edge, one row per port. Hovering a port label shows its signal type as a tooltip. Multiview tile ports (keyed `tile{N}:...` on the parent device) are labeled `Tile N`, with the full qualified key in the tooltip
+- **Clickable port rows** (route editing only): Where route editing is available, input ports on route destinations and output ports on midpoints render as buttons that outline blue on hover and open the **Route Popover**. Clicking a port does not also trigger signal path tracing, drag the node, or pan the canvas. Source ports and midpoint *input* ports are never clickable — routing is always driven from the destination or midpoint-output end
+- **Port status indicators** (route editing only): A pulsing blue dot marks a port whose route command has been accepted by the processor but not yet confirmed over the feedback WebSocket. An amber `!` replaces it if no confirmation arrives within ~10 seconds, and clears itself a few seconds later
 - **Internal route curves**: On PepperDashEssentials.dll 3.0+, an SVG overlay draws a curve from each currently-active input port to its routed output port inside the card, color-coded by signal type. When a signal path is selected elsewhere in the diagram (see **Signal Path Tracing**), curves that are part of the selected path stay highlighted while all others dim
 
 ### Tie Line Edges
@@ -233,8 +236,34 @@ For devices that implement a multiview/window layout (e.g. a multiview decoder),
 - The panel renders the canvas at its real aspect ratio, with one rectangle per tile positioned and sized to match the live layout, labeled with the tile number and the name of the source currently routed to it
 - **Drag** the panel's title bar to reposition it anywhere on screen; its position is independent of the graph layout, so it doesn't move when the diagram re-lays-out
 - **Click a tile** to highlight the full signal path feeding it (see **Signal Path Tracing**) — the tile itself is also highlighted while its path is selected
+- **Tile edit badge** (small pencil icon, tile corner, route editing only): Appears on hover and opens the **Route Popover** for that tile. This is equivalent to clicking the tile's `Tile N` port row on the device node; both resolve to the same qualified port
 - Multiple panels (one per device) can be open and positioned independently at the same time
 - Click the panel's `×` to close it; closed panels stay closed until the layout toggle button is clicked again
+
+### Route Popover
+
+**Component**: `RoutePopover`
+**Purpose**: Make or clear a route from the diagram. Opened by clicking a clickable port row on a device node, or a tile's edit badge in a Multiview Layout Panel.
+
+Rendered through a portal into `document.body` and positioned against the clicked element's viewport rect, so it is never clipped by a device card and never scales with the canvas zoom. It closes on outside click, `Escape`, its own `×`, a successful commit, and any canvas pan, zoom, or node drag.
+
+**Two flows**, determined by what was clicked:
+
+| Clicked | Step 1 | Step 2 | Effect |
+|---|---|---|---|
+| Input port on a route destination | Signal type | Source device | Routes the source through every midpoint in the discovered path and switches the destination's input |
+| Output port on a midpoint | Signal type | Input port on the same device | Switches that one device only |
+
+**Behavior**:
+- **Signal type step**: Offers the port's declared type plus each individual flag as a breakaway option (`AudioVideo` → `AudioVideo`, `Audio`, `Video`). Collapses to a static label when the port carries a single type. Buttons use the same color coding as the toolbar's signal type toggles
+- **Source list**: Computed client-side by walking the tie-line graph backwards from the clicked port, mirroring the processor's own path-finding rules — so only sources with a real physical path for that signal type are listed. Pure sources sort first, then by name. This uses the complete, unfiltered tie-line set: toolbar filters change the view, never what is routable
+- **Partial-match badge**: A source with a path for only one half of an `AudioVideo` request is badged `video only` / `audio only`. It remains selectable, since the processor routes whichever half has a path
+- **Current selection**: The source (or input port) currently routed to that port is marked with a check
+- **None — clear route**: Always the first option. On a destination this tears down the path *and* deselects the destination's own input; on a midpoint output it clears just that output
+- **Filter box**: Appears once the option list exceeds 12 entries
+- **Errors**: A failed command keeps the popover open with the processor's reason inline, so a different option can be chosen without reopening
+
+**Route roles**: which ports are clickable is derived from the device flags in the routing graph API — midpoints (`hasInputsAndOutputs`) expose clickable outputs; route destinations (`hasInputs` and *not* `hasInputsAndOutputs`, which covers both pure sinks and multiview parents) expose clickable inputs.
 
 ---
 

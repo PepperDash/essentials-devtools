@@ -1,18 +1,14 @@
 import { Handle, NodeProps, Position } from "@xyflow/react";
 
-import { MidpointRoute, RoutingDevice } from "../store/apiSlice";
+import { MidpointRoute, RoutingDevice, RoutingPort } from "../store/apiSlice";
+import { signalColor } from "./routing/signalColors";
 import styles from "./RoutingDeviceNode.module.scss";
 
-const SIGNAL_COLORS: Record<string, string> = {
-  AudioVideo: "#6f42c1",
-  Video: "#0d6efd",
-  Audio: "#dc3545",
-  "Audio, SecondaryAudio": "#dc3545",
-  "UsbOutput, UsbInput": "#fd7e14",
-  UsbOutput: "#fd7e14",
-  UsbInput: "#fd7e14",
-};
-const FALLBACK_COLOR = "#adb5bd";
+/**
+ * A command was sent for this port but the processor has not confirmed it over the feedback
+ * WebSocket yet; "timedOut" means it never did.
+ */
+export type PortStatus = "pending" | "timedOut";
 
 export type RoutingDeviceNodeData = {
   device: RoutingDevice;
@@ -25,6 +21,84 @@ export type RoutingDeviceNodeData = {
   hasLayout?: boolean;
   /** Called when the layout toggle button is clicked - shows/hides this device's floating layout panel (see Routing.tsx). */
   onToggleLayoutPanel?: () => void;
+  /** Opens the route popover for a port. Absent when route editing is unavailable. */
+  onPortClick?: (port: RoutingPort, kind: "input" | "output", rect: DOMRect) => void;
+  /** Input ports are clickable on route destinations (pure sinks and multiview parents). */
+  canEditInputs?: boolean;
+  /** Output ports are clickable on midpoints. */
+  canEditOutputs?: boolean;
+  /** In-flight/timed-out route commands on this device, keyed by port key. */
+  portStatus?: Readonly<Record<string, PortStatus>>;
+  /** Port key whose popover is currently open, for the active outline. */
+  editingPortKey?: string | null;
+};
+
+/** Multiview tile ports arrive qualified as "tile{N}:{portKey}" - see RoutingGraphHelpers. */
+const TILE_PORT_RE = /^tile(\d+):/;
+
+/** "tile2:tileInput" truncates badly in a 280px card; "Tile 2" does not. */
+function portDisplayLabel(portKey: string): string {
+  const match = TILE_PORT_RE.exec(portKey);
+  return match ? `Tile ${match[1]}` : portKey;
+}
+
+interface PortCellProps {
+  port?: RoutingPort;
+  kind: "input" | "output";
+  editable: boolean;
+  status?: PortStatus;
+  isEditing: boolean;
+  onPortClick?: RoutingDeviceNodeData["onPortClick"];
+}
+
+const PortCell = ({ port, kind, editable, status, isEditing, onPortClick }: PortCellProps) => {
+  const align = kind === "output" ? "text-end " : "";
+  if (!port) return <div className={`${align}${styles.portLabelWrap}`} />;
+
+  const label = portDisplayLabel(port.key);
+  const indicator = status && (
+    <span
+      className={status === "pending" ? styles.portPending : styles.portTimedOut}
+      title={
+        status === "pending"
+          ? "Waiting for the processor to confirm this route…"
+          : "No feedback received - the route may not have been made."
+      }
+    >
+      {status === "pending" ? "●" : "!"}
+    </span>
+  );
+
+  return (
+    <div className={`${align}${styles.portLabelWrap}`}>
+      {editable && onPortClick ? (
+        <button
+          type="button"
+          // nodrag/nopan keep React Flow from reading the press as a node drag or canvas pan;
+          // stopPropagation keeps onNodeClick from also running its path trace.
+          className={`nodrag nopan ${styles.portLabelText} ${styles.portButton} ${
+            kind === "output" ? styles.portButtonEnd : ""
+          } ${isEditing ? styles.portButtonActive : ""}`}
+          title={port.key}
+          aria-haspopup="dialog"
+          aria-expanded={isEditing}
+          onClick={(e) => {
+            e.stopPropagation();
+            onPortClick(port, kind, e.currentTarget.getBoundingClientRect());
+          }}
+        >
+          {indicator}
+          <span className="text-truncate">{label}</span>
+        </button>
+      ) : (
+        <span className={`text-muted text-truncate ${styles.portLabelText}`} title={port.key}>
+          {indicator}
+          {label}
+        </span>
+      )}
+      <span className={styles.portTooltip}>{port.signalType}</span>
+    </div>
+  );
 };
 
 const PORT_ROW_PX = 28;
@@ -39,6 +113,11 @@ const RoutingDeviceNode = ({ data }: NodeProps) => {
     highlightedRouteKeys,
     hasLayout,
     onToggleLayoutPanel,
+    onPortClick,
+    canEditInputs,
+    canEditOutputs,
+    portStatus,
+    editingPortKey,
   } = data as RoutingDeviceNodeData;
   const inputPorts = device.inputPorts ?? [];
   const outputPorts = device.outputPorts ?? [];
@@ -119,22 +198,24 @@ const RoutingDeviceNode = ({ data }: NodeProps) => {
               className={`d-flex justify-content-between align-items-center px-3 ${styles.portRow} ${darkMode ? styles.portRowDark : ""}`}
               style={{ height: PORT_ROW_PX }}
             >
-              <div className={styles.portLabelWrap}>
-                <span className={`text-muted text-truncate ${styles.portLabelText}`} title={inPort?.key}>
-                  {inPort?.key ?? ""}
-                </span>
-                {inPort && (
-                  <span className={styles.portTooltip}>{inPort.signalType}</span>
-                )}
-              </div>
-              <div className={`text-end ${styles.portLabelWrap}`}>
-                <span className={`text-muted text-truncate ${styles.portLabelText}`} title={outPort?.key}>
-                  {outPort?.key ?? ""}
-                </span>
-                {outPort && (
-                  <span className={styles.portTooltip}>{outPort.signalType}</span>
-                )}
-              </div>
+              {/* Handlers hang off each side's cell, not the row: a midpoint row carries an input
+                  on the left and an output on the right, so a row-level click is ambiguous. */}
+              <PortCell
+                port={inPort}
+                kind="input"
+                editable={Boolean(canEditInputs)}
+                status={inPort ? portStatus?.[inPort.key] : undefined}
+                isEditing={Boolean(inPort && editingPortKey === inPort.key)}
+                onPortClick={onPortClick}
+              />
+              <PortCell
+                port={outPort}
+                kind="output"
+                editable={Boolean(canEditOutputs)}
+                status={outPort ? portStatus?.[outPort.key] : undefined}
+                isEditing={Boolean(outPort && editingPortKey === outPort.key)}
+                onPortClick={onPortClick}
+              />
             </div>
           );
         })}
@@ -154,7 +235,7 @@ const RoutingDeviceNode = ({ data }: NodeProps) => {
 
               const inY = ((inIdx + 0.5) / portRows) * bodyHeight;
               const outY = ((outIdx + 0.5) / portRows) * bodyHeight;
-              const color = SIGNAL_COLORS[route.signalType] ?? FALLBACK_COLOR;
+              const color = signalColor(route.signalType);
 
               // Determine if this route is highlighted or dimmed
               const routeKey = `${route.inputPortKey}:${route.outputPortKey}`;

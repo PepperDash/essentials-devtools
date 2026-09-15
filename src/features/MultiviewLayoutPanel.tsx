@@ -17,6 +17,8 @@ export interface MultiviewLayoutPanelProps {
   selectedTileNumber?: number | null;
   resolveSourceName: (deviceKey: string) => string;
   onTileClick?: (tile: MultiviewTileState) => void;
+  /** Opens the route popover for a tile. Omitted when route editing is unavailable. */
+  onTileEditClick?: (tile: MultiviewTileState, rect: DOMRect) => void;
   onClose: () => void;
   onMove: (position: MultiviewLayoutPanelPosition) => void;
 }
@@ -36,6 +38,7 @@ const MultiviewLayoutPanel = ({
   selectedTileNumber,
   resolveSourceName,
   onTileClick,
+  onTileEditClick,
   onClose,
   onMove,
 }: MultiviewLayoutPanelProps) => {
@@ -99,6 +102,7 @@ const MultiviewLayoutPanel = ({
           darkMode={darkMode}
           selectedTileNumber={selectedTileNumber}
           onTileClick={onTileClick}
+          onTileEditClick={onTileEditClick}
         />
       </div>
     </div>

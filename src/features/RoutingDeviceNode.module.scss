@@ -98,6 +98,58 @@
   }
 }
 
+// Clickable port row, shown when route editing is available for that side of the device.
+.portButton {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  width: 100%;
+  max-width: 100%;
+  border: 1px solid transparent;
+  cursor: pointer;
+  color: #6c757d;
+  text-align: left;
+
+  &.portButtonEnd {
+    justify-content: flex-end;
+    text-align: right;
+  }
+
+  &:hover {
+    border-color: #0d6efd;
+    color: #0d6efd;
+  }
+}
+
+.portButtonActive {
+  border-color: #0d6efd !important;
+  color: #0d6efd !important;
+}
+
+// Route command sent, awaiting confirmation over the feedback WebSocket.
+.portPending {
+  flex-shrink: 0;
+  color: #0d6efd;
+  font-size: 0.6rem;
+  animation: portPendingPulse 1s ease-in-out infinite;
+}
+
+@keyframes portPendingPulse {
+  0%,
+  100% {
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.portTimedOut {
+  flex-shrink: 0;
+  color: #fd7e14;
+  font-weight: 700;
+}
+
 .portTooltip {
   position: absolute;
   bottom: calc(100% + 4px);

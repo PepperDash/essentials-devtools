@@ -73,3 +73,5 @@ If a device shows the small tile icon in its card header, it currently has an ac
 - **Live badge Offline**: click Refresh; confirm Essentials 3.0+ for live tracing
 
 See also: [UI Components Reference — Routing Diagram](../reference/ui-components.md#routing-diagram) for the complete technical reference of every element and control.
+
+**Need to change a route rather than just read one?** On supported processors, port names on destination and midpoint devices are clickable — see [Change Routes from the Routing Diagram](./change-routes.md).
