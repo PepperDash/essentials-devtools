@@ -47,6 +47,8 @@ export interface RoutePopoverProps {
   current?: RoutePopoverCurrent | null;
   /** Memoized candidate lookup. Only called for the sinkInput flow. */
   getCandidateSources: (signalType: string) => CandidateSource[];
+  /** Explains an empty source list for the sinkInput flow - the two causes need different fixes. */
+  describeEmptySources?: (signalType: string) => string;
   isSubmitting?: boolean;
   errorMessage?: string | null;
   onSubmit: (command: RoutingCommand) => void;
@@ -73,6 +75,7 @@ const RoutePopover = ({
   darkMode,
   current,
   getCandidateSources,
+  describeEmptySources,
   isSubmitting = false,
   errorMessage,
   onSubmit,
@@ -205,7 +208,8 @@ const RoutePopover = ({
 
   const emptyMessage =
     target.kind === "sinkInput"
-      ? `No source has a path to this input for ${signalType}.`
+      ? (describeEmptySources?.(signalType) ??
+        `No source has a path to this input for ${signalType}.`)
       : `No input on this device carries ${signalType}.`;
 
   // The panel styles itself rather than reusing Bootstrap's `card`. Both are single-class
