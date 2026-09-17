@@ -4,7 +4,9 @@ import { NavLink, useLocation } from "react-router-dom";
 import { meetsMinVersion } from "../shared/functions/meetsMinimumVersion";
 import useAppParams from "../shared/hooks/useAppParams";
 import { IconDarkChevronDown, IconDarkEllipse, IconDarkHelp } from "../shared/icons";
-import { useGetVersionsQuery } from "../store/apiSlice";
+import { skipToken } from "@reduxjs/toolkit/query";
+import { useGetPathsQuery, useGetVersionsQuery } from "../store/apiSlice";
+import { supportsSecretsApi } from "../store/secretsContract";
 import { selectAvailableApps } from "../store/auth/authSelectors";
 import { useAppSelector } from "../store/hooks";
 
@@ -61,6 +63,12 @@ const TopNav = ({ isConnected }: { isConnected: boolean }) => {
     const match = location.pathname.match(/^\/app\d+\/(.+)/);
     return match ? match[1] : "console";
   }, [location.pathname]);
+
+  // Detected from the processor's live route table rather than a version number, so the link
+  // appears exactly where the endpoint exists. RTK Query dedupes this with the Routing page's
+  // identical probe, so it costs no extra request.
+  const { data: apiPaths } = useGetPathsQuery(params.appId ? { appId: params.appId } : skipToken);
+  const showSecrets = useMemo(() => supportsSecretsApi(apiPaths?.routes), [apiPaths]);
 
   const showInitializationExceptions = useMemo(() => {
     const essentialsVersion = currentVersions?.find(
@@ -133,6 +141,11 @@ const TopNav = ({ isConnected }: { isConnected: boolean }) => {
           <AppNavLink appId={params.appId} path="mobileControl">
             Mobile Control
           </AppNavLink>
+          {showSecrets && (
+            <AppNavLink appId={params.appId} path="secrets">
+              Secrets
+            </AppNavLink>
+          )}
           <NavLink
             className={({ isActive }) => (isActive ? "me-3 text-secondary" : "me-3")}
             to="/help"

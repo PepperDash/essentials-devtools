@@ -13,6 +13,7 @@ import { selectSearchText } from '../../store/debugConsole/debugConsoleSelectors
 import { debugConsoleActions } from '../../store/debugConsole/debugConsoleSlice';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import type { RootState } from '../../store/store';
+import { downloadText } from '../../shared/functions/downloadFile';
 import ConsoleWindow from './ConsoleWindow';
 import { DebugFilters } from './DebugFilters';
 import MinimumLogLevelDropdown from './MinimumLogLevelDropdown';
@@ -45,17 +46,7 @@ const DebugConsole = ({isConnected, join, stop, clear}: DebugConsoleProps) => {
     const content = filteredItems
       .map((item) => `${item.Timestamp} [${item.Level}]${item.Properties?.Key ? ` [${item.Properties.Key}]` : ''} ${item.RenderedMessage}`)
       .join('\n');
-    const blob = new Blob([content], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `debug-log-${new Date().toISOString().replace(/[:.]/g, '-')}.log`;
-    document.body.appendChild(a);
-    a.click();
-    setTimeout(() => {
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-    }, 0);
+    downloadText(`debug-log-${new Date().toISOString().replace(/[:.]/g, '-')}.log`, content);
   };
 
   const clickRestart = () => {
