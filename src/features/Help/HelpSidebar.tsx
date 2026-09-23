@@ -1,5 +1,5 @@
-import { NavLink } from "react-router-dom";
-import { docsNavTree } from "./docsContent";
+import { NavLink } from 'react-router-dom';
+import { docsNavTree } from './docsContent';
 
 const HelpSidebar = () => {
   return (
@@ -8,7 +8,7 @@ const HelpSidebar = () => {
         to="/help"
         end
         className={({ isActive }) =>
-          `d-block mb-2 ${isActive ? "text-secondary" : ""}`
+          `d-block mb-2 ${isActive ? 'text-secondary' : ''}`
         }
       >
         Documentation Home
@@ -19,7 +19,7 @@ const HelpSidebar = () => {
             to={`/help/${category.indexSlug}`}
             end
             className={({ isActive }) =>
-              `d-block fw-semibold ${isActive ? "text-secondary" : ""}`
+              `d-block fw-semibold ${isActive ? 'text-secondary' : ''}`
             }
           >
             {category.label}
@@ -30,7 +30,7 @@ const HelpSidebar = () => {
                 <NavLink
                   to={`/help/${page.slug}`}
                   className={({ isActive }) =>
-                    isActive ? "text-secondary" : ""
+                    isActive ? 'text-secondary' : ''
                   }
                 >
                   {page.title}

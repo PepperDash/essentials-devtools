@@ -9,8 +9,9 @@
         ]
       }
     ],
-    "@semantic-release/release-notes-generator",    
-    ["@semantic-release/changelog", 
+    "@semantic-release/release-notes-generator",
+    [
+      "@semantic-release/changelog",
       {
         "changelogFile": "CHANGELOG.md"
       }
@@ -22,11 +23,11 @@
         "publishCmd": "echo \"version=${nextRelease.version}\" >> $GITHUB_OUTPUT && echo \"tag=${nextRelease.gitTag}\" >> $GITHUB_OUTPUT && echo \"type=${nextRelease.type}\" >> $GITHUB_OUTPUT && echo \"channel=${nextRelease.channel}\" >> $GITHUB_OUTPUT"
       }
     ]
-  ],  
+  ],
   "branches": [
     "main",
-    {"name": "development", "prerelease": "beta", "channel": "beta"},
-    {"name": "release", "prerelease": "rc", "channel": "rc"},
+    { "name": "development", "prerelease": "beta", "channel": "beta" },
+    { "name": "release", "prerelease": "rc", "channel": "rc" },
     {
       "name": "replace-me-feature-branch",
       "prerelease": "replace-me-prerelease",

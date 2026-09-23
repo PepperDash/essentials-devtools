@@ -1,4 +1,4 @@
-import { Middleware } from "@reduxjs/toolkit";
+import { Middleware } from '@reduxjs/toolkit';
 import {
   connected,
   connectionAttemptStarted,
@@ -9,7 +9,7 @@ import {
   WS_DISCONNECT,
   WsConnectAction,
   WsDisconnectAction,
-} from "./websocketSlice";
+} from './websocketSlice';
 
 export const websocketMiddleware: Middleware = (store) => {
   let socket: WebSocket | null = null;
@@ -33,7 +33,7 @@ export const websocketMiddleware: Middleware = (store) => {
     if (type === WS_CONNECT) {
       const { url, fallbackUrl } = (action as WsConnectAction).payload;
 
-      console.log("[ws] Connecting to", url);
+      console.log('[ws] Connecting to', url);
 
       store.dispatch(connectionAttemptStarted());
 
@@ -54,16 +54,20 @@ export const websocketMiddleware: Middleware = (store) => {
         };
         ws.onerror = (err) => {
           if (socket !== ws) return;
-          console.error("WebSocket error", err);
+          console.error('WebSocket error', err);
           if (fallback) {
-            console.log("[ws] Primary connection failed, falling back to", fallback);
+            console.log(
+              '[ws] Primary connection failed, falling back to',
+              fallback
+            );
             closeSocket();
             connectToUrl(fallback);
           } else {
             // Report all attempted URLs (primary + fallback that was tried)
-            const attemptedUrls = fallbackUrl && targetUrl === fallbackUrl
-              ? [url, fallbackUrl]
-              : [targetUrl];
+            const attemptedUrls =
+              fallbackUrl && targetUrl === fallbackUrl
+                ? [url, fallbackUrl]
+                : [targetUrl];
             store.dispatch(connectionFailed(attemptedUrls));
           }
         };
@@ -72,7 +76,7 @@ export const websocketMiddleware: Middleware = (store) => {
           try {
             store.dispatch(messageReceived(JSON.parse(event.data)));
           } catch (e) {
-            console.error("Failed to parse WebSocket message", e);
+            console.error('Failed to parse WebSocket message', e);
           }
         };
       };

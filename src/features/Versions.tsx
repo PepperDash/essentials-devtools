@@ -1,6 +1,6 @@
 import { skipToken } from '@reduxjs/toolkit/query';
 import useAppParams from '../shared/hooks/useAppParams';
-import { Version, useGetVersionsQuery } from "../store/apiSlice";
+import { Version, useGetVersionsQuery } from '../store/apiSlice';
 
 const Versions = () => {
   const { appId } = useAppParams();
@@ -11,7 +11,7 @@ const Versions = () => {
   }
 
   const unsorted: Version[] = [];
-  Object.assign(unsorted, versions)
+  Object.assign(unsorted, versions);
 
   const sorted = unsorted.sort((a, b) => {
     if (a.Name < b.Name) {

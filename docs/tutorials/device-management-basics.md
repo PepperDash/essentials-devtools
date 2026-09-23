@@ -4,7 +4,8 @@
 
 **Time required**: 20-25 minutes
 
-**Prerequisites**: 
+**Prerequisites**:
+
 - Completed the [Getting Started Tutorial](./getting-started.md)
 - Access to a system with configured devices
 - Basic understanding of the web app interface
@@ -30,12 +31,14 @@
 
 Each device has two important identifiers:
 
-**Key**: 
+**Key**:
+
 - Unique technical identifier used in configuration
 - Often follows naming conventions like "Display-01" or "Codec-Main"
 - Used internally by the system for routing commands
 
 **Name**:
+
 - Human-friendly display name
 - What users typically see in interfaces
 - Often describes location or function like "Conference Room Display"
@@ -81,9 +84,10 @@ Each device has two important identifiers:
    - Currently shows basic "Device Detail" header
    - This is where detailed device information would appear
 
-*Note: The current implementation shows a placeholder. In a fully implemented system, you would see:*
+_Note: The current implementation shows a placeholder. In a fully implemented system, you would see:_
 
 **Expected device details**:
+
 - Current status and connection state
 - Device properties (power state, input selection, volume, etc.)
 - Available methods (commands you can send)
@@ -99,6 +103,7 @@ Even with the current interface, you can gather valuable information:
 3. **Key format**: Indicates how the system organizes devices
 
 **Troubleshooting workflow**:
+
 1. Check if the problematic device appears in the device list
 2. Note its Key and Name for reference in debug messages
 3. Use the Key to filter debug console messages for that specific device
@@ -144,15 +149,17 @@ Even with the current interface, you can gather valuable information:
 Real systems have devices that work together:
 
 **Common relationships**:
+
 - **Display + Audio**: TV with sound system
 - **Touch Panel + Devices**: Control interface managing multiple devices
 - **Switcher + Endpoints**: Video routing with sources and destinations
 - **Codec + Peripherals**: Video conferencing system with cameras and microphones
 
 **Look for these patterns** in your device list:
+
 - Similar names with different suffixes (-01, -02, etc.)
 - Hierarchical naming (Room1-Display, Room1-Audio)
-- Functional grouping (Boardroom-*, Training-*)
+- Functional grouping (Boardroom-_, Training-_)
 
 ### Step 8: Configuration Insights
 
@@ -164,6 +171,7 @@ The device list reveals configuration decisions:
 4. **Missing devices**: Are expected devices configured?
 
 **Use this information to**:
+
 - Understand system complexity
 - Identify potential configuration issues
 - Plan troubleshooting approaches
@@ -174,19 +182,22 @@ The device list reveals configuration decisions:
 ## Best Practices for Device Management
 
 ### Investigation Workflow:
+
 1. ✅ **Start broad**: Review the complete device list
-2. ✅ **Identify patterns**: Look for naming conventions and groupings  
+2. ✅ **Identify patterns**: Look for naming conventions and groupings
 3. ✅ **Focus specific**: Select devices related to your current task
 4. ✅ **Cross-reference**: Use device Keys in debug console for detailed analysis
 5. ✅ **Document findings**: Note device relationships and issues
 
 ### Troubleshooting Tips:
+
 - ✅ Use device Keys (not Names) when filtering debug messages
 - ✅ Look for similar devices to compare expected vs. actual behavior
 - ✅ Check device types to understand what functionality should be available
 - ✅ Note device naming patterns to find related components
 
 ### Don'ts:
+
 - ❌ Assume device Names match debug message identifiers (use Keys)
 - ❌ Ignore devices that seem unrelated to your current problem
 - ❌ Forget to check if expected devices are actually configured
@@ -195,12 +206,14 @@ The device list reveals configuration decisions:
 ## Integration with Other Features
 
 ### Connecting Device Management to Debug Console:
+
 1. **Identify problem device** in device list
 2. **Note the device Key**
 3. **Filter debug console** to that specific device
 4. **Analyze messages** for that device's behavior
 
 ### Using Configuration Data:
+
 1. **Check device list** for what's configured
 2. **View config file** to see detailed device settings
 3. **Compare types list** to understand available capabilities
@@ -222,11 +235,13 @@ You now understand device management fundamentals:
 ## Current Limitations and Future Enhancements
 
 **Current interface limitations**:
+
 - Device detail panel shows placeholder content
 - No real-time device status information
 - Limited interaction capabilities
 
 **In enhanced versions, you might see**:
+
 - Live device status and properties
 - Command sending capabilities
 - Device method execution
@@ -242,16 +257,19 @@ You now understand device management fundamentals:
 ## Troubleshooting This Tutorial
 
 **No devices showing?**
+
 - Check that your system is properly configured
 - Verify you're connected to the right processor
 - Confirm the Essentials framework is running
 
 **Device names don't make sense?**
+
 - This reflects how your system was configured
 - Contact your system administrator for naming conventions
 - Use Keys for technical references, Names for user communication
 
 **Can't find expected devices?**
+
 - They may not be configured in the system
 - Check the configuration file for more details
 - Verify physical device connections and power

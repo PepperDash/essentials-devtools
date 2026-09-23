@@ -1,12 +1,6 @@
-import { createApi } from "@reduxjs/toolkit/query/react";
+import { createApi } from '@reduxjs/toolkit/query/react';
 
-import { axiosBaseQuery } from "../services/httpService";
-
-function getAppIdFromPath(): string {
-  const path = window.location.pathname;
-  const pathParts = path.split("/");
-  return pathParts[2];
-}
+import { axiosBaseQuery } from '../services/httpService';
 
 function getBaseApiPath(): string {
   return `/cws`;
@@ -15,33 +9,32 @@ function getBaseApiPath(): string {
 const apiSlice = createApi({
   baseQuery: axiosBaseQuery({ baseUrl: getBaseApiPath() }),
   tagTypes: [
-    "Version",
-    "Device",
-    "Type",
-    "DeviceProperty",
-    "DeviceMethod",
-    "DeviceFeedback",
-    "Config",
-    "DebugSession",
-    "DoNotLoadConfigOnNextBoot",
-    "MinimumLogLevel",
-    "MobileControlInfo",
+    'Version',
+    'Device',
+    'Type',
+    'DeviceProperty',
+    'DeviceMethod',
+    'DeviceFeedback',
+    'Config',
+    'DebugSession',
+    'DoNotLoadConfigOnNextBoot',
+    'MinimumLogLevel',
+    'MobileControlInfo',
   ],
   endpoints: (builder) => ({
     getPaths: builder.query<PathsReturn, { appId: string }>({
       query: ({ appId }) => ({
         url: `/${appId}/api/apiPaths`,
-        method: "GET",
+        method: 'GET',
       }),
     }),
-
 
     getVersions: builder.query<Version[], { appId: string }>({
       query: ({ appId }) => ({
         url: `/${appId}/api/versions`,
-        method: "GET",
+        method: 'GET',
       }),
-      providesTags: ["Version"],
+      providesTags: ['Version'],
     }),
 
     getInitializationExceptions: builder.query<
@@ -50,24 +43,24 @@ const apiSlice = createApi({
     >({
       query: ({ appId }) => ({
         url: `/${appId}/api/initializationExceptions`,
-        method: "GET",
+        method: 'GET',
       }),
     }),
 
     getDevices: builder.query<IKeyed[], { appId: string }>({
       query: ({ appId }) => ({
         url: `/${appId}/api/devices`,
-        method: "GET",
+        method: 'GET',
       }),
-      providesTags: ["Device"],
+      providesTags: ['Device'],
     }),
 
     getTypes: builder.query<Type[], { appId: string }>({
       query: ({ appId }) => ({
         url: `/${appId}/api/types`,
-        method: "GET",
+        method: 'GET',
       }),
-      providesTags: ["Type"],
+      providesTags: ['Type'],
     }),
 
     getDeviceProperties: builder.query<
@@ -76,9 +69,9 @@ const apiSlice = createApi({
     >({
       query: ({ appId, key }) => ({
         url: `/${appId}/api/deviceProperties/${key}`,
-        method: "GET",
+        method: 'GET',
       }),
-      providesTags: ["DeviceProperty"],
+      providesTags: ['DeviceProperty'],
     }),
 
     getDeviceMethods: builder.query<
@@ -87,7 +80,7 @@ const apiSlice = createApi({
     >({
       query: ({ appId, key }) => ({
         url: `/${appId}/api/deviceMethods/${key}`,
-        method: "GET",
+        method: 'GET',
       }),
     }),
 
@@ -97,9 +90,9 @@ const apiSlice = createApi({
     >({
       query: ({ appId, key }) => ({
         url: `/${appId}/api/deviceFeedbacks/${key}`,
-        method: "GET",
+        method: 'GET',
       }),
-      providesTags: ["DeviceFeedback"],
+      providesTags: ['DeviceFeedback'],
     }),
 
     setDeviceJsonCommand: builder.mutation<
@@ -113,7 +106,7 @@ const apiSlice = createApi({
     >({
       query: ({ appId, deviceKey, methodName, params }) => ({
         url: `/${appId}/api/deviceCommands/${deviceKey}`,
-        method: "POST",
+        method: 'POST',
         data: { deviceKey, methodName, params },
       }),
     }),
@@ -124,16 +117,16 @@ const apiSlice = createApi({
     >({
       query: ({ appId }) => ({
         url: `/${appId}/api/routingDevicesAndTieLines`,
-        method: "GET",
+        method: 'GET',
       }),
     }),
 
-    getConfig: builder.query<any, { appId: string }>({
+    getConfig: builder.query<unknown, { appId: string }>({
       query: ({ appId }) => ({
         url: `/${appId}/api/config`,
-        method: "GET",
+        method: 'GET',
       }),
-      providesTags: ["Config"],
+      providesTags: ['Config'],
     }),
 
     getMobileControlInfo: builder.query<
@@ -142,9 +135,9 @@ const apiSlice = createApi({
     >({
       query: ({ appId, deviceKey }) => ({
         url: `/${appId}/api/device/${deviceKey}/info`,
-        method: "GET",
+        method: 'GET',
       }),
-      providesTags: ["MobileControlInfo"],
+      providesTags: ['MobileControlInfo'],
     }),
 
     getMobileControlActionPaths: builder.query<
@@ -153,14 +146,14 @@ const apiSlice = createApi({
     >({
       query: ({ appId, deviceKey }) => ({
         url: `/${appId}/api/device/${deviceKey}/actionPaths`,
-        method: "GET",
+        method: 'GET',
       }),
     }),
 
     getDebugSession: builder.mutation<DebugSession, { appId: string }>({
       query: ({ appId }) => ({
         url: `/${appId}/api/debugSession`,
-        method: "GET",
+        method: 'GET',
       }),
     }),
 
@@ -170,9 +163,9 @@ const apiSlice = createApi({
     >({
       query: ({ appId }) => ({
         url: `/${appId}/api/appdebug`,
-        method: "GET",
+        method: 'GET',
       }),
-      providesTags: ["MinimumLogLevel"],
+      providesTags: ['MinimumLogLevel'],
     }),
 
     setLoginCredentials: builder.mutation<
@@ -181,7 +174,7 @@ const apiSlice = createApi({
     >({
       query: ({ appId, username, password }) => ({
         url: `/${appId}/api/login`,
-        method: "POST",
+        method: 'POST',
         data: { username, password },
       }),
     }),
@@ -192,16 +185,16 @@ const apiSlice = createApi({
     >({
       query: ({ appId, minimumLevel }) => ({
         url: `/${appId}/api/appdebug`,
-        method: "POST",
+        method: 'POST',
         data: { minimumLevel },
       }),
-      invalidatesTags: ["MinimumLogLevel"],
+      invalidatesTags: ['MinimumLogLevel'],
     }),
 
     stopDebugSession: builder.mutation<void, { appId: string }>({
       query: ({ appId }) => ({
         url: `/${appId}/api/debugSession`,
-        method: "POST",
+        method: 'POST',
       }),
     }),
 
@@ -211,9 +204,9 @@ const apiSlice = createApi({
     >({
       query: ({ appId }) => ({
         url: `/${appId}/api/doNotLoadConfigOnNextBoot`,
-        method: "GET",
+        method: 'GET',
       }),
-      providesTags: ["DoNotLoadConfigOnNextBoot"],
+      providesTags: ['DoNotLoadConfigOnNextBoot'],
     }),
 
     setDoNotLoadConfigOnNextBoot: builder.mutation<
@@ -222,36 +215,36 @@ const apiSlice = createApi({
     >({
       query: ({ appId, doNotLoadConfigOnNextBoot }) => ({
         url: `/${appId}/api/doNotLoadConfigOnNextBoot`,
-        method: "POST",
+        method: 'POST',
         data: { doNotLoadConfigOnNextBoot },
       }),
-      invalidatesTags: ["DoNotLoadConfigOnNextBoot"],
+      invalidatesTags: ['DoNotLoadConfigOnNextBoot'],
     }),
 
     setRestart: builder.mutation<void, { appId: string }>({
       query: ({ appId }) => ({
         url: `/${appId}/api/restartProgram`,
-        method: "POST",
+        method: 'POST',
       }),
     }),
 
     setLoadConfig: builder.mutation<void, { appId: string }>({
       query: ({ appId }) => ({
         url: `/${appId}/api/loadConfig`,
-        method: "POST",
+        method: 'POST',
       }),
     }),
 
     createMobileControlUiClient: builder.mutation<
       ClientResponse,
-      { appId: string; deviceKey: string, request: ClientRequest }
+      { appId: string; deviceKey: string; request: ClientRequest }
     >({
       query: ({ appId, deviceKey, request }) => ({
         url: `/${appId}/api/device/${deviceKey}/client`,
-        method: "POST",
+        method: 'POST',
         data: request,
       }),
-      invalidatesTags: ["MobileControlInfo"],
+      invalidatesTags: ['MobileControlInfo'],
     }),
 
     deleteMobileControlUiClient: builder.mutation<
@@ -260,10 +253,10 @@ const apiSlice = createApi({
     >({
       query: ({ appId, deviceKey, client }) => ({
         url: `/${appId}/api/device/${deviceKey}/client`,
-        method: "DELETE",
+        method: 'DELETE',
         data: client,
       }),
-      invalidatesTags: ["MobileControlInfo"],
+      invalidatesTags: ['MobileControlInfo'],
     }),
 
     deleteAllMobileControlUiClients: builder.mutation<
@@ -272,9 +265,9 @@ const apiSlice = createApi({
     >({
       query: ({ appId, deviceKey }) => ({
         url: `/${appId}/api/device/${deviceKey}/deleteAllUiClients`,
-        method: "DELETE",
+        method: 'DELETE',
       }),
-      invalidatesTags: ["MobileControlInfo"],
+      invalidatesTags: ['MobileControlInfo'],
     }),
   }),
 });
@@ -542,7 +535,7 @@ export interface SinkRoute {
 }
 
 export interface RoutingSnapshotMessage {
-  type: "snapshot";
+  type: 'snapshot';
   midpointRoutes: Record<string, MidpointRoute[]>;
   // A device implementing IRoutingSinkWithLayouts (e.g. a multiview decoder) can have multiple
   // simultaneous tile routes reported under its one device key, so this is a list per device
@@ -554,13 +547,13 @@ export interface RoutingSnapshotMessage {
 }
 
 export interface MidpointRouteChangedMessage {
-  type: "midpointRouteChanged";
+  type: 'midpointRouteChanged';
   deviceKey: string;
   routes: MidpointRoute[];
 }
 
 export interface SinkInputChangedMessage {
-  type: "sinkInputChanged";
+  type: 'sinkInputChanged';
   deviceKey: string;
   inputPortKey: string;
   sourceDeviceKey: string;
@@ -568,7 +561,7 @@ export interface SinkInputChangedMessage {
 }
 
 export interface LayoutChangedMessage {
-  type: "layoutChanged";
+  type: 'layoutChanged';
   deviceKey: string;
   layout: MultiviewLayoutState;
 }
@@ -580,9 +573,4 @@ export type RoutingFeedbackMessage =
   | LayoutChangedMessage;
 
 export type LogEventLevel =
-  | "Verbose"
-  | "Debug"
-  | "Information"
-  | "Warning"
-  | "Error"
-  | "Fatal";
+  'Verbose' | 'Debug' | 'Information' | 'Warning' | 'Error' | 'Fatal';

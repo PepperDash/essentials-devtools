@@ -1,5 +1,5 @@
-import { Component, ErrorInfo, ReactNode } from "react";
-import ErrorBox from "./ErrorBox";
+import { Component, ErrorInfo, ReactNode } from 'react';
+import ErrorBox from './ErrorBox';
 
 interface Props {
   children: ReactNode;
@@ -17,7 +17,7 @@ class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, info: ErrorInfo) {
-    console.error("ErrorBoundary caught an error:", error, info.componentStack);
+    console.error('ErrorBoundary caught an error:', error, info.componentStack);
   }
 
   render() {

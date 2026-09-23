@@ -11,13 +11,7 @@ const RequireAuth = () => {
   if (!isAuthenticated) {
     const loginPath =
       appId && appId !== 'undefined' ? `/${appId}/login` : '/login';
-    return (
-      <Navigate
-        to={loginPath}
-        state={{ from: location }}
-        replace
-      />
-    );
+    return <Navigate to={loginPath} state={{ from: location }} replace />;
   }
 
   return <Outlet />;

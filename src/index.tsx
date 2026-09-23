@@ -1,11 +1,11 @@
-import React from "react";
-import ReactDOM from "react-dom/client";
-import { Provider } from "react-redux";
+import React from 'react';
+import ReactDOM from 'react-dom/client';
+import { Provider } from 'react-redux';
 import { BrowserRouter } from 'react-router-dom';
-import App from "./App";
-import reportWebVitals from "./reportWebVitals";
-import { store } from "./store/store";
-import "./styles.scss";
+import App from './App';
+import reportWebVitals from './reportWebVitals';
+import { store } from './store/store';
+import './styles.scss';
 
 // const router = createBrowserRouter(
 //   [
@@ -18,12 +18,12 @@ import "./styles.scss";
 // );
 
 const root = ReactDOM.createRoot(
-  document.getElementById("root") as HTMLElement
+  document.getElementById('root') as HTMLElement
 );
 root.render(
   <React.StrictMode>
     <Provider store={store}>
-      <BrowserRouter basename='/cws/debug'>
+      <BrowserRouter basename="/cws/debug">
         <App />
       </BrowserRouter>
     </Provider>

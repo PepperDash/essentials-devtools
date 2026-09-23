@@ -1,19 +1,19 @@
-import { Middleware } from "@reduxjs/toolkit";
-import { RoutingFeedbackMessage } from "./apiSlice";
+import { Middleware } from '@reduxjs/toolkit';
+import { RoutingFeedbackMessage } from './apiSlice';
 import {
-    layoutChanged,
-    midpointRouteChanged,
-    ROUTING_WS_CONNECT,
-    ROUTING_WS_DISCONNECT,
-    routingFeedbackReset,
-    routingSnapshotReceived,
-    RoutingWsConnectAction,
-    routingWsConnected,
-    routingWsConnectionFailed,
-    RoutingWsDisconnectAction,
-    routingWsDisconnected,
-    sinkInputChanged,
-} from "./routingFeedbackSlice";
+  layoutChanged,
+  midpointRouteChanged,
+  ROUTING_WS_CONNECT,
+  ROUTING_WS_DISCONNECT,
+  routingFeedbackReset,
+  routingSnapshotReceived,
+  RoutingWsConnectAction,
+  routingWsConnected,
+  routingWsConnectionFailed,
+  RoutingWsDisconnectAction,
+  routingWsDisconnected,
+  sinkInputChanged,
+} from './routingFeedbackSlice';
 
 const RECONNECT_DELAY_MS = 3000;
 const MAX_RECONNECT_ATTEMPTS = 5;
@@ -72,9 +72,12 @@ export const routingFeedbackMiddleware: Middleware = (store) => {
     };
 
     socket.onerror = (err) => {
-      console.error("[routing-ws] WebSocket error", err);
+      console.error('[routing-ws] WebSocket error', err);
       if (fallback) {
-        console.log("[routing-ws] Primary connection failed, falling back to", fallback);
+        console.log(
+          '[routing-ws] Primary connection failed, falling back to',
+          fallback
+        );
         connectToUrl(fallback);
       }
     };
@@ -83,21 +86,21 @@ export const routingFeedbackMiddleware: Middleware = (store) => {
       try {
         const msg = JSON.parse(event.data) as RoutingFeedbackMessage;
         switch (msg.type) {
-          case "snapshot":
+          case 'snapshot':
             store.dispatch(routingSnapshotReceived(msg));
             break;
-          case "midpointRouteChanged":
+          case 'midpointRouteChanged':
             store.dispatch(midpointRouteChanged(msg));
             break;
-          case "sinkInputChanged":
+          case 'sinkInputChanged':
             store.dispatch(sinkInputChanged(msg));
             break;
-          case "layoutChanged":
+          case 'layoutChanged':
             store.dispatch(layoutChanged(msg));
             break;
         }
       } catch (e) {
-        console.error("[routing-ws] Failed to parse message", e);
+        console.error('[routing-ws] Failed to parse message', e);
       }
     };
   }
@@ -118,10 +121,12 @@ export const routingFeedbackMiddleware: Middleware = (store) => {
   }
 
   return (next) => (action) => {
-    const { type } = action as RoutingWsConnectAction | RoutingWsDisconnectAction;
+    const { type } = action as
+      RoutingWsConnectAction | RoutingWsDisconnectAction;
 
     if (type === ROUTING_WS_CONNECT) {
-      const { url, fallbackUrl: fb } = (action as RoutingWsConnectAction).payload;
+      const { url, fallbackUrl: fb } = (action as RoutingWsConnectAction)
+        .payload;
       cleanup();
       fallbackUrl = fb ?? null;
       connectToUrl(url, fallbackUrl ?? undefined);
