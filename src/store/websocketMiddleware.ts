@@ -35,10 +35,11 @@ export const websocketMiddleware: Middleware = (store) => {
 
       console.log('[ws] Connecting to', url);
 
-      store.dispatch(connectionAttemptStarted());
-
-      // Close any existing connection before opening a new one
+      // Close any existing connection before opening a new one. Its handlers
+      // are detached, so report the disconnect here before the new attempt
       closeSocket();
+      store.dispatch(disconnected());
+      store.dispatch(connectionAttemptStarted());
 
       const connectToUrl = (targetUrl: string, fallback?: string) => {
         const ws = new WebSocket(targetUrl);

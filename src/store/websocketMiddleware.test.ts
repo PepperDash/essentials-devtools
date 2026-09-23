@@ -58,9 +58,20 @@ describe('websocketMiddleware', () => {
   it('keeps a single live socket when connect is dispatched twice', () => {
     const store = makeStore();
     connect(store);
+    // Capture the first socket's handlers before the reconnect detaches them
+    const stale = FakeWebSocket.instances[0];
+    const { onopen, onmessage } = stale;
     connect(store);
 
     expect(openSockets()).toHaveLength(1);
+
+    onopen?.call(stale);
+    onmessage?.call(stale, {
+      data: JSON.stringify({ RenderedMessage: 'stale' }),
+    });
+
+    expect(store.getState().websocket.isConnected).toBe(false);
+    expect(store.getState().websocket.messages).toHaveLength(0);
 
     openSockets()[0].onopen?.();
     openSockets()[0].receive({ RenderedMessage: 'hello' });
@@ -88,5 +99,44 @@ describe('websocketMiddleware', () => {
     FakeWebSocket.instances[0].onerror?.(new Event('error'));
 
     expect(openSockets().map((s) => s.url)).toEqual(['ws://fallback']);
+  });
+
+  it('clears isConnected when a replacement connection fails', () => {
+    const store = makeStore();
+    connect(store);
+    FakeWebSocket.instances[0].onopen?.();
+    expect(store.getState().websocket.isConnected).toBe(true);
+
+    connect(store);
+    FakeWebSocket.instances[1].onerror?.(new Event('error'));
+    FakeWebSocket.instances[2].onerror?.(new Event('error'));
+
+    const state = store.getState().websocket;
+    expect(state.isConnected).toBe(false);
+    expect(state.isConnecting).toBe(false);
+    expect(state.failedUrls).toEqual(['ws://primary', 'ws://fallback']);
+  });
+
+  it('tracks isConnecting from connect until the socket opens', () => {
+    const store = makeStore();
+    connect(store);
+    expect(store.getState().websocket.isConnecting).toBe(true);
+
+    // Still connecting while the fallback is being tried
+    FakeWebSocket.instances[0].onerror?.(new Event('error'));
+    expect(store.getState().websocket.isConnecting).toBe(true);
+
+    FakeWebSocket.instances[1].onopen?.();
+    expect(store.getState().websocket.isConnecting).toBe(false);
+    expect(store.getState().websocket.isConnected).toBe(true);
+  });
+
+  it('clears isConnecting on disconnect during the handshake', () => {
+    const store = makeStore();
+    connect(store);
+
+    store.dispatch({ type: WS_DISCONNECT });
+
+    expect(store.getState().websocket.isConnecting).toBe(false);
   });
 });

@@ -21,6 +21,7 @@ import { useFilteredMessages } from './hooks/useFilteredMessages';
 
 const DebugConsole = ({
   isConnected,
+  isConnecting,
   join,
   stop,
   clear,
@@ -97,9 +98,10 @@ const DebugConsole = ({
               className="mx-1"
               variant="success"
               size="sm"
+              disabled={isConnecting}
               onClick={() => void join(appId)}
             >
-              Start Debug Session
+              {isConnecting ? 'Connecting...' : 'Start Debug Session'}
             </Button>
           ) : (
             <Button
@@ -208,6 +210,7 @@ export default DebugConsole;
 
 interface DebugConsoleProps {
   isConnected: boolean;
+  isConnecting: boolean;
   join: (appId: string) => Promise<void>;
   stop: (appId: string) => void;
   clear: () => void;

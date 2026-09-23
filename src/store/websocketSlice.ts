@@ -4,12 +4,15 @@ import { LogMessage } from '../shared/types/LogMessage';
 interface WebsocketState {
   messages: LogMessage[];
   isConnected: boolean;
+  /** True from the start of a join until the socket opens, fails, or closes */
+  isConnecting: boolean;
   failedUrls: string[] | null;
 }
 
 const initialState: WebsocketState = {
   messages: [],
   isConnected: false,
+  isConnecting: false,
   failedUrls: null,
 };
 
@@ -20,10 +23,12 @@ const websocketSlice = createSlice({
     /** Dispatched by the middleware when the socket opens */
     connected(state) {
       state.isConnected = true;
+      state.isConnecting = false;
     },
     /** Dispatched by the middleware when the socket closes */
     disconnected(state) {
       state.isConnected = false;
+      state.isConnecting = false;
     },
     /** Dispatched by the middleware for each incoming message */
     messageReceived(state, action: PayloadAction<LogMessage>) {
@@ -36,10 +41,12 @@ const websocketSlice = createSlice({
     /** Dispatched by the middleware when a connection attempt fails */
     connectionFailed(state, action: PayloadAction<string[]>) {
       state.failedUrls = action.payload;
+      state.isConnecting = false;
     },
-    /** Dispatched by the middleware when a new connection attempt starts */
+    /** Dispatched when a join begins and again when the socket is opened */
     connectionAttemptStarted(state) {
       state.failedUrls = null;
+      state.isConnecting = true;
     },
   },
 });

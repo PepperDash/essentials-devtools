@@ -1,5 +1,5 @@
-import { Suspense, useRef } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+import { Suspense } from 'react';
+import { useDispatch, useSelector, useStore } from 'react-redux';
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { ApiPaths } from './features/ApiPaths';
 import ConfigFile from './features/ConfigFile';
@@ -21,6 +21,8 @@ import {
 } from './store/apiSlice';
 import { AppDispatch, RootState } from './store/store';
 import {
+  connectionAttemptStarted,
+  disconnected,
   messagesCleared,
   WS_CONNECT,
   WS_DISCONNECT,
@@ -28,19 +30,24 @@ import {
 
 function App() {
   const dispatch = useDispatch<AppDispatch>();
+  const store = useStore<RootState>();
   const isConnected = useSelector(
     (state: RootState) => state.websocket.isConnected
+  );
+  const isConnecting = useSelector(
+    (state: RootState) => state.websocket.isConnecting
   );
 
   const [startSession] = useGetDebugSessionMutation();
   const [stopSession] = useStopDebugSessionMutation();
-  const joiningRef = useRef(false);
 
   //* FUNCTIONS *******************************************************/
   const join = async (appId: string) => {
-    // Ignore repeat clicks while a session request is already in flight
-    if (!appId || joiningRef.current) return;
-    joiningRef.current = true;
+    // Ignore repeat clicks until the current attempt connects or fails. Read
+    // the store directly so a click before re-render still sees the flag
+    const { isConnecting, isConnected } = store.getState().websocket;
+    if (!appId || isConnecting || isConnected) return;
+    dispatch(connectionAttemptStarted());
     try {
       const res = await startSession({ appId }).unwrap();
       // The server already picks the URL on the browser's side of the network
@@ -53,8 +60,7 @@ function App() {
       dispatch({ type: WS_CONNECT, payload: { url, fallbackUrl } });
     } catch (err) {
       console.error('Failed to start debug session', err);
-    } finally {
-      joiningRef.current = false;
+      dispatch(disconnected());
     }
   };
 
@@ -99,6 +105,7 @@ function App() {
                 element={
                   <DebugConsole
                     isConnected={isConnected}
+                    isConnecting={isConnecting}
                     join={join}
                     stop={stop}
                     clear={clear}
