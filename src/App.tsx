@@ -51,6 +51,8 @@ function App() {
           (fallbackUrl ? ' (fallback: ' + fallbackUrl + ')' : '')
       );
       dispatch({ type: WS_CONNECT, payload: { url, fallbackUrl } });
+    } catch (err) {
+      console.error('Failed to start debug session', err);
     } finally {
       joiningRef.current = false;
     }
@@ -60,7 +62,7 @@ function App() {
     console.log('Stopping debug session');
     dispatch({ type: WS_DISCONNECT });
     if (!appId) return;
-    stopSession({ appId });
+    void stopSession({ appId });
   };
 
   const clear = () => {

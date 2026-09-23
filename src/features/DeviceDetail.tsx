@@ -178,7 +178,7 @@ const DeviceDetailRender = ({
             </Button>
             <Button
               variant="primary"
-              onClick={handleExecute}
+              onClick={() => void handleExecute()}
               disabled={isExecuting}
             >
               {isExecuting ? 'Executing…' : 'Execute'}

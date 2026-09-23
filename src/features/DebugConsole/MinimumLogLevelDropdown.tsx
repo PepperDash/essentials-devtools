@@ -30,42 +30,42 @@ const MinimumLogLevelDropdown = () => {
       <Dropdown.Menu className="shadow">
         <Dropdown.Item
           onClick={() => {
-            setLogLevel({ appId, minimumLevel: 'Information' });
+            void setLogLevel({ appId, minimumLevel: 'Information' });
           }}
         >
           Information
         </Dropdown.Item>
         <Dropdown.Item
           onClick={() => {
-            setLogLevel({ appId, minimumLevel: 'Warning' });
+            void setLogLevel({ appId, minimumLevel: 'Warning' });
           }}
         >
           Warning
         </Dropdown.Item>
         <Dropdown.Item
           onClick={() => {
-            setLogLevel({ appId, minimumLevel: 'Error' });
+            void setLogLevel({ appId, minimumLevel: 'Error' });
           }}
         >
           Error
         </Dropdown.Item>
         <Dropdown.Item
           onClick={() => {
-            setLogLevel({ appId, minimumLevel: 'Fatal' });
+            void setLogLevel({ appId, minimumLevel: 'Fatal' });
           }}
         >
           Fatal
         </Dropdown.Item>
         <Dropdown.Item
           onClick={() => {
-            setLogLevel({ appId, minimumLevel: 'Debug' });
+            void setLogLevel({ appId, minimumLevel: 'Debug' });
           }}
         >
           Debug
         </Dropdown.Item>
         <Dropdown.Item
           onClick={() => {
-            setLogLevel({ appId, minimumLevel: 'Verbose' });
+            void setLogLevel({ appId, minimumLevel: 'Verbose' });
           }}
         >
           Verbose

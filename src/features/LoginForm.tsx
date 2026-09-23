@@ -76,7 +76,7 @@ const LoginForm = () => {
     dispatch(authActions.loginSuccess(availableApps));
 
     const destination = from ?? `/${availableApps[0] ?? probeAppId}/versions`;
-    navigate(destination, { replace: true });
+    void navigate(destination, { replace: true });
   }
 
   return (
@@ -93,7 +93,7 @@ const LoginForm = () => {
       <div className="w-100" style={{ maxWidth: '360px' }}>
         <h2 className="mb-4">Sign In</h2>
         {error && <Alert variant="danger">{error}</Alert>}
-        <Form onSubmit={handleSubmit}>
+        <Form onSubmit={(e) => void handleSubmit(e)}>
           <Form.Group className="mb-3" controlId="username">
             <Form.Label>Username</Form.Label>
             <Form.Control

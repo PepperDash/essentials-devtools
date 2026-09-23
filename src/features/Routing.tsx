@@ -579,7 +579,7 @@ const Routing = () => {
   // WebSocket to disconnect and reconnect (e.g. after the routing feedback server was restarted,
   // or its connection got stuck).
   const handleRefreshClick = useCallback(() => {
-    refetch();
+    void refetch();
     dispatch({ type: ROUTING_WS_DISCONNECT });
     connectRoutingWebSocket();
   }, [refetch, dispatch, connectRoutingWebSocket]);

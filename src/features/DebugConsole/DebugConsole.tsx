@@ -79,7 +79,7 @@ const DebugConsole = ({
   const clickLoadConfig = () => {
     if (!appId) return;
     console.log('Loading config');
-    loadConfig({ appId });
+    void loadConfig({ appId });
   };
 
   if (!doNotLoadConfigOnNextBoot || !appId) return null;
@@ -97,7 +97,7 @@ const DebugConsole = ({
               className="mx-1"
               variant="success"
               size="sm"
-              onClick={() => join(appId)}
+              onClick={() => void join(appId)}
             >
               Start Debug Session
             </Button>
@@ -121,7 +121,7 @@ const DebugConsole = ({
             checked={doNotLoadConfigOnNextBoot?.doNotLoadConfigOnNextBoot}
             onChange={() => {
               if (!appId) return;
-              setDoNotLoadConfig({
+              void setDoNotLoadConfig({
                 appId,
                 doNotLoadConfigOnNextBoot:
                   !doNotLoadConfigOnNextBoot?.doNotLoadConfigOnNextBoot,
@@ -196,7 +196,7 @@ const DebugConsole = ({
         handleClose={() => setShowModal(false)}
         handleConfirm={() => {
           if (!appId) return;
-          restart({ appId });
+          void restart({ appId });
           setShowModal(false);
         }}
       />
@@ -208,7 +208,7 @@ export default DebugConsole;
 
 interface DebugConsoleProps {
   isConnected: boolean;
-  join: (appId: string) => void;
+  join: (appId: string) => Promise<void>;
   stop: (appId: string) => void;
   clear: () => void;
 }

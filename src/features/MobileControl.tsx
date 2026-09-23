@@ -209,7 +209,7 @@ const MobileControl = () => {
           <Button variant="secondary" onClick={() => setPendingDelete(null)}>
             Cancel
           </Button>
-          <Button variant="danger" onClick={handleConfirmDelete}>
+          <Button variant="danger" onClick={() => void handleConfirmDelete()}>
             Delete
           </Button>
         </Modal.Footer>
@@ -233,7 +233,10 @@ const MobileControl = () => {
           >
             Cancel
           </Button>
-          <Button variant="danger" onClick={handleConfirmDeleteAll}>
+          <Button
+            variant="danger"
+            onClick={() => void handleConfirmDeleteAll()}
+          >
             Delete All
           </Button>
         </Modal.Footer>
@@ -279,7 +282,7 @@ const MobileControl = () => {
           </Button>
           <Button
             variant="primary"
-            onClick={handleCreateClient}
+            onClick={() => void handleCreateClient()}
             disabled={!newRoomKey.trim()}
           >
             Create

@@ -7,6 +7,19 @@ import { useGetConfigQuery } from '../store/apiSlice';
 
 type IConfigViewer = Parameters<OnMount>[0];
 
+// Newer monaco typings drop languages.json, but the runtime still provides it
+type LegacyJsonLanguages = {
+  json?: {
+    jsonDefaults?: {
+      setDiagnosticsOptions(options: {
+        enableSchemaRequest?: boolean;
+        allowComments?: boolean;
+        validate?: boolean;
+      }): void;
+    };
+  };
+};
+
 const ConfigFile = () => {
   const { appId } = useAppParams();
   const {
@@ -25,7 +38,7 @@ const ConfigFile = () => {
         <Button
           variant="outline-secondary"
           size="sm"
-          onClick={refetch}
+          onClick={() => void refetch()}
           disabled={isFetching}
         >
           {isFetching ? 'Refreshing…' : 'Refresh Config'}
@@ -40,7 +53,7 @@ const ConfigFile = () => {
 
 export default ConfigFile;
 
-const ConfigFileRender = ({ config }: { config: any }) => {
+const ConfigFileRender = ({ config }: { config: unknown }) => {
   console.log('ConfigFileRender == ', config);
   const monaco = useMonaco();
   const editorRef = useRef<IConfigViewer | null>(null);
@@ -48,7 +61,9 @@ const ConfigFileRender = ({ config }: { config: any }) => {
   useEffect(() => {
     if (!monaco) return;
 
-    (monaco.languages as any).json?.jsonDefaults?.setDiagnosticsOptions({
+    (
+      monaco.languages as unknown as LegacyJsonLanguages
+    ).json?.jsonDefaults?.setDiagnosticsOptions({
       enableSchemaRequest: false,
       allowComments: false,
       validate: true,

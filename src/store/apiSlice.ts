@@ -2,12 +2,6 @@ import { createApi } from '@reduxjs/toolkit/query/react';
 
 import { axiosBaseQuery } from '../services/httpService';
 
-function getAppIdFromPath(): string {
-  const path = window.location.pathname;
-  const pathParts = path.split('/');
-  return pathParts[2];
-}
-
 function getBaseApiPath(): string {
   return `/cws`;
 }
@@ -127,7 +121,7 @@ const apiSlice = createApi({
       }),
     }),
 
-    getConfig: builder.query<any, { appId: string }>({
+    getConfig: builder.query<unknown, { appId: string }>({
       query: ({ appId }) => ({
         url: `/${appId}/api/config`,
         method: 'GET',
