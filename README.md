@@ -119,7 +119,7 @@ VITE_PROGRAM_ID=app01                     # Optional: Default application slot
 
 **Development Prerequisites:**
 
-- Node.js 18+
+- Node.js 20.19+, 22.13+, or 24+ (required by Vite, Vitest's jsdom environment, and ESLint)
 - npm
 - Network access to target PepperDash Essentials processor
 - Modern web browser
