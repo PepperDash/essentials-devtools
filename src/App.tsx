@@ -37,10 +37,10 @@ function App() {
     joiningRef.current = true;
     try {
       const res = await startSession({ appId }).unwrap();
-      const primaryUrl = res.fallbackUrl || res.url;
-      const fallbackUrl = res.fallbackUrl ? res.url : undefined;
-      console.log("Joining debug session at " + primaryUrl + (fallbackUrl ? " (fallback: " + fallbackUrl + ")" : ""));
-      dispatch({ type: WS_CONNECT, payload: { url: primaryUrl, fallbackUrl } });
+      // The server already picks the URL on the browser's side of the network
+      const { url, fallbackUrl } = res;
+      console.log("Joining debug session at " + url + (fallbackUrl ? " (fallback: " + fallbackUrl + ")" : ""));
+      dispatch({ type: WS_CONNECT, payload: { url, fallbackUrl } });
     } finally {
       joiningRef.current = false;
     }
