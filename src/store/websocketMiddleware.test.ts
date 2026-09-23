@@ -117,6 +117,21 @@ describe('websocketMiddleware', () => {
     expect(state.failedUrls).toEqual(['ws://primary', 'ws://fallback']);
   });
 
+  it('clears isConnected when a fallback connection fails after a live socket errors', () => {
+    const store = makeStore();
+    connect(store);
+    FakeWebSocket.instances[0].onopen?.();
+    expect(store.getState().websocket.isConnected).toBe(true);
+
+    FakeWebSocket.instances[0].onerror?.(new Event('error'));
+    FakeWebSocket.instances[1].onerror?.(new Event('error'));
+
+    const state = store.getState().websocket;
+    expect(state.isConnected).toBe(false);
+    expect(state.isConnecting).toBe(false);
+    expect(state.failedUrls).toEqual(['ws://primary', 'ws://fallback']);
+  });
+
   it('tracks isConnecting from connect until the socket opens', () => {
     const store = makeStore();
     connect(store);

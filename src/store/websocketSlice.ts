@@ -41,6 +41,7 @@ const websocketSlice = createSlice({
     /** Dispatched by the middleware when a connection attempt fails */
     connectionFailed(state, action: PayloadAction<string[]>) {
       state.failedUrls = action.payload;
+      state.isConnected = false;
       state.isConnecting = false;
     },
     /** Dispatched when a join begins and again when the socket is opened */
