@@ -14,6 +14,19 @@ import {
 export const websocketMiddleware: Middleware = (store) => {
   let socket: WebSocket | null = null;
 
+  // Detach handlers before closing so a stale socket can't clobber the
+  // current one, trigger a fallback connection, or keep dispatching messages
+  const closeSocket = () => {
+    if (socket) {
+      socket.onopen = null;
+      socket.onclose = null;
+      socket.onerror = null;
+      socket.onmessage = null;
+      socket.close();
+      socket = null;
+    }
+  };
+
   return (next) => (action) => {
     const { type } = action as WsConnectAction | WsDisconnectAction;
 
@@ -25,21 +38,26 @@ export const websocketMiddleware: Middleware = (store) => {
       store.dispatch(connectionAttemptStarted());
 
       // Close any existing connection before opening a new one
-      if (socket) {
-        socket.close();
-      }
+      closeSocket();
 
       const connectToUrl = (targetUrl: string, fallback?: string) => {
-        socket = new WebSocket(targetUrl);
-        socket.onopen = () => store.dispatch(connected());
-        socket.onclose = () => {
+        const ws = new WebSocket(targetUrl);
+        socket = ws;
+        ws.onopen = () => {
+          if (socket !== ws) return;
+          store.dispatch(connected());
+        };
+        ws.onclose = () => {
+          if (socket !== ws) return;
           store.dispatch(disconnected());
           socket = null;
         };
-        socket.onerror = (err) => {
+        ws.onerror = (err) => {
+          if (socket !== ws) return;
           console.error("WebSocket error", err);
           if (fallback) {
             console.log("[ws] Primary connection failed, falling back to", fallback);
+            closeSocket();
             connectToUrl(fallback);
           } else {
             // Report all attempted URLs (primary + fallback that was tried)
@@ -49,7 +67,8 @@ export const websocketMiddleware: Middleware = (store) => {
             store.dispatch(connectionFailed(attemptedUrls));
           }
         };
-        socket.onmessage = (event: MessageEvent<string>) => {
+        ws.onmessage = (event: MessageEvent<string>) => {
+          if (socket !== ws) return;
           try {
             store.dispatch(messageReceived(JSON.parse(event.data)));
           } catch (e) {
@@ -64,10 +83,8 @@ export const websocketMiddleware: Middleware = (store) => {
     }
 
     if (type === WS_DISCONNECT) {
-      if (socket) {
-        socket.close();
-        socket = null;
-      }
+      closeSocket();
+      store.dispatch(disconnected());
       return;
     }
 
