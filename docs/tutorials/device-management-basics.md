@@ -159,7 +159,7 @@ Real systems have devices that work together:
 
 - Similar names with different suffixes (-01, -02, etc.)
 - Hierarchical naming (Room1-Display, Room1-Audio)
-- Functional grouping (Boardroom-_, Training-_)
+- Functional grouping (`Boardroom-*`, `Training-*`)
 
 ### Step 8: Configuration Insights
 
