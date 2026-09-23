@@ -1,4 +1,4 @@
-import { Suspense } from "react";
+import { Suspense, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { ApiPaths } from './features/ApiPaths';
@@ -28,15 +28,22 @@ function App() {
 
   const [startSession] = useGetDebugSessionMutation();
   const [stopSession] = useStopDebugSessionMutation();
+  const joiningRef = useRef(false);
 
   //* FUNCTIONS *******************************************************/
   const join = async (appId: string) => {
-    if (!appId) return;
-    const res = await startSession({ appId }).unwrap();
-    const primaryUrl = res.fallbackUrl || res.url;
-    const fallbackUrl = res.fallbackUrl ? res.url : undefined;
-    console.log("Joining debug session at " + primaryUrl + (fallbackUrl ? " (fallback: " + fallbackUrl + ")" : ""));
-    dispatch({ type: WS_CONNECT, payload: { url: primaryUrl, fallbackUrl } });
+    // Ignore repeat clicks while a session request is already in flight
+    if (!appId || joiningRef.current) return;
+    joiningRef.current = true;
+    try {
+      const res = await startSession({ appId }).unwrap();
+      const primaryUrl = res.fallbackUrl || res.url;
+      const fallbackUrl = res.fallbackUrl ? res.url : undefined;
+      console.log("Joining debug session at " + primaryUrl + (fallbackUrl ? " (fallback: " + fallbackUrl + ")" : ""));
+      dispatch({ type: WS_CONNECT, payload: { url: primaryUrl, fallbackUrl } });
+    } finally {
+      joiningRef.current = false;
+    }
   };
 
   const stop = (appId: string) => {
