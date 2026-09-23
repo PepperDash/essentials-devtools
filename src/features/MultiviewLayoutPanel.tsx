@@ -1,8 +1,8 @@
-import { useCallback, useRef } from "react";
+import { useCallback, useRef } from 'react';
 
-import { MultiviewLayoutState, MultiviewTileState } from "../store/apiSlice";
-import MultiviewLayoutCanvas from "./MultiviewLayoutCanvas";
-import styles from "./MultiviewLayoutPanel.module.scss";
+import { MultiviewLayoutState, MultiviewTileState } from '../store/apiSlice';
+import MultiviewLayoutCanvas from './MultiviewLayoutCanvas';
+import styles from './MultiviewLayoutPanel.module.scss';
 
 export interface MultiviewLayoutPanelPosition {
   x: number;
@@ -39,7 +39,12 @@ const MultiviewLayoutPanel = ({
   onClose,
   onMove,
 }: MultiviewLayoutPanelProps) => {
-  const dragStateRef = useRef<{ startX: number; startY: number; originX: number; originY: number } | null>(null);
+  const dragStateRef = useRef<{
+    startX: number;
+    startY: number;
+    originX: number;
+    originY: number;
+  } | null>(null);
 
   const handleTitleBarPointerDown = useCallback(
     (e: React.PointerEvent<HTMLDivElement>) => {
@@ -64,25 +69,25 @@ const MultiviewLayoutPanel = ({
 
       const handlePointerUp = () => {
         dragStateRef.current = null;
-        window.removeEventListener("pointermove", handlePointerMove);
-        window.removeEventListener("pointerup", handlePointerUp);
-        window.removeEventListener("pointercancel", handlePointerUp);
+        window.removeEventListener('pointermove', handlePointerMove);
+        window.removeEventListener('pointerup', handlePointerUp);
+        window.removeEventListener('pointercancel', handlePointerUp);
       };
 
-      window.addEventListener("pointermove", handlePointerMove);
-      window.addEventListener("pointerup", handlePointerUp, { once: true });
-      window.addEventListener("pointercancel", handlePointerUp, { once: true });
+      window.addEventListener('pointermove', handlePointerMove);
+      window.addEventListener('pointerup', handlePointerUp, { once: true });
+      window.addEventListener('pointercancel', handlePointerUp, { once: true });
     },
-    [position.x, position.y, onMove],
+    [position.x, position.y, onMove]
   );
 
   return (
     <div
-      className={`${styles.panel}${darkMode ? ` ${styles.panelDark}` : ""}`}
+      className={`${styles.panel}${darkMode ? ` ${styles.panelDark}` : ''}`}
       style={{ left: position.x, top: position.y }}
     >
       <div
-        className={`${styles.titleBar}${darkMode ? ` ${styles.titleBarDark}` : ""}`}
+        className={`${styles.titleBar}${darkMode ? ` ${styles.titleBarDark}` : ''}`}
         onPointerDown={handleTitleBarPointerDown}
       >
         <span className={styles.title} title={title}>

@@ -21,7 +21,7 @@ export const FilterDropdownSearchParams = (
 
   // Defined inside here for access to props
   const FilterCheckItem = (checkProps: {
-    item: IdLabel ;
+    item: IdLabel;
     htmlName: string;
     htmlId: string;
   }) => {
@@ -46,7 +46,7 @@ export const FilterDropdownSearchParams = (
       <Form.Check
         type="checkbox"
         className="m-2"
-        label={ checkProps.item.id}
+        label={checkProps.item.id}
         name={checkProps.htmlName}
         id={checkProps.htmlId}
         onChange={clickItem}

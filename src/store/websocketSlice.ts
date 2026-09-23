@@ -1,5 +1,5 @@
-import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { LogMessage } from "../shared/types/LogMessage";
+import { createSlice, PayloadAction } from '@reduxjs/toolkit';
+import { LogMessage } from '../shared/types/LogMessage';
 
 interface WebsocketState {
   messages: LogMessage[];
@@ -14,7 +14,7 @@ const initialState: WebsocketState = {
 };
 
 const websocketSlice = createSlice({
-  name: "websocket",
+  name: 'websocket',
   initialState,
   reducers: {
     /** Dispatched by the middleware when the socket opens */
@@ -44,16 +44,22 @@ const websocketSlice = createSlice({
   },
 });
 
-export const { connected, disconnected, messageReceived, messagesCleared, connectionFailed, connectionAttemptStarted } =
-  websocketSlice.actions;
+export const {
+  connected,
+  disconnected,
+  messageReceived,
+  messagesCleared,
+  connectionFailed,
+  connectionAttemptStarted,
+} = websocketSlice.actions;
 
 export default websocketSlice.reducer;
 
 // ── Action type constants used by the middleware ─────────────────────────────
 /** Dispatch this to open a WebSocket connection */
-export const WS_CONNECT = "websocket/connect";
+export const WS_CONNECT = 'websocket/connect';
 /** Dispatch this to close the current connection */
-export const WS_DISCONNECT = "websocket/disconnect";
+export const WS_DISCONNECT = 'websocket/disconnect';
 
 export interface WsConnectAction {
   type: typeof WS_CONNECT;

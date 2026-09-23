@@ -1,8 +1,8 @@
-import { Link } from "react-router-dom";
-import ReactMarkdown from "react-markdown";
-import type { Components } from "react-markdown";
-import remarkGfm from "remark-gfm";
-import { DocEntry, resolveRelativeLink } from "./docsContent";
+import { Link } from 'react-router-dom';
+import ReactMarkdown from 'react-markdown';
+import type { Components } from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import { DocEntry, resolveRelativeLink } from './docsContent';
 
 const DocLink = ({
   currentSlug,

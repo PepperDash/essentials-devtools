@@ -9,7 +9,11 @@ type IConfigViewer = Parameters<OnMount>[0];
 
 const ConfigFile = () => {
   const { appId } = useAppParams();
-  const { data: config, refetch, isFetching } = useGetConfigQuery(appId ? { appId } : skipToken);
+  const {
+    data: config,
+    refetch,
+    isFetching,
+  } = useGetConfigQuery(appId ? { appId } : skipToken);
 
   if (!config) {
     return <div>Config Data Loading or Not Available</div>;
@@ -18,7 +22,12 @@ const ConfigFile = () => {
   return (
     <div className="d-flex flex-column h-100">
       <div className="mb-2 d-flex justify-content-end">
-        <Button variant="outline-secondary" size="sm" onClick={refetch} disabled={isFetching}>
+        <Button
+          variant="outline-secondary"
+          size="sm"
+          onClick={refetch}
+          disabled={isFetching}
+        >
           {isFetching ? 'Refreshing…' : 'Refresh Config'}
         </Button>
       </div>
@@ -32,7 +41,7 @@ const ConfigFile = () => {
 export default ConfigFile;
 
 const ConfigFileRender = ({ config }: { config: any }) => {
-  console.log("ConfigFileRender == ", config);
+  console.log('ConfigFileRender == ', config);
   const monaco = useMonaco();
   const editorRef = useRef<IConfigViewer | null>(null);
 

@@ -1,22 +1,11 @@
 {
-  "conventionalCommits.scopes": [
-    "force-patch"
-  ],
+  "conventionalCommits.scopes": ["force-patch"],
   "editor.tabSize": 2,
   "conventionalCommits.gitmoji": false,
   "conventionalCommits.promptFooter": false,
-  "eslint.validate": [
-    "javascript",
-    "typescript",
-    "html"
-  ],
+  "eslint.validate": ["javascript", "typescript", "html"],
   "eslint.options": {
-    "extensions": [
-      ".js",
-      ".ts",
-      "html",
-      "tsx"
-    ]
+    "extensions": [".js", ".ts", "html", "tsx"]
   },
   "eslint.rules.customizations": [
     {

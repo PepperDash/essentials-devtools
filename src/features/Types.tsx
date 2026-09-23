@@ -1,6 +1,6 @@
 import { skipToken } from '@reduxjs/toolkit/query';
 import useAppParams from '../shared/hooks/useAppParams';
-import { Type, useGetTypesQuery } from "../store/apiSlice";
+import { Type, useGetTypesQuery } from '../store/apiSlice';
 
 const Types = () => {
   const { appId } = useAppParams();
@@ -28,7 +28,7 @@ const Types = () => {
       <h2 className="mb-2">
         The Type Names Supported by the Currently Loaded Plugins
       </h2>
-      <div className='h-100 flex-grow-1 overflow-auto'>
+      <div className="h-100 flex-grow-1 overflow-auto">
         <table className="table table-striped table-bordered mb-0">
           <thead className="table-light">
             <tr>

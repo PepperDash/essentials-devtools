@@ -7,15 +7,18 @@ These guides provide step-by-step solutions to specific problems you might encou
 ## 🔧 Connection and Access Issues
 
 ### [Troubleshooting Connection Issues](./troubleshoot-connection.md)
+
 **Problem**: Can't access the web application or it's not loading properly
 
 **Common symptoms:**
+
 - Browser can't reach the application URL
-- Page won't load or shows errors  
+- Page won't load or shows errors
 - Security certificate warnings
 - Application loads but doesn't function
 
 **You'll learn to fix:**
+
 - Network connectivity problems
 - Browser security settings
 - URL formatting issues
@@ -26,15 +29,18 @@ These guides provide step-by-step solutions to specific problems you might encou
 ## 🔍 Debug Console Problems
 
 ### [Filter and Search Debug Messages](./filter-debug-messages.md)
+
 **Problem**: Too many debug messages to find what you need
 
 **Common symptoms:**
+
 - Debug console overwhelmed with messages
 - Can't find specific device information
 - Need to focus on particular types of events
 - Looking for specific errors or patterns
 
 **You'll learn to:**
+
 - Use advanced filtering techniques effectively
 - Combine multiple search criteria
 - Find specific message types quickly
@@ -45,15 +51,18 @@ These guides provide step-by-step solutions to specific problems you might encou
 ## 📄 Configuration Management
 
 ### [Export and Analyze Configuration](./export-configuration.md)
+
 **Problem**: Need to examine, backup, or analyze system configuration
 
 **Common symptoms:**
+
 - Need to document current system setup
 - Want to compare configurations between systems
 - Need to backup configuration before changes
 - Troubleshooting requires configuration analysis
 
 **You'll learn to:**
+
 - Export complete configuration data
 - Analyze configuration structure and content
 - Compare configurations between systems
@@ -64,15 +73,18 @@ These guides provide step-by-step solutions to specific problems you might encou
 ## 🔀 Routing
 
 ### [Trace Signal Routes and Read the Routing Diagram](./trace-signal-routes.md)
+
 **Problem**: Need to find what's feeding a display, verify a route change, or make sense of a busy routing diagram
 
 **Common symptoms:**
+
 - Wrong source appears on a display or output
 - Need to confirm a route or multiview layout change took effect
 - Routing diagram has too many devices/tie lines to read easily
 - Live feedback badge shows "Offline" or a certificate warning appears
 
 **You'll learn to:**
+
 - Filter the diagram by signal type and device
 - Trace a signal path by clicking an edge, device, or multiview tile
 - Read and reposition multiview layout panels
@@ -83,30 +95,36 @@ These guides provide step-by-step solutions to specific problems you might encou
 ## ⚡ Performance and Monitoring
 
 ### [Monitor System Performance](./monitor-performance.md)
+
 **Problem**: Need to monitor system health and identify performance issues
 
 **Common symptoms:**
+
 - System seems slow or unresponsive
 - Want to establish performance baselines
 - Need to identify problematic devices
 - Monitoring for proactive maintenance
 
 **You'll learn to:**
+
 - Establish performance baselines
 - Identify performance problems early
 - Monitor device health systematically
 - Create performance reports and documentation
 
 ### [Restart and Reload Configuration](./restart-reload-config.md)
+
 **Problem**: Need to restart the system or reload configuration changes
 
 **Common symptoms:**
+
 - Made configuration changes that require restart
 - System is unresponsive and needs restart
 - Need to reload configuration without full restart
 - Troubleshooting requires clean system state
 
 **You'll learn to:**
+
 - Choose appropriate restart methods
 - Safely restart without losing data
 - Reload configuration changes efficiently
@@ -117,18 +135,23 @@ These guides provide step-by-step solutions to specific problems you might encou
 ## 📚 Guide Categories
 
 ### Connection and Access (Getting Connected)
+
 Essential for basic application access and resolving connectivity problems
 
-### Debug Console (Information Gathering)  
+### Debug Console (Information Gathering)
+
 Core troubleshooting skills for monitoring and analyzing system behavior
 
 ### Configuration Management (System Understanding)
+
 Tools for understanding, documenting, and managing system configuration
 
 ### Routing (Signal Visibility)
+
 Filtering, tracing, and troubleshooting the live signal routing diagram
 
 ### Performance and Monitoring (System Health)
+
 Proactive monitoring and maintenance techniques for system reliability
 
 ---
@@ -136,18 +159,21 @@ Proactive monitoring and maintenance techniques for system reliability
 ## 🎯 How to Use These Guides
 
 ### Quick Problem Solving
+
 1. **Identify your symptom** from the descriptions above
 2. **Jump directly to the relevant guide**
 3. **Follow the step-by-step instructions**
 4. **Apply the solution to your specific situation**
 
 ### Systematic Troubleshooting
+
 1. **Start with connection issues** if you can't access the app
 2. **Use filtering guides** to focus on relevant information
 3. **Apply performance monitoring** to understand system state
 4. **Use configuration analysis** for deep troubleshooting
 
 ### Preventive Maintenance
+
 1. **Monitor performance regularly** using monitoring guides
 2. **Export configurations periodically** for backup and documentation
 3. **Use restart procedures** for planned maintenance
@@ -172,12 +198,15 @@ Proactive monitoring and maintenance techniques for system reliability
 ## 🔗 Related Resources
 
 ### For Learning the Basics
+
 Start with **[Tutorials](../tutorials/)** if you're new to the application
 
-### For Technical Details  
+### For Technical Details
+
 Check **[Reference](../reference/)** documentation for complete technical information
 
 ### For Understanding Concepts
+
 Read **[Explanation](../explanation/)** articles for background and design rationale
 
 ---
@@ -192,6 +221,7 @@ Read **[Explanation](../explanation/)** articles for background and design ratio
 4. **Check explanation articles**: Understanding the underlying concepts might help
 
 **When to seek additional help:**
+
 - Multiple guides haven't resolved the issue
 - You encounter error messages not covered in the guides
 - The problem seems to be with system hardware or network infrastructure
@@ -209,4 +239,4 @@ These guides are designed to address the most common problems users encounter. T
 
 ---
 
-*Remember: These guides assume you have basic familiarity with the application. If you're completely new, start with the [Getting Started Tutorial](../tutorials/getting-started.md) first.*
+_Remember: These guides assume you have basic familiarity with the application. If you're completely new, start with the [Getting Started Tutorial](../tutorials/getting-started.md) first._

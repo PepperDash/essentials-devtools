@@ -12,16 +12,16 @@ import { authActions } from '../store/auth/authSlice';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 
 const ALL_APP_IDS = [
-  "app01",
-  "app02",
-  "app03",
-  "app04",
-  "app05",
-  "app06",
-  "app07",
-  "app08",
-  "app09",
-  "app10",
+  'app01',
+  'app02',
+  'app03',
+  'app04',
+  'app05',
+  'app06',
+  'app07',
+  'app08',
+  'app09',
+  'app10',
 ];
 
 const LoginForm = () => {
@@ -32,8 +32,8 @@ const LoginForm = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -58,18 +58,18 @@ const LoginForm = () => {
     // Send login to all program slots in parallel
     const results = await Promise.allSettled(
       ALL_APP_IDS.map((id) =>
-        setLoginCredentials({ appId: id, username, password }).unwrap(),
-      ),
+        setLoginCredentials({ appId: id, username, password }).unwrap()
+      )
     );
 
     const availableApps = ALL_APP_IDS.filter(
-      (_, i) => results[i].status === "fulfilled",
+      (_, i) => results[i].status === 'fulfilled'
     );
 
     setIsLoading(false);
 
     if (availableApps.length === 0) {
-      setError("Invalid credentials. Please try again.");
+      setError('Invalid credentials. Please try again.');
       return;
     }
 
@@ -90,7 +90,7 @@ const LoginForm = () => {
       <h1 className="mb-5 text-center">
         PepperDash Essentials Developer Tools
       </h1>
-      <div className="w-100" style={{ maxWidth: "360px" }}>
+      <div className="w-100" style={{ maxWidth: '360px' }}>
         <h2 className="mb-4">Sign In</h2>
         {error && <Alert variant="danger">{error}</Alert>}
         <Form onSubmit={handleSubmit}>
@@ -109,7 +109,7 @@ const LoginForm = () => {
             <Form.Label>Password</Form.Label>
             <InputGroup>
               <Form.Control
-                type={showPassword ? "text" : "password"}
+                type={showPassword ? 'text' : 'password'}
                 autoComplete="current-password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -121,7 +121,7 @@ const LoginForm = () => {
                 variant="outline-secondary"
                 onClick={() => setShowPassword((prev) => !prev)}
                 disabled={isLoading}
-                aria-label={showPassword ? "Hide password" : "Show password"}
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
                 aria-pressed={showPassword}
               >
                 <EyeIcon slashed={showPassword} />
@@ -135,7 +135,7 @@ const LoginForm = () => {
                 Signing in…
               </>
             ) : (
-              "Sign In"
+              'Sign In'
             )}
           </Button>
         </Form>
