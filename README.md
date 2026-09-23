@@ -100,6 +100,14 @@ Compiles TypeScript and builds the app for production to the `dist/` folder with
 
 Serves the production build locally for inspection before deployment.
 
+#### `npm run lint` / `npm run lint:fix`
+
+Checks the code with ESLint (configured in `eslint.config.js`); `lint:fix` applies automatic fixes.
+
+#### `npm run format` / `npm run format:check`
+
+Formats files with Prettier (configured in `.prettierrc.json`); `format:check` reports unformatted files without changing them. VS Code formats on save when the recommended Prettier extension is installed.
+
 ### Environment Setup
 
 Create a `.env.local` file in the project root (never commit this file):
