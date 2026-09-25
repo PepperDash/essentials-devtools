@@ -6,6 +6,20 @@ import {
   RoutingCommand,
   RoutingCommandResponse,
 } from './routingCommands';
+import {
+  BulkSecretsRequest,
+  BulkSecretsResponse,
+  SECRETS_BULK_PATH,
+  SECRETS_COMMAND_PATH,
+  SECRETS_PATH,
+  SECRETS_PROVIDERS_PATH,
+  SECRETS_TEMPLATE_PATH,
+  SecretCommandRequest,
+  SecretCommandResponse,
+  SecretsListResponse,
+  SecretsProvidersResponse,
+  SecretsTemplateResponse,
+} from './secretsContract';
 
 function getAppIdFromPath(): string {
   const path = window.location.pathname;
@@ -31,6 +45,7 @@ const apiSlice = createApi({
     'DoNotLoadConfigOnNextBoot',
     'MinimumLogLevel',
     'MobileControlInfo',
+    'Secrets',
   ],
   endpoints: (builder) => ({
     getPaths: builder.query<PathsReturn, { appId: string }>({
@@ -294,6 +309,76 @@ const apiSlice = createApi({
       }),
       invalidatesTags: ['MobileControlInfo'],
     }),
+
+    // ─── Secrets ─────────────────────────────────────────────────────────────
+    // No endpoint here ever returns a secret value; see src/store/secretsContract.ts.
+    //
+    // SECURITY: RTK Query retains a mutation's arguments under
+    // state.api.mutations[requestId].originalArgs, which is visible in Redux DevTools. For
+    // sendSecretCommand and applyBulkSecrets those arguments contain plaintext values, so every
+    // call site must call the mutation's reset() once the request settles.
+
+    getSecretProviders: builder.query<
+      SecretsProvidersResponse,
+      { appId: string }
+    >({
+      query: ({ appId }) => ({
+        url: `/${appId}/api/${SECRETS_PROVIDERS_PATH}`,
+        method: 'GET',
+      }),
+    }),
+
+    getSecrets: builder.query<
+      SecretsListResponse,
+      { appId: string; provider: string }
+    >({
+      query: ({ appId, provider }) => ({
+        url: `/${appId}/api/${SECRETS_PATH}`,
+        method: 'GET',
+        params: { provider },
+      }),
+      providesTags: ['Secrets'],
+    }),
+
+    sendSecretCommand: builder.mutation<
+      SecretCommandResponse,
+      { appId: string; request: SecretCommandRequest }
+    >({
+      query: ({ appId, request }) => ({
+        url: `/${appId}/api/${SECRETS_COMMAND_PATH}`,
+        method: 'POST',
+        data: request,
+      }),
+      invalidatesTags: ['Secrets'],
+    }),
+
+    applyBulkSecrets: builder.mutation<
+      BulkSecretsResponse,
+      { appId: string; request: BulkSecretsRequest }
+    >({
+      query: ({ appId, request }) => ({
+        url: `/${appId}/api/${SECRETS_BULK_PATH}`,
+        method: 'POST',
+        data: request,
+      }),
+      // A preview writes nothing, so re-fetching the list after one would be a wasted round trip
+      // and would churn the table while the user is reading the preview.
+      invalidatesTags: (_result, _error, arg) =>
+        arg.request.mode === 'commit' ? ['Secrets'] : [],
+    }),
+
+    getSecretsTemplate: builder.query<
+      SecretsTemplateResponse,
+      { appId: string; provider: string }
+    >({
+      query: ({ appId, provider }) => ({
+        url: `/${appId}/api/${SECRETS_TEMPLATE_PATH}`,
+        method: 'GET',
+        params: { provider },
+      }),
+      // No providesTags: the template is derived on demand for a download, so re-deriving it after
+      // an unrelated mutation would be work nobody asked for.
+    }),
   }),
 });
 
@@ -324,6 +409,11 @@ export const {
   useDeleteMobileControlUiClientMutation,
   useDeleteAllMobileControlUiClientsMutation,
   useSetLoginCredentialsMutation,
+  useGetSecretProvidersQuery,
+  useGetSecretsQuery,
+  useSendSecretCommandMutation,
+  useApplyBulkSecretsMutation,
+  useLazyGetSecretsTemplateQuery,
 } = apiSlice;
 
 export const oneSliceToRuleThemAll = {

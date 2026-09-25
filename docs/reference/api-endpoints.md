@@ -752,6 +752,189 @@ Ports are addressed by **key**, never by selector: a routing port's selector is 
 
 ---
 
+## Secrets Endpoints
+
+Credential storage. **No endpoint here ever returns a stored secret value** — the processor is
+write-only for values by design.
+
+Mutations are POST rather than DELETE: the Crestron web server advertises only `POST, GET, OPTIONS`,
+so a DELETE would fail CORS preflight.
+
+### Get Secret Providers
+
+```http
+GET /secrets/providers
+```
+
+```json
+{
+  "providers": [
+    { "key": "default", "description": "Default secret provider serving Essentials Application 1",
+      "scope": "local", "enumerationSupported": true,
+      "maxKeyLength": 32, "maxValueLength": 1600 },
+    { "key": "CrestronGlobalSecrets", "description": "Default secret provider serving all local applications",
+      "scope": "global", "enumerationSupported": true,
+      "maxKeyLength": 32, "maxValueLength": 1600 }
+  ]
+}
+```
+
+`scope` is `local` (this program slot) or `global` (shared across slots). The limits are Crestron
+Data Store caps, not application choices.
+
+---
+
+### List Secrets
+
+```http
+GET /secrets?provider=default
+```
+
+Optional: `includeReserved=true` to show the API's own bookkeeping records, `includeSizes=true` to
+include each value's character count.
+
+```json
+{
+  "provider": "default", "scope": "local",
+  "indexStatus": "ok",
+  "enumerationComplete": true,
+  "counts": { "total": 3, "managed": 1, "unmanaged": 2, "stale": 0 },
+  "secrets": [
+    { "key": "displayPassword", "managed": true, "description": "Display admin",
+      "createdUtc": "2026-09-10T14:00:00Z", "updatedUtc": "2026-09-16T18:22:05Z",
+      "lastModifiedUtc": "2026-09-16T18:22:05Z", "owner": "app01", "type": "String" }
+  ],
+  "staleIndexEntries": [],
+  "warnings": []
+}
+```
+
+**Response Fields**:
+- `managed` — whether the key was written through this API. Unmanaged records exist in the same flat
+  Data Store but were created elsewhere; Mobile Control's paired-client tokens are one
+- `indexStatus` — `ok`, `missing`, or `corrupt:<reason>`. Anything but `ok` means classification is
+  unavailable and every key reports as unmanaged. **The secrets themselves are unaffected**
+- `enumerationComplete` — `false` means the Data Store walk was cut short and the list is partial.
+  Index pruning is refused in that state
+- `staleIndexEntries` — keys the index lists that no longer exist in the store
+
+Status: `200` · `400 missingField` · `404 providerNotFound` · `500`
+
+---
+
+### Execute Secrets Command
+
+```http
+POST /secrets/command
+```
+
+```json
+{ "action": "set", "provider": "default", "key": "displayPassword",
+  "value": "…", "description": "Display admin", "overwrite": false }
+```
+
+| Action | Semantics |
+|---|---|
+| `set` | Creates. Existing key + `overwrite:false` → `409 alreadyExists` |
+| `update` | Must already exist, else `404 notFound` |
+| `delete` | Removes the secret and its index entry |
+| `test` | Existence probe → `{"exists": true}`. Never a value |
+| `pruneIndex` | Drops index entries with no matching record. `409` if the walk was incomplete |
+| `rebuildIndex` | Repairs a damaged index. `adoptKeys` marks existing keys as managed **without reading or changing their values** |
+
+```json
+{ "status": "ok", "action": "set", "provider": "default", "key": "displayPassword",
+  "existedBefore": false, "indexUpdated": true }
+```
+
+`indexUpdated: false` with a `warning` means the secret was written but its metadata was not. That is
+reported as **success**, because the secret is authoritative and the index is advisory — returning an
+error would invite retrying a write that already happened.
+
+**Validation** (all before any store access):
+
+| Rule | Code | Status |
+|---|---|---|
+| Key empty or whitespace | `emptyKey` | 400 |
+| Key over 32 characters, or containing control characters | `keyTooLong` / `invalidKey` | 400 |
+| Key starts with `__essSecretsIdx` | `reservedKey` | 400 |
+| Value empty (empty means *delete* in the store) | `emptyValue` | 400 |
+| Value over 1600 characters | `valueTooLong` | 400 |
+
+The empty-key rule is not cosmetic: an empty key reaches a Data Store call that deletes **every
+record belonging to the application**.
+
+Status: `200` · `400` · `403 accessDenied` · `404 notFound` · `409 alreadyExists` /
+`enumerationIncomplete` · `507 storeFull` · `503 storeUnavailable` · `500`
+
+---
+
+### Apply Secrets In Bulk
+
+```http
+POST /secrets/bulk
+```
+
+```json
+{ "mode": "preview", "provider": "default", "overwrite": false,
+  "secrets": { "displayPassword": "…", "codecPassword": "…" } }
+```
+
+`secrets` accepts either the flat map above — which is what the template endpoint emits — or an
+array of `{key, value, provider?, description?}`.
+
+```json
+{
+  "mode": "preview", "provider": "default", "overwrite": false,
+  "summary": { "total": 3, "create": 1, "overwrite": 1, "skip": 1, "invalid": 0, "failed": 0 },
+  "entries": [
+    { "index": 0, "key": "displayPassword", "provider": "default",
+      "action": "create", "applied": false }
+  ],
+  "indexUpdated": false
+}
+```
+
+Rules worth knowing:
+- **Preview writes nothing.** `applied` is always `false`, and the response is `200` even when
+  entries are invalid — a successful preview of a bad file is not a failed request
+- **A commit with any invalid entry returns `422` and writes nothing**
+- `overwrite` defaults to `false`
+- An entry targeting an existing **unmanaged** key is skipped as `unmanagedTarget` unless
+  `allowUnmanagedOverwrite` is set. This is what stops a round-tripped template destroying another
+  subsystem's records
+- **Bulk never deletes.** A key absent from the file is left alone
+- Duplicate keys within one batch are `invalid`, not last-write-wins
+- Over 200 entries → `400 batchTooLarge`
+
+---
+
+### Get Secrets Template
+
+```http
+GET /secrets/template?provider=default
+```
+
+```json
+{
+  "provider": "default",
+  "generatedUtc": "2026-09-16T18:30:00Z",
+  "note": "Values are intentionally blank. Fill them in, then apply this file.",
+  "secrets": { "displayPassword": "", "codecPassword": "" },
+  "metadata": [ { "key": "displayPassword", "provider": "default",
+                  "description": "Display admin", "managed": true } ]
+}
+```
+
+`secrets` is byte-for-byte what the bulk endpoint accepts, so the file round-trips: download, fill
+in, apply elsewhere. `includeUnmanaged` defaults to `false`, so other subsystems' records are not
+offered as blanks to fill in.
+
+**Capability detection**: these endpoints do not exist on older processors. Probe
+[Get API Paths](#get-api-paths) for a `secrets` route rather than gating on a version number.
+
+---
+
 ## Error Response Format
 
 All endpoints return errors in consistent format:

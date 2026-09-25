@@ -80,6 +80,11 @@ describe('docsContent', () => {
 
   // Nav order comes from the ](./slug.md) links in the category README, so a page that isn't
   // linked there silently sorts to the end instead of next to its sibling.
+  it('includes the secrets how-to in the how-to nav category', () => {
+    const howTo = docsNavTree.find((c) => c.category === 'how-to');
+    expect(howTo?.pages.map((p) => p.slug)).toContain('how-to/manage-secrets');
+  });
+
   it('orders the route-changing guide directly after the tracing guide', () => {
     const howTo = docsNavTree.find((c) => c.category === 'how-to');
     const slugs = howTo?.pages.map((p) => p.slug) ?? [];

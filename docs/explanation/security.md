@@ -34,12 +34,29 @@ The web config app implements defense-in-depth through multiple security layers:
 ### Security-First Design Principles
 
 **Principle of Least Privilege**:
-The web app operates with minimal necessary permissions:
+The web app reads far more than it writes, and the writes it does perform are narrow:
 
-- Read-only access to configuration data
-- No ability to modify system configuration through web interface
+- Configuration files are read-only — the app cannot edit or replace a config
+- Write operations are limited to a defined set (see **Write Operations** below)
 - Limited system command execution capabilities
 - Restricted file system access
+
+**Write Operations**:
+The app is not read-only, and has not been for some time. These operations change processor state:
+
+| Operation                             | Effect                                           |
+| ------------------------------------- | ------------------------------------------------ |
+| Restart program                       | Restarts the Essentials program                  |
+| Load configuration                    | Reloads the configuration from disk              |
+| Set "do not load config on next boot" | Changes boot behaviour                           |
+| Set minimum log level                 | Changes debug verbosity                          |
+| Execute device method                 | Invokes an arbitrary method on a device          |
+| Routing commands                      | Makes and clears signal routes                   |
+| Mobile Control clients                | Creates and deletes UI client registrations      |
+| Secrets                               | Creates, replaces and deletes stored credentials |
+
+Secrets deserve particular note: values can be **written but never read**, by design. A compromised
+session can replace or destroy a credential, but cannot exfiltrate one through this interface.
 
 **Fail-Safe Defaults**:
 Security defaults assume restrictive access:
@@ -57,7 +74,7 @@ Security defaults assume restrictive access:
 
 - **Man-in-the-middle attacks**: Mitigated by HTTPS encryption
 - **Network eavesdropping**: Protected by certificate-based encryption
-- **Denial of service**: Limited by read-only nature and resource constraints
+- **Denial of service**: Limited by resource constraints; note that restart and config-reload are exposed write operations
 - **Network scanning**: Reduced attack surface through minimal exposed services
 
 **Web Application Attacks**:
@@ -87,7 +104,7 @@ The web interface exposes system information over the network:
 Configuration data may contain sensitive information:
 
 - **Impact**: Exposure of device credentials, network topology, system details
-- **Mitigation**: Sensitive data filtering, read-only access, audit logging
+- **Mitigation**: Sensitive data filtering and audit logging. Stored secret values are never returned by any endpoint, so they cannot be read back through the web interface
 - **Residual Risk**: Low to medium depending on configuration content
 
 **Low Risk - Denial of Service**:
@@ -390,9 +407,13 @@ All dynamic content is properly encoded:
 
 ### Known Limitations
 
-**Read-Only Security Model**:
+**No Authorization Model**:
 
-- Prevents web-based configuration changes (positive security feature)
+- Authentication is a shared session against the processor's web server; the app stores only
+  whether you are signed in and which program slots answered
+- There are **no roles and no permission tiers** — any authenticated user can perform every write
+  operation the app exposes
+- Access control is therefore entirely a matter of who can reach and authenticate to the processor
 - Does not protect against attacks through other system interfaces
 - Relies on processor-level security for comprehensive protection
 

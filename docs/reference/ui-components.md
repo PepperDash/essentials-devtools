@@ -18,15 +18,15 @@ This document provides detailed information about every UI element, its purpose,
 - **Navigation Links**: Six main sections accessible via top menu
 
 **Navigation Links**:
-
-| Link          | Route       | Purpose                                        |
-| ------------- | ----------- | ---------------------------------------------- |
-| Home          | `/home`     | Welcome page and application starting point    |
-| Debug Console | `/console`  | Real-time system monitoring and debugging      |
-| Versions      | `/versions` | View loaded assemblies and version information |
-| Config File   | `/config`   | View complete merged configuration             |
-| Devices       | `/devices`  | Browse and inspect configured devices          |
-| Types         | `/types`    | View available device types and descriptions   |
+| Link | Route | Purpose |
+|------|-------|---------|
+| Home | `/home` | Welcome page and application starting point |
+| Debug Console | `/console` | Real-time system monitoring and debugging |
+| Versions | `/versions` | View loaded assemblies and version information |
+| Secrets | `/secrets` | View and manage stored credentials (capability-gated) |
+| Config File | `/config` | View complete merged configuration |
+| Devices | `/devices` | Browse and inspect configured devices |
+| Types | `/types` | View available device types and descriptions |
 
 **Visual States**:
 
@@ -373,6 +373,102 @@ Rendered through a portal into `document.body` and positioned against the clicke
 - **Format**: JSON with syntax highlighting and indentation
 - **Content**: All structured data associated with the message
 - **Common fields**: Key, SourceContext, CommandType, etc.
+
+---
+
+## Secrets Components
+
+### Secrets Page
+
+**Component**: `Secrets`
+**Location**: Secrets page (`/:appId/secrets`)
+**Purpose**: View which credentials the processor has stored, add/replace/delete them, and apply or export a bulk file
+
+**Availability**: The page and its nav entry are gated on capability detection — `supportsSecretsApi`
+matches a whole `secrets` path segment in the processor's live CWS route table (`apiPaths`), rather
+than on a version number. On a processor without the API the nav entry is absent and a direct link
+renders an explanation. The whole-segment match is deliberately stricter than the routing feature's
+substring check, because `secrets` collides far more easily than `routingCommand`.
+
+**Values are never displayed.** No endpoint returns a stored value, so the page can show that a
+secret exists and replace it, but never reveal it. A persistent notice states this.
+
+**Elements**:
+
+- **Provider selector**: `default` (this program slot) or `CrestronGlobalSecrets` (shared across
+  slots), populated from the providers endpoint
+- **Filter**: matches key and description
+- **Download template** / **Apply file…**: the bulk workflow
+- **Managed secrets table**: Key · Description · Updated · actions, with `Add +` in the last header
+  cell (matching the Mobile Control convention). Per row: **Replace value** and **Delete**
+- **Other data store records table**: records that exist but were not created here, each badged
+  _Not managed here_, shown with Owner and Modified. **No Replace button**, and deletion requires
+  typing the key
+- **Index-health banner**: shown when `indexStatus` is not `ok`, stating that classification is
+  unavailable but the secrets themselves are unaffected
+- **Incomplete-listing banner**: shown when `enumerationComplete` is false
+
+### Secret Edit Modal
+
+**Component**: `SecretEditModal`
+
+Add or replace one secret. Provider and key are locked when replacing. The value field reuses the
+existing `EyeIcon` show/hide toggle from the login form, with `autoComplete="off"` throughout so the
+browser never offers to save the credential. Key and value length limits (32 / 1600) are enforced
+inline against the Crestron Data Store caps.
+
+Collision handling is driven by the already-loaded list: a key matching an existing **managed** entry
+shows a warning and sends `overwrite`; one matching an **unmanaged** entry blocks the submit behind a
+separate acknowledgement checkbox.
+
+### Secret Delete Modal
+
+**Component**: `SecretDeleteModal`
+
+Confirms deletion. For an **unmanaged** record it switches to a strict mode requiring the exact key
+to be typed — Mobile Control stores its paired-client tokens in the same flat Data Store, and
+deleting that record silently un-pairs every touchpanel.
+
+### Bulk Apply Modal
+
+**Component**: `BulkApplyModal`
+
+A four-stage flow: choose → preview → confirm → done.
+
+- The drop zone wraps a real `<input type="file" accept=".json">`, so keyboard and screen-reader
+  users get the same affordance; dragging is layered on top
+- While open, window-level `dragover`/`drop` handlers call `preventDefault()`. Without them a drop
+  that misses the zone makes the browser navigate to the file — destroying the page and putting a
+  credential file in the address bar and history
+- Files are validated **client-side first** (extension, 256 KB size cap, JSON shape, per-entry rules)
+  before any request. `JSON.parse` error text is never surfaced, because V8 embeds a snippet of the
+  offending source in it — which for a secrets file is a live credential
+- The processor is then asked for a **preview**, which writes nothing
+- Parsed entries live in local component state and never enter Redux, keeping plaintext values out
+  of the store and out of Redux DevTools
+- The backdrop becomes static once a file is loaded, so a stray click cannot discard a reviewed batch
+- On commit the parsed values and the file input are cleared immediately
+
+### Bulk Preview Table
+
+**Component**: `BulkPreviewTable`
+
+Presentational only — no store access — which is what lets it be tested directly. One row per entry
+with an action badge:
+
+| Action    | Badge | Meaning                                   |
+| --------- | ----- | ----------------------------------------- |
+| Create    | green | Key does not exist yet                    |
+| Overwrite | amber | Exists and will be replaced               |
+| Skip      | grey  | Exists and will be left alone             |
+| Invalid   | red   | Rejected; will not be written             |
+| Failed    | red   | The store refused the write (commit only) |
+
+An entry that would overwrite a record the tool does not manage gets an additional _not managed here_
+badge, and the Apply button then requires an explicit acknowledgement.
+
+The **Replace secrets that already exist** switch re-runs the preview, so what is shown always matches
+the flag that would actually be sent.
 
 ---
 

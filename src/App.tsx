@@ -13,6 +13,7 @@ import MainLayout from './features/MainLayout';
 import MobileControl from './features/MobileControl';
 import RequireAuth from './features/RequireAuth';
 import Routing from './features/Routing';
+import Secrets from './features/Secrets';
 import Types from './features/Types';
 import Versions from './features/Versions';
 import {
@@ -144,6 +145,7 @@ function App() {
               <Route path="types" element={<Types />} />
               <Route path="routing" element={<Routing />} />
               <Route path="mobileControl" element={<MobileControl />} />
+              <Route path="secrets" element={<Secrets />} />
               <Route
                 path="console"
                 element={
