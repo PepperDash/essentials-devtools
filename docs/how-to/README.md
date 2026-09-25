@@ -90,6 +90,25 @@ These guides provide step-by-step solutions to specific problems you might encou
 - Read and reposition multiview layout panels
 - Troubleshoot the live feedback connection
 
+### [Change Routes from the Routing Diagram](./change-routes.md)
+
+**Problem**: Need to send a source to a display, switch a matrix output, or tear down a route without leaving the diagram
+
+**Common symptoms:**
+
+- Verifying during commissioning that a wiring path actually works
+- Need to switch one matrix output in isolation to test it
+- A display is showing the wrong source and needs rerouting
+- A multiview tile needs a different source
+
+**You'll learn to:**
+
+- Route a source to a destination input, through any midpoints in between
+- Switch a single midpoint device without affecting the rest of the path
+- Break audio and video away onto separate paths
+- Route multiview tiles from the node or the layout panel
+- Clear a route, and read the pending/timeout indicators
+
 ---
 
 ## ⚡ Performance and Monitoring
@@ -146,9 +165,9 @@ Core troubleshooting skills for monitoring and analyzing system behavior
 
 Tools for understanding, documenting, and managing system configuration
 
-### Routing (Signal Visibility)
+### Routing (Signal Visibility and Control)
 
-Filtering, tracing, and troubleshooting the live signal routing diagram
+Filtering, tracing, and troubleshooting the live signal routing diagram, and making route changes from it
 
 ### Performance and Monitoring (System Health)
 

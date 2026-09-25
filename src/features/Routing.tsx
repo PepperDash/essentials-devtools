@@ -23,12 +23,20 @@ import {
   MidpointRoute,
   RoutingDevice,
   RoutingDevicesAndTieLines,
+  RoutingPort,
   SinkRoute,
   TieLine,
+  useGetPathsQuery,
   useGetRoutingDevicesAndTieLinesQuery,
   useGetVersionsQuery,
+  useSendRoutingCommandMutation,
 } from '../store/apiSlice';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
+import {
+  describeRoutingError,
+  ROUTING_COMMAND_PATH,
+  RoutingCommand,
+} from '../store/routingCommands';
 import {
   ROUTING_WS_CONNECT,
   ROUTING_WS_DISCONNECT,
@@ -38,9 +46,25 @@ import MultiviewLayoutPanel, {
   MultiviewLayoutPanelPosition,
 } from './MultiviewLayoutPanel';
 import styles from './Routing.module.scss';
+import {
+  agePendingRoutes,
+  isExpectationMet,
+  pendingFromCommand,
+  pendingId,
+  PendingRoute,
+} from './routing/pendingRoutes';
+import {
+  buildRouteIndex,
+  isMidpoint,
+  isRouteDestination,
+} from './routing/routeGraph';
+import RoutePopover, { RouteEditTarget } from './routing/RoutePopover';
+import { FALLBACK_COLOR, signalColor } from './routing/signalColors';
+import useRouteCandidates from './routing/useRouteCandidates';
 import RoutingDeviceNode, {
   HEADER_PX,
   PORT_ROW_PX,
+  PortStatus,
   RoutingDeviceNodeData,
 } from './RoutingDeviceNode';
 import TieLineEdge from './TieLineEdge';
@@ -50,22 +74,6 @@ import TieLineEdge from './TieLineEdge';
 const NODE_WIDTH = 280;
 const NODE_SEP = 60;
 const RANK_SEP = 350;
-
-const SIGNAL_COLORS: Record<string, string> = {
-  AudioVideo: '#6f42c1',
-  Video: '#0d6efd',
-  Audio: '#dc3545',
-  'Audio, SecondaryAudio': '#dc3545',
-  'UsbOutput, UsbInput': '#fd7e14',
-  UsbOutput: '#fd7e14',
-  UsbInput: '#fd7e14',
-};
-
-const FALLBACK_COLOR = '#adb5bd';
-
-function signalColor(signalType: string): string {
-  return SIGNAL_COLORS[signalType] ?? FALLBACK_COLOR;
-}
 
 // ─── Dagre layout ────────────────────────────────────────────────────────────
 
@@ -114,7 +122,12 @@ function buildGraph(
         .filter(
           (r) => !realTieLineDestinations.has(`${deviceKey}:${r.inputPortKey}`)
         )
-        .filter((r) => deviceOutputPortKey.has(r.sourceDeviceKey))
+        // A cleared route carries no source, so it can produce no edge.
+        .filter(
+          (r): r is SinkRoute & { sourceDeviceKey: string } =>
+            Boolean(r.sourceDeviceKey) &&
+            deviceOutputPortKey.has(r.sourceDeviceKey!)
+        )
         .map((r) => ({
           sourceDeviceKey: r.sourceDeviceKey,
           sourcePortKey: deviceOutputPortKey.get(r.sourceDeviceKey)!,
@@ -391,6 +404,20 @@ function traceSignalPath(
   return result;
 }
 
+// ─── Route editing ───────────────────────────────────────────────────────────
+
+const EMPTY_PORT_STATUS: Readonly<Record<string, PortStatus>> = Object.freeze(
+  {}
+);
+
+/** Multiview tile ports arrive qualified as "tile{N}:{portKey}". */
+const TILE_PORT_RE = /^tile(\d+):/;
+
+function tileNumberOf(portKey: string): number | undefined {
+  const match = TILE_PORT_RE.exec(portKey);
+  return match ? Number(match[1]) : undefined;
+}
+
 // ─── Node types registry (stable reference outside component) ────────────────
 
 const nodeTypes: NodeTypes = {
@@ -426,6 +453,19 @@ const Routing = () => {
     new Set()
   );
   const [darkMode, setDarkMode] = useState(true);
+
+  // ── Route editing ──────────────────────────────────────────────────────────
+  const [routeEdit, setRouteEdit] = useState<{
+    target: RouteEditTarget;
+    anchorRect: DOMRect;
+  } | null>(null);
+  const [commandError, setCommandError] = useState<string | null>(null);
+  // Commands sent but not yet confirmed over the feedback WebSocket, keyed by device+port.
+  const [pendingByPort, setPendingByPort] = useState<
+    Record<string, PendingRoute>
+  >({});
+  const [sendRoutingCommand, { isLoading: isSendingCommand }] =
+    useSendRoutingCommandMutation();
 
   // Floating, freely-draggable multiview layout panels - independent of graph node positions
   // (which move whenever dagre re-runs in response to routing/filter changes). Keyed by device
@@ -481,6 +521,21 @@ const Routing = () => {
       ? meetsMinVersion(essentialsVersion, '3.0.0')
       : false;
   }, [versions]);
+
+  // Route editing needs a routing-command endpoint that older processors do not have. Detect it by
+  // capability rather than version: apiPaths reports the processor's live CWS route table, which is
+  // exact and does not need updating when the shipping version changes. Editing stays off until
+  // the probe confirms the route, so an older processor simply renders the read-only page.
+  const { data: apiPaths } = useGetPathsQuery(appId ? { appId } : skipToken);
+  const canEditRoutes = useMemo(
+    () =>
+      Boolean(
+        appId &&
+        isV3 &&
+        apiPaths?.routes?.some((r) => r.Url?.includes(ROUTING_COMMAND_PATH))
+      ),
+    [appId, isV3, apiPaths]
+  );
 
   // Seed routing feedback state from the HTTP response before the WebSocket connects
   useEffect(() => {
@@ -675,6 +730,182 @@ const Routing = () => {
     [midpointRoutes]
   );
 
+  // ── Route editing ──────────────────────────────────────────────────────────
+
+  // Candidate-source lookups run against the full, unfiltered tie-line graph: hiding a device or
+  // a signal type in the toolbar changes the view, never what is physically routable.
+  const routeIndex = useMemo(
+    () => (data ? buildRouteIndex(data) : null),
+    [data]
+  );
+  const getCandidates = useRouteCandidates(routeIndex);
+
+  // Read the latest data from a ref inside the click handlers, so the handlers stay referentially
+  // stable and the dagre effect (which injects them into node data) does not re-run.
+  const dataRef = useRef(data);
+  useEffect(() => {
+    dataRef.current = data;
+  }, [data]);
+
+  const closeRoutePopover = useCallback(() => {
+    setRouteEdit(null);
+    setCommandError(null);
+  }, []);
+
+  const handlePortClick = useCallback(
+    (
+      deviceKey: string,
+      port: RoutingPort,
+      kind: 'input' | 'output',
+      rect: DOMRect
+    ) => {
+      // Resolve against the UNFILTERED device, so "Hide unconnected ports" cannot hide an input
+      // from a midpoint's route-from list.
+      const device = dataRef.current?.devices.find((d) => d.key === deviceKey);
+      if (!device) return;
+
+      const deviceName = device.name || device.key;
+      const target: RouteEditTarget =
+        kind === 'input'
+          ? {
+              kind: 'sinkInput',
+              deviceKey,
+              deviceName,
+              port,
+              tileNumber: tileNumberOf(port.key),
+            }
+          : {
+              kind: 'midpointOutput',
+              deviceKey,
+              deviceName,
+              port,
+              inputPorts: device.inputPorts ?? [],
+            };
+
+      setCommandError(null);
+      setRouteEdit({ target, anchorRect: rect });
+    },
+    []
+  );
+
+  // Edit badge on a tile in a floating multiview layout panel. Tiles are exposed on the parent
+  // node as "tile{N}:" qualified input ports, so this resolves to the same port the node's own row
+  // would open and reuses the identical flow.
+  const handleTileEditClick = useCallback(
+    (deviceKey: string, tile: { tileNumber: number }, rect: DOMRect) => {
+      const device = dataRef.current?.devices.find((d) => d.key === deviceKey);
+      const port = device?.inputPorts?.find((p) =>
+        p.key.startsWith(`tile${tile.tileNumber}:`)
+      );
+      if (!port) return;
+      handlePortClick(deviceKey, port, 'input', rect);
+    },
+    [handlePortClick]
+  );
+
+  const handleSubmitRouteCommand = useCallback(
+    async (command: RoutingCommand) => {
+      if (!appId) return;
+      try {
+        await sendRoutingCommand({ appId, command }).unwrap();
+      } catch (error) {
+        // Keep the popover open so the user can pick something else.
+        setCommandError(describeRoutingError(error));
+        return;
+      }
+
+      // A sinkRoute/clearSink is only *accepted* by the processor; the authoritative result lands
+      // over the feedback WebSocket. Mark the port pending until the expected feedback shows up.
+      const pending = pendingFromCommand(command, Date.now());
+      if (pending) {
+        setPendingByPort((prev) => ({
+          ...prev,
+          [pendingId(pending.deviceKey, pending.portKey)]: pending,
+        }));
+      }
+
+      setRouteEdit(null);
+      setCommandError(null);
+    },
+    [appId, sendRoutingCommand]
+  );
+
+  // Clear pending markers once the feedback confirms what was asked for.
+  //
+  // pendingByPort is a dependency as well as the thing being set, so a newly-added marker is
+  // checked against feedback immediately rather than waiting for the next WebSocket tick. That
+  // matters for two cases that would otherwise sit pending until they timed out and showed a
+  // spurious warning: feedback that raced ahead of the mutation resolving, and re-selecting the
+  // source that is already routed, which changes nothing and so produces no feedback at all.
+  // The updater returns `prev` unchanged when nothing resolved, so React bails out rather than
+  // looping.
+  useEffect(() => {
+    setPendingByPort((prev) => {
+      const entries = Object.entries(prev);
+      if (entries.length === 0) return prev;
+
+      const next: Record<string, PendingRoute> = {};
+      let changed = false;
+      for (const [id, pending] of entries) {
+        if (isExpectationMet(sinkRoutes, midpointRoutes, pending))
+          changed = true;
+        else next[id] = pending;
+      }
+      return changed ? next : prev;
+    });
+  }, [sinkRoutes, midpointRoutes, pendingByPort]);
+
+  // Age out anything the processor never confirmed: warn at PENDING_TIMEOUT_MS, then drop it. The
+  // interval only runs while something is actually pending.
+  const hasPending = Object.keys(pendingByPort).length > 0;
+  useEffect(() => {
+    if (!hasPending) return;
+    const interval = setInterval(() => {
+      setPendingByPort((prev) => agePendingRoutes(prev, Date.now()));
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [hasPending]);
+
+  // Port status grouped by device, so the node-data effect below can hand each node a stable
+  // object and skip re-rendering every other node on every pending change.
+  const portStatusByDevice = useMemo(() => {
+    const map = new Map<string, Record<string, PortStatus>>();
+    for (const pending of Object.values(pendingByPort)) {
+      const forDevice = map.get(pending.deviceKey) ?? {};
+      forDevice[pending.portKey] = pending.timedOut ? 'timedOut' : 'pending';
+      map.set(pending.deviceKey, forDevice);
+    }
+    return map;
+  }, [pendingByPort]);
+
+  // What is routed to the port the popover is open on, for its check mark.
+  const routeEditCurrent = useMemo(() => {
+    if (!routeEdit) return null;
+    const { target } = routeEdit;
+    if (target.kind === 'sinkInput') {
+      const route = sinkRoutes[target.deviceKey]?.find(
+        (r: SinkRoute) => r.inputPortKey === target.port.key
+      );
+      return { sourceDeviceKey: route?.sourceDeviceKey ?? null };
+    }
+    const route = midpointRoutes[target.deviceKey]?.find(
+      (r: MidpointRoute) => r.outputPortKey === target.port.key
+    );
+    return { inputPortKey: route?.inputPortKey ?? null };
+  }, [routeEdit, sinkRoutes, midpointRoutes]);
+
+  const getCandidatesForOpenPopover = useCallback(
+    (signalType: string) =>
+      routeEdit
+        ? getCandidates(
+            routeEdit.target.deviceKey,
+            routeEdit.target.port.key,
+            signalType
+          )
+        : [],
+    [routeEdit, getCandidates]
+  );
+
   // Re-run dagre layout only when the source data or filters change.
   // Using useEffect (not useMemo) means React Flow owns the node array
   // between renders, so drag positions are preserved.
@@ -689,22 +920,35 @@ const Routing = () => {
       sinkRoutes
     );
     setNodes(
-      layoutNodes.map((n) => ({
-        ...n,
-        data: {
-          ...n.data,
-          darkMode,
-          currentRoutes: midpointRoutesRef.current[n.id],
-          hasLayout: Boolean(layoutsRef.current[n.id]),
-          onToggleLayoutPanel: () => toggleLayoutPanel(n.id),
-          onHide: () =>
-            setHiddenDevices((prev) => {
-              const next = new Set(prev);
-              next.add(n.id);
-              return next;
-            }),
-        },
-      }))
+      layoutNodes.map((n) => {
+        const device = (n.data as RoutingDeviceNodeData).device;
+        return {
+          ...n,
+          data: {
+            ...n.data,
+            darkMode,
+            currentRoutes: midpointRoutesRef.current[n.id],
+            hasLayout: Boolean(layoutsRef.current[n.id]),
+            onToggleLayoutPanel: () => toggleLayoutPanel(n.id),
+            // Only the stable edit fields go in here; pending/editing state is injected by the
+            // cheap effect below so feedback ticks never re-run dagre.
+            onPortClick: canEditRoutes
+              ? (port: RoutingPort, kind: 'input' | 'output', rect: DOMRect) =>
+                  handlePortClick(n.id, port, kind, rect)
+              : undefined,
+            // Inputs are routable on route destinations - pure sinks AND multiview parents, which
+            // report hasInputs && hasOutputs without being midpoints.
+            canEditInputs: canEditRoutes && isRouteDestination(device),
+            canEditOutputs: canEditRoutes && isMidpoint(device),
+            onHide: () =>
+              setHiddenDevices((prev) => {
+                const next = new Set(prev);
+                next.add(n.id);
+                return next;
+              }),
+          },
+        };
+      })
     );
     setEdges(layoutEdges);
     setSelectedEdgeIds(new Set());
@@ -718,24 +962,50 @@ const Routing = () => {
     sinkRoutes,
     resolveSourceName,
     handleTileClick,
+    canEditRoutes,
+    handlePortClick,
+    toggleLayoutPanel,
     setNodes,
     setEdges,
   ]);
 
-  // Keep node data's currentRoutes/hasLayout fresh as feedback arrives, without
+  // Keep node data's currentRoutes/hasLayout/port status fresh as feedback arrives, without
   // re-running dagre or resetting the current selection.
   useEffect(() => {
+    const editingDeviceKey = routeEdit?.target.deviceKey ?? null;
+    const editingPortKey = routeEdit?.target.port.key ?? null;
+
     setNodes((nds) =>
-      nds.map((n) => ({
-        ...n,
-        data: {
-          ...n.data,
-          currentRoutes: midpointRoutes[n.id],
-          hasLayout: Boolean(layouts[n.id]),
-        },
-      }))
+      nds.map((n) => {
+        const portStatus = portStatusByDevice.get(n.id) ?? EMPTY_PORT_STATUS;
+        const nodeEditingPortKey =
+          n.id === editingDeviceKey ? editingPortKey : null;
+        const prev = n.data as RoutingDeviceNodeData;
+
+        // Most nodes are unaffected by any given pending change; returning the same object keeps
+        // React Flow from re-rendering them.
+        if (
+          prev.portStatus === portStatus &&
+          (prev.editingPortKey ?? null) === nodeEditingPortKey &&
+          prev.currentRoutes === midpointRoutes[n.id] &&
+          prev.hasLayout === Boolean(layouts[n.id])
+        ) {
+          return n;
+        }
+
+        return {
+          ...n,
+          data: {
+            ...n.data,
+            currentRoutes: midpointRoutes[n.id],
+            hasLayout: Boolean(layouts[n.id]),
+            portStatus,
+            editingPortKey: nodeEditingPortKey,
+          },
+        };
+      })
     );
-  }, [midpointRoutes, layouts, setNodes]);
+  }, [midpointRoutes, layouts, portStatusByDevice, routeEdit, setNodes]);
 
   // Re-style edges and update node highlights when selection changes.
   useEffect(() => {
@@ -1195,6 +1465,10 @@ const Routing = () => {
           onEdgeMouseEnter={onEdgeMouseEnter}
           onEdgeMouseLeave={onEdgeMouseLeave}
           onPaneClick={onPaneClick}
+          // The popover is anchored to a viewport rect, so it cannot follow a pan, zoom or node
+          // drag. Close it instead of letting it drift away from its port.
+          onMoveStart={closeRoutePopover}
+          onNodeDragStart={closeRoutePopover}
           nodeTypes={nodeTypes}
           edgeTypes={edgeTypes}
           nodesConnectable={false}
@@ -1226,6 +1500,11 @@ const Routing = () => {
               selectedTileNumber={selectedTileNumberByDevice[deviceKey] ?? null}
               resolveSourceName={resolveSourceName}
               onTileClick={(tile) => handleTileClick(deviceKey, tile)}
+              onTileEditClick={
+                canEditRoutes
+                  ? (tile, rect) => handleTileEditClick(deviceKey, tile, rect)
+                  : undefined
+              }
               onClose={() => closeLayoutPanel(deviceKey)}
               onMove={(nextPosition) =>
                 moveLayoutPanel(deviceKey, nextPosition)
@@ -1233,6 +1512,22 @@ const Routing = () => {
             />
           );
         })}
+
+        {/* Rendered into document.body by the component itself, so it is never clipped by the
+            canvas or scaled by its zoom transform. */}
+        {routeEdit && (
+          <RoutePopover
+            target={routeEdit.target}
+            anchorRect={routeEdit.anchorRect}
+            darkMode={darkMode}
+            current={routeEditCurrent}
+            getCandidateSources={getCandidatesForOpenPopover}
+            isSubmitting={isSendingCommand}
+            errorMessage={commandError}
+            onSubmit={handleSubmitRouteCommand}
+            onClose={closeRoutePopover}
+          />
+        )}
       </div>
     </div>
   );

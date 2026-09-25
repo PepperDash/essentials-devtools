@@ -61,8 +61,20 @@ const routingFeedbackSlice = createSlice({
       const { deviceKey, inputPortKey, sourceDeviceKey, signalType } =
         action.payload;
       const existing = state.sinkRoutes[deviceKey] ?? [];
-      const updated: SinkRoute = { inputPortKey, sourceDeviceKey, signalType };
       const idx = existing.findIndex((r) => r.inputPortKey === inputPortKey);
+
+      // An empty source means the route was cleared. Drop the entry rather than storing a
+      // sourceless route, so consumers can treat "present in sinkRoutes" as "actually routed" -
+      // the synthetic tie-line edges on the routing diagram depend on this.
+      if (!sourceDeviceKey) {
+        if (idx < 0) return;
+        existing.splice(idx, 1);
+        if (existing.length === 0) delete state.sinkRoutes[deviceKey];
+        else state.sinkRoutes[deviceKey] = existing;
+        return;
+      }
+
+      const updated: SinkRoute = { inputPortKey, sourceDeviceKey, signalType };
       if (idx >= 0) {
         existing[idx] = updated;
       } else {

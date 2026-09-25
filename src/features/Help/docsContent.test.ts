@@ -71,10 +71,20 @@ describe('docsContent', () => {
     expect(docsMap.size).toBeGreaterThan(0);
   });
 
-  it('includes the new routing how-to guide in the how-to nav category', () => {
+  it('includes the routing how-to guides in the how-to nav category', () => {
     const howTo = docsNavTree.find((c) => c.category === 'how-to');
-    expect(howTo?.pages.map((p) => p.slug)).toContain(
-      'how-to/trace-signal-routes'
+    const slugs = howTo?.pages.map((p) => p.slug);
+    expect(slugs).toContain('how-to/trace-signal-routes');
+    expect(slugs).toContain('how-to/change-routes');
+  });
+
+  // Nav order comes from the ](./slug.md) links in the category README, so a page that isn't
+  // linked there silently sorts to the end instead of next to its sibling.
+  it('orders the route-changing guide directly after the tracing guide', () => {
+    const howTo = docsNavTree.find((c) => c.category === 'how-to');
+    const slugs = howTo?.pages.map((p) => p.slug) ?? [];
+    expect(slugs.indexOf('how-to/change-routes')).toBe(
+      slugs.indexOf('how-to/trace-signal-routes') + 1
     );
   });
 });

@@ -1,6 +1,17 @@
 import { createApi } from '@reduxjs/toolkit/query/react';
 
 import { axiosBaseQuery } from '../services/httpService';
+import {
+  ROUTING_COMMAND_PATH,
+  RoutingCommand,
+  RoutingCommandResponse,
+} from './routingCommands';
+
+function getAppIdFromPath(): string {
+  const path = window.location.pathname;
+  const pathParts = path.split('/');
+  return pathParts[2];
+}
 
 function getBaseApiPath(): string {
   return `/cws`;
@@ -121,7 +132,21 @@ const apiSlice = createApi({
       }),
     }),
 
-    getConfig: builder.query<unknown, { appId: string }>({
+    // No invalidatesTags: getRoutingDevicesAndTieLines provides no tags, and the authoritative
+    // result of a routing command arrives over the routing feedback WebSocket rather than by
+    // refetching. See src/store/routingCommands.ts for the wire contract.
+    sendRoutingCommand: builder.mutation<
+      RoutingCommandResponse,
+      { appId: string; command: RoutingCommand }
+    >({
+      query: ({ appId, command }) => ({
+        url: `/${appId}/api/${ROUTING_COMMAND_PATH}`,
+        method: 'POST',
+        data: command,
+      }),
+    }),
+
+    getConfig: builder.query<any, { appId: string }>({
       query: ({ appId }) => ({
         url: `/${appId}/api/config`,
         method: 'GET',
@@ -294,6 +319,7 @@ export const {
   useGetMinimumLogLevelQuery,
   useSetMinimumLogLevelMutation,
   useGetRoutingDevicesAndTieLinesQuery,
+  useSendRoutingCommandMutation,
   useCreateMobileControlUiClientMutation,
   useDeleteMobileControlUiClientMutation,
   useDeleteAllMobileControlUiClientsMutation,
@@ -530,7 +556,9 @@ export interface MidpointRoute {
 
 export interface SinkRoute {
   inputPortKey: string;
-  sourceDeviceKey: string;
+  // Null/empty when the route feeding this input has been cleared. The feedback slice removes such
+  // entries rather than storing them, so a SinkRoute held in state always has a real source.
+  sourceDeviceKey: string | null;
   signalType: string;
 }
 
@@ -556,7 +584,10 @@ export interface SinkInputChangedMessage {
   type: 'sinkInputChanged';
   deviceKey: string;
   inputPortKey: string;
-  sourceDeviceKey: string;
+  // Null/empty means the route feeding this input was cleared - the processor raises this from
+  // ICurrentSources.CurrentSourcesChanged, since clearing a route never calls ExecuteSwitch on the
+  // sink itself and so fires no InputChanged.
+  sourceDeviceKey: string | null;
   signalType: string;
 }
 
@@ -573,4 +604,9 @@ export type RoutingFeedbackMessage =
   | LayoutChangedMessage;
 
 export type LogEventLevel =
-  'Verbose' | 'Debug' | 'Information' | 'Warning' | 'Error' | 'Fatal';
+  | 'Verbose'
+  | 'Debug'
+  | 'Information'
+  | 'Warning'
+  | 'Error'
+  | 'Fatal';

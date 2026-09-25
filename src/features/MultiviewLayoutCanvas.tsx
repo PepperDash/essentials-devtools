@@ -11,6 +11,11 @@ export interface MultiviewLayoutCanvasProps {
   selectedTileNumber?: number | null;
   /** Called when a tile is clicked, with the full tile state. */
   onTileClick?: (tile: MultiviewTileState) => void;
+  /**
+   * Called when a tile's edit badge is clicked, with the badge's viewport rect for anchoring the
+   * route popover. Omitted when route editing is unavailable, which also hides the badge.
+   */
+  onTileEditClick?: (tile: MultiviewTileState, rect: DOMRect) => void;
 }
 
 /**
@@ -26,6 +31,7 @@ const MultiviewLayoutCanvas = ({
   darkMode,
   selectedTileNumber,
   onTileClick,
+  onTileEditClick,
 }: MultiviewLayoutCanvasProps) => {
   const aspectRatio = layout.canvasWidth / layout.canvasHeight;
 
@@ -72,6 +78,34 @@ const MultiviewLayoutCanvas = ({
                 <span className={styles.tileNumberBadge}>
                   {tile.tileNumber}
                 </span>
+                {onTileEditClick && (
+                  <button
+                    type="button"
+                    className={styles.tileEditBtn}
+                    title={`Route tile ${tile.tileNumber}`}
+                    aria-label={`Route tile ${tile.tileNumber}`}
+                    aria-haspopup="dialog"
+                    // Without this the tile's own click handler would also fire and trace the
+                    // existing path, fighting the popover for the user's attention.
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onTileEditClick(
+                        tile,
+                        e.currentTarget.getBoundingClientRect()
+                      );
+                    }}
+                  >
+                    <svg
+                      width="10"
+                      height="10"
+                      viewBox="0 0 16 16"
+                      fill="currentColor"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708l-10 10a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168l10-10zM11.207 2.5 13.5 4.793 14.793 3.5 12.5 1.207 11.207 2.5zm1.586 3L10.5 3.207 4 9.707V10h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.293l6.5-6.5z" />
+                    </svg>
+                  </button>
+                )}
                 <span className={styles.tileLabel}>{sourceName}</span>
               </div>
             );
