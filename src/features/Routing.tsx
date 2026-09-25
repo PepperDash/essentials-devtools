@@ -335,18 +335,27 @@ function traceSignalPath(
 
   const d = (e: Edge) => (e.data ?? {}) as EdgeData;
 
-  // Build lookup maps:
-  // "deviceKey:portKey" → edge that ARRIVES at that input port
-  const edgeByDestPort = new Map<string, Edge>();
-  // "deviceKey:portKey" → edge that LEAVES from that output port
-  const edgeBySrcPort = new Map<string, Edge>();
+  // Build lookup maps. A port can carry multiple tie lines (fan-out from an
+  // output, fan-in to an input), so each key maps to every matching edge.
+  // "deviceKey:portKey" → edges that ARRIVE at that input port
+  const edgesByDestPort = new Map<string, Edge[]>();
+  // "deviceKey:portKey" → edges that LEAVE from that output port
+  const edgesBySrcPort = new Map<string, Edge[]>();
+
+  const addTo = (map: Map<string, Edge[]>, key: string, e: Edge) => {
+    const list = map.get(key);
+    if (list) list.push(e);
+    else map.set(key, [e]);
+  };
 
   for (const e of edges) {
     const ed = d(e);
-    const srcKey = `${ed.sourceDeviceKey}:${ed.sourcePortKey}`;
-    const dstKey = `${ed.destinationDeviceKey}:${ed.destinationPortKey}`;
-    edgeBySrcPort.set(srcKey, e);
-    edgeByDestPort.set(dstKey, e);
+    addTo(edgesBySrcPort, `${ed.sourceDeviceKey}:${ed.sourcePortKey}`, e);
+    addTo(
+      edgesByDestPort,
+      `${ed.destinationDeviceKey}:${ed.destinationPortKey}`,
+      e
+    );
   }
 
   // Trace upstream from the clicked edge's source
@@ -362,13 +371,14 @@ function traceSignalPath(
       (r) => r.outputPortKey === outputPortKey
     );
     for (const route of matchingRoutes) {
-      const incomingEdge = edgeByDestPort.get(
+      for (const incomingEdge of edgesByDestPort.get(
         `${deviceKey}:${route.inputPortKey}`
-      );
-      if (!incomingEdge || result.has(incomingEdge.id)) continue;
-      result.add(incomingEdge.id);
-      const ed = d(incomingEdge);
-      traceUpstream(ed.sourceDeviceKey, ed.sourcePortKey);
+      ) ?? []) {
+        if (result.has(incomingEdge.id)) continue;
+        result.add(incomingEdge.id);
+        const ed = d(incomingEdge);
+        traceUpstream(ed.sourceDeviceKey, ed.sourcePortKey);
+      }
     }
   }
 
@@ -385,13 +395,14 @@ function traceSignalPath(
       (r) => r.inputPortKey === inputPortKey
     );
     for (const route of matchingRoutes) {
-      const outgoingEdge = edgeBySrcPort.get(
+      for (const outgoingEdge of edgesBySrcPort.get(
         `${deviceKey}:${route.outputPortKey}`
-      );
-      if (!outgoingEdge || result.has(outgoingEdge.id)) continue;
-      result.add(outgoingEdge.id);
-      const ed = d(outgoingEdge);
-      traceDownstream(ed.destinationDeviceKey, ed.destinationPortKey);
+      ) ?? []) {
+        if (result.has(outgoingEdge.id)) continue;
+        result.add(outgoingEdge.id);
+        const ed = d(outgoingEdge);
+        traceDownstream(ed.destinationDeviceKey, ed.destinationPortKey);
+      }
     }
   }
 

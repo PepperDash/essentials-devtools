@@ -44,9 +44,12 @@ const Secrets = () => {
   const [showBulk, setShowBulk] = useState(false);
   const [commandError, setCommandError] = useState<string | null>(null);
 
-  const { data: apiPaths, isLoading: isProbing } = useGetPathsQuery(
-    appId ? { appId } : skipToken,
-  );
+  const {
+    data: apiPaths,
+    isLoading: isProbing,
+    isError: probeFailed,
+    refetch: retryProbe,
+  } = useGetPathsQuery(appId ? { appId } : skipToken);
   const canManageSecrets = useMemo(
     () => supportsSecretsApi(apiPaths?.routes),
     [apiPaths],
@@ -153,6 +156,21 @@ const Secrets = () => {
 
   if (isProbing || (canManageSecrets && isLoading)) {
     return <div className="p-3">Loading secrets…</div>;
+  }
+
+  // "Could not ask" and "asked, and it is not supported" are different problems with different
+  // fixes. Collapsing them would tell someone to upgrade Essentials over a dropped request.
+  if (probeFailed) {
+    return (
+      <div className="p-3">
+        <div className="text-danger mb-2">
+          Could not check whether this processor supports secrets management.
+        </div>
+        <Button size="sm" variant="outline-secondary" onClick={() => retryProbe()}>
+          Retry
+        </Button>
+      </div>
+    );
   }
 
   if (!canManageSecrets) {

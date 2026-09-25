@@ -96,8 +96,14 @@ const MultiviewLayoutPanel = ({
         <span className={styles.title} title={title}>
           {title}
         </span>
-        <button className={styles.closeBtn} onClick={onClose} title="Close">
-          &times;
+        <button
+          type="button"
+          className={styles.closeBtn}
+          onClick={onClose}
+          title="Close"
+          aria-label={`Close ${title}`}
+        >
+          <span aria-hidden="true">&times;</span>
         </button>
       </div>
       <div className={styles.body}>

@@ -70,9 +70,23 @@ const MultiviewLayoutCanvas = ({
                   zIndex: tile.zOrder,
                 }}
                 title={`Tile ${tile.tileNumber}: ${sourceName}`}
+                // Not a <button>: it contains the edit <button>, and buttons can't nest.
+                role={onTileClick ? "button" : undefined}
+                tabIndex={onTileClick ? 0 : undefined}
+                aria-label={onTileClick ? `Tile ${tile.tileNumber}: ${sourceName}` : undefined}
+                aria-pressed={onTileClick ? isSelected : undefined}
                 onClick={(e) => {
                   e.stopPropagation();
                   onTileClick?.(tile);
+                }}
+                onKeyDown={(e) => {
+                  // Ignore keys bubbling up from the nested edit button.
+                  if (!onTileClick || e.target !== e.currentTarget) return;
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    onTileClick(tile);
+                  }
                 }}
               >
                 <span className={styles.tileNumberBadge}>
