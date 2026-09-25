@@ -42,7 +42,25 @@ export const websocketMiddleware: Middleware = (store) => {
       store.dispatch(connectionAttemptStarted());
 
       const connectToUrl = (targetUrl: string, fallback?: string) => {
-        const ws = new WebSocket(targetUrl);
+        let ws: WebSocket;
+        try {
+          ws = new WebSocket(targetUrl);
+        } catch (err) {
+          // An unparseable URL throws synchronously instead of firing onerror
+          console.error('[ws] Invalid WebSocket URL', targetUrl, err);
+          if (fallback) {
+            connectToUrl(fallback);
+          } else {
+            store.dispatch(
+              connectionFailed(
+                fallbackUrl && targetUrl === fallbackUrl
+                  ? [url, fallbackUrl]
+                  : [targetUrl]
+              )
+            );
+          }
+          return;
+        }
         socket = ws;
         ws.onopen = () => {
           if (socket !== ws) return;
