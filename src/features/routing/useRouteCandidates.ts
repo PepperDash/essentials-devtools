@@ -1,11 +1,11 @@
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef } from 'react';
 
 import {
   CandidateSource,
   findCandidateSources,
   findReachableUpstreamDevices,
   RouteIndex,
-} from "./routeGraph";
+} from './routeGraph';
 
 /**
  * Memoized candidate-source lookup for the route popover.
@@ -19,8 +19,12 @@ import {
  * popover asks for them.
  */
 function useRouteCandidates(
-  index: RouteIndex | null,
-): (destDeviceKey: string, destPortKey: string | null, signalType: string) => CandidateSource[] {
+  index: RouteIndex | null
+): (
+  destDeviceKey: string,
+  destPortKey: string | null,
+  signalType: string
+) => CandidateSource[] {
   const cache = useRef(new Map<string, ReadonlySet<string>>());
 
   // Index identity changes only when the query data does.
@@ -31,17 +35,23 @@ function useRouteCandidates(
   return useCallback(
     (destDeviceKey: string, destPortKey: string | null, signalType: string) => {
       if (!index) return [];
-      return findCandidateSources(index, destDeviceKey, destPortKey, signalType, (d, p, atom) => {
-        const cacheKey = `${d}\u0000${p ?? "*"}\u0000${atom}`;
-        let reachable = cache.current.get(cacheKey);
-        if (!reachable) {
-          reachable = findReachableUpstreamDevices(index, d, p, atom);
-          cache.current.set(cacheKey, reachable);
+      return findCandidateSources(
+        index,
+        destDeviceKey,
+        destPortKey,
+        signalType,
+        (d, p, atom) => {
+          const cacheKey = `${d}\u0000${p ?? '*'}\u0000${atom}`;
+          let reachable = cache.current.get(cacheKey);
+          if (!reachable) {
+            reachable = findReachableUpstreamDevices(index, d, p, atom);
+            cache.current.set(cacheKey, reachable);
+          }
+          return reachable;
         }
-        return reachable;
-      });
+      );
     },
-    [index],
+    [index]
   );
 }
 

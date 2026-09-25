@@ -18,11 +18,11 @@
 // ─── Endpoint paths ──────────────────────────────────────────────────────────
 // Appended after `/{appId}/api/`. SECRETS_PATH is also what the capability probe looks for.
 
-export const SECRETS_PATH = "secrets";
-export const SECRETS_PROVIDERS_PATH = "secrets/providers";
-export const SECRETS_COMMAND_PATH = "secrets/command";
-export const SECRETS_BULK_PATH = "secrets/bulk";
-export const SECRETS_TEMPLATE_PATH = "secrets/template";
+export const SECRETS_PATH = 'secrets';
+export const SECRETS_PROVIDERS_PATH = 'secrets/providers';
+export const SECRETS_COMMAND_PATH = 'secrets/command';
+export const SECRETS_BULK_PATH = 'secrets/bulk';
+export const SECRETS_TEMPLATE_PATH = 'secrets/template';
 
 // ─── Crestron Data Store limits ──────────────────────────────────────────────
 
@@ -41,12 +41,12 @@ export const DOCUMENTED_MAX_SECRET_KEY_LENGTH = 32;
 export const MAX_SECRET_VALUE_LENGTH = 1600;
 
 /** Records the API uses for its own bookkeeping. Never writable, never listed by default. */
-export const RESERVED_KEY_PREFIX = "__essSecretsIdx";
+export const RESERVED_KEY_PREFIX = '__essSecretsIdx';
 
 // ─── Providers ───────────────────────────────────────────────────────────────
 
 /** Which Crestron Data Store space a provider writes to. */
-export type SecretStoreScope = "local" | "global";
+export type SecretStoreScope = 'local' | 'global';
 
 export interface SecretProviderInfo {
   key: string;
@@ -71,7 +71,7 @@ export interface SecretsProvidersResponse {
  * "corrupt:*" value means every key is reported unmanaged, which is a degraded display - never a
  * broken system, and never a reason to block writes.
  */
-export type SecretsIndexStatus = "ok" | "missing" | `corrupt:${string}`;
+export type SecretsIndexStatus = 'ok' | 'missing' | `corrupt:${string}`;
 
 export interface SecretEntry {
   key: string;
@@ -123,12 +123,7 @@ export interface SecretsListResponse {
 // ─── Single-secret commands ──────────────────────────────────────────────────
 
 export type SecretCommandAction =
-  | "set"
-  | "update"
-  | "delete"
-  | "test"
-  | "pruneIndex"
-  | "rebuildIndex";
+  'set' | 'update' | 'delete' | 'test' | 'pruneIndex' | 'rebuildIndex';
 
 export interface SecretCommandRequest {
   action: SecretCommandAction;
@@ -143,7 +138,7 @@ export interface SecretCommandRequest {
 }
 
 export interface SecretCommandResponse {
-  status: "ok" | "error";
+  status: 'ok' | 'error';
   action?: SecretCommandAction;
   provider?: string;
   key?: string;
@@ -170,7 +165,7 @@ export interface BulkSecretEntry {
 
 export interface BulkSecretsRequest {
   /** "preview" validates and reports without writing anything. */
-  mode: "preview" | "commit";
+  mode: 'preview' | 'commit';
   provider: string;
   overwrite: boolean;
   /** Permit writing over a key the index does not manage (e.g. another subsystem's record). */
@@ -178,7 +173,8 @@ export interface BulkSecretsRequest {
   secrets: BulkSecretEntry[];
 }
 
-export type BulkSecretAction = "create" | "overwrite" | "skip" | "invalid" | "failed";
+export type BulkSecretAction =
+  'create' | 'overwrite' | 'skip' | 'invalid' | 'failed';
 
 export interface BulkEntryResult {
   index: number;
@@ -202,7 +198,7 @@ export interface BulkSummary {
 }
 
 export interface BulkSecretsResponse {
-  mode: "preview" | "commit";
+  mode: 'preview' | 'commit';
   provider: string;
   overwrite: boolean;
   summary: BulkSummary;
@@ -238,25 +234,25 @@ export interface SecretsTemplateResponse {
  * Data Store itself refused.
  */
 export type SecretsApiErrorCode =
-  | "invalidJson"
-  | "missingField"
-  | "unknownAction"
-  | "providerNotFound"
-  | "emptyKey"
-  | "invalidKey"
-  | "keyTooLong"
-  | "reservedKey"
-  | "emptyValue"
-  | "valueTooLong"
-  | "alreadyExists"
-  | "notFound"
-  | "accessDenied"
-  | "storeFull"
-  | "storeUnavailable"
-  | "batchTooLarge"
-  | "enumerationIncomplete"
-  | "indexFull"
-  | "executionError";
+  | 'invalidJson'
+  | 'missingField'
+  | 'unknownAction'
+  | 'providerNotFound'
+  | 'emptyKey'
+  | 'invalidKey'
+  | 'keyTooLong'
+  | 'reservedKey'
+  | 'emptyValue'
+  | 'valueTooLong'
+  | 'alreadyExists'
+  | 'notFound'
+  | 'accessDenied'
+  | 'storeFull'
+  | 'storeUnavailable'
+  | 'batchTooLarge'
+  | 'enumerationIncomplete'
+  | 'indexFull'
+  | 'executionError';
 
 export interface SecretsApiError {
   code: SecretsApiErrorCode;
@@ -270,9 +266,9 @@ export function setSecretCommand(
   provider: string,
   key: string,
   value: string,
-  options: { description?: string; overwrite?: boolean } = {},
+  options: { description?: string; overwrite?: boolean } = {}
 ): SecretCommandRequest {
-  const request: SecretCommandRequest = { action: "set", provider, key, value };
+  const request: SecretCommandRequest = { action: 'set', provider, key, value };
   if (options.description) request.description = options.description;
   if (options.overwrite) request.overwrite = true;
   return request;
@@ -282,27 +278,41 @@ export function updateSecretCommand(
   provider: string,
   key: string,
   value: string,
-  description?: string,
+  description?: string
 ): SecretCommandRequest {
-  const request: SecretCommandRequest = { action: "update", provider, key, value };
+  const request: SecretCommandRequest = {
+    action: 'update',
+    provider,
+    key,
+    value,
+  };
   if (description) request.description = description;
   return request;
 }
 
-export function deleteSecretCommand(provider: string, key: string): SecretCommandRequest {
-  return { action: "delete", provider, key };
+export function deleteSecretCommand(
+  provider: string,
+  key: string
+): SecretCommandRequest {
+  return { action: 'delete', provider, key };
 }
 
-export function testSecretCommand(provider: string, key: string): SecretCommandRequest {
-  return { action: "test", provider, key };
+export function testSecretCommand(
+  provider: string,
+  key: string
+): SecretCommandRequest {
+  return { action: 'test', provider, key };
 }
 
 export function pruneIndexCommand(provider: string): SecretCommandRequest {
-  return { action: "pruneIndex", provider };
+  return { action: 'pruneIndex', provider };
 }
 
-export function rebuildIndexCommand(provider: string, adoptKeys?: string[]): SecretCommandRequest {
-  const request: SecretCommandRequest = { action: "rebuildIndex", provider };
+export function rebuildIndexCommand(
+  provider: string,
+  adoptKeys?: string[]
+): SecretCommandRequest {
+  const request: SecretCommandRequest = { action: 'rebuildIndex', provider };
   if (adoptKeys && adoptKeys.length > 0) request.adoptKeys = adoptKeys;
   return request;
 }
@@ -310,7 +320,11 @@ export function rebuildIndexCommand(provider: string, adoptKeys?: string[]): Sec
 export function bulkSecretsRequest(
   provider: string,
   secrets: BulkSecretEntry[],
-  options: { mode: "preview" | "commit"; overwrite: boolean; allowUnmanagedOverwrite?: boolean },
+  options: {
+    mode: 'preview' | 'commit';
+    overwrite: boolean;
+    allowUnmanagedOverwrite?: boolean;
+  }
 ): BulkSecretsRequest {
   const request: BulkSecretsRequest = {
     mode: options.mode,
@@ -328,12 +342,12 @@ export function bulkSecretsRequest(
  * True when the processor exposes the secrets API, detected from its live CWS route table rather
  * than from a version number.
  *
- * Matches a whole path segment, unlike the routing feature's substring check: "secrets" is a
- * common enough token that `/api/mysecretsthing` would otherwise read as support.
+ * Matches a whole path segment: "secrets" is a common enough token that `/api/mysecretsthing`
+ * would otherwise read as support.
  */
 export function supportsSecretsApi(routes?: { Url?: string }[]): boolean {
   if (!routes) return false;
-  return routes.some((route) => /(^|\/)secrets(\/|$)/i.test(route.Url ?? ""));
+  return routes.some((route) => /(^|\/)secrets(\/|$)/i.test(route.Url ?? ''));
 }
 
 // ─── Error rendering ─────────────────────────────────────────────────────────
@@ -350,8 +364,8 @@ export function describeSecretsError(error: unknown): string {
   if (data?.error?.message) return data.error.message;
 
   const status = (error as { status?: number | string })?.status;
-  if (status === "FETCH_ERROR" || status === undefined) {
-    return "Could not reach the processor.";
+  if (status === 'FETCH_ERROR' || status === undefined) {
+    return 'Could not reach the processor.';
   }
   return `Secrets request failed (${status}).`;
 }

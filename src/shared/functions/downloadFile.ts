@@ -12,10 +12,14 @@
  * URL can only be revoked once the click has been dispatched - hence the deferred cleanup rather
  * than revoking inline, which cancels the download in some browsers.
  */
-export function downloadText(filename: string, text: string, mime = "text/plain"): void {
+export function downloadText(
+  filename: string,
+  text: string,
+  mime = 'text/plain'
+): void {
   const blob = new Blob([text], { type: mime });
   const url = URL.createObjectURL(blob);
-  const anchor = document.createElement("a");
+  const anchor = document.createElement('a');
 
   anchor.href = url;
   anchor.download = filename;
@@ -30,7 +34,7 @@ export function downloadText(filename: string, text: string, mime = "text/plain"
 
 /** Pretty-prints `data` and saves it as a .json file. */
 export function downloadJson(filename: string, data: unknown): void {
-  downloadText(filename, JSON.stringify(data, null, 2), "application/json");
+  downloadText(filename, JSON.stringify(data, null, 2), 'application/json');
 }
 
 /**

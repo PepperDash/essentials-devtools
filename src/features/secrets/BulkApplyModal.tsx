@@ -1,29 +1,33 @@
-import { useEffect, useRef, useState } from "react";
-import { Button, Form, Modal, Spinner } from "react-bootstrap";
+import { useEffect, useRef, useState } from 'react';
+import { Button, Form, Modal, Spinner } from 'react-bootstrap';
 
 import {
   BulkSecretEntry,
   BulkSecretsResponse,
-  bulkSecretsRequest,
-  SecretEntry,
-} from "../../store/secretsContract";
-import BulkPreviewTable, { unmanagedId } from "./BulkPreviewTable";
-import { MAX_FILE_BYTES, parseSecretsFile, SecretsFileIssue } from "./secretsFile";
-import styles from "./BulkApplyModal.module.scss";
+} from '../../store/secretsContract';
+import BulkPreviewTable from './BulkPreviewTable';
+import {
+  MAX_FILE_BYTES,
+  parseSecretsFile,
+  SecretsFileIssue,
+} from './secretsFile';
+import styles from './BulkApplyModal.module.scss';
 
 export interface BulkApplyModalProps {
   provider: string;
-  /** Current store contents, for flagging entries that would overwrite an unmanaged record. */
-  existing: SecretEntry[];
   /** Runs a preview or a commit and resolves with the processor's verdict. */
   onRun: (
     entries: BulkSecretEntry[],
-    options: { mode: "preview" | "commit"; overwrite: boolean; allowUnmanagedOverwrite: boolean },
+    options: {
+      mode: 'preview' | 'commit';
+      overwrite: boolean;
+      allowUnmanagedOverwrite: boolean;
+    }
   ) => Promise<BulkSecretsResponse>;
   onClose: () => void;
 }
 
-type Stage = "choose" | "review" | "done";
+type Stage = 'choose' | 'review' | 'done';
 
 /**
  * Applies a file of secrets, with a mandatory preview.
@@ -38,10 +42,10 @@ type Stage = "choose" | "review" | "done";
  *   3. Nothing is written until the user presses Apply. The only request before that is a preview,
  *      which the processor answers without touching the store.
  */
-const BulkApplyModal = ({ provider, existing, onRun, onClose }: BulkApplyModalProps) => {
+const BulkApplyModal = ({ provider, onRun, onClose }: BulkApplyModalProps) => {
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const [stage, setStage] = useState<Stage>("choose");
+  const [stage, setStage] = useState<Stage>('choose');
   const [fileName, setFileName] = useState<string | null>(null);
   const [entries, setEntries] = useState<BulkSecretEntry[]>([]);
   const [warnings, setWarnings] = useState<SecretsFileIssue[]>([]);
@@ -49,23 +53,24 @@ const BulkApplyModal = ({ provider, existing, onRun, onClose }: BulkApplyModalPr
   const [response, setResponse] = useState<BulkSecretsResponse | null>(null);
   const [overwrite, setOverwrite] = useState(false);
   const [acknowledgeUnmanaged, setAcknowledgeUnmanaged] = useState(false);
+  // Entries the processor held back because they would overwrite a record this tool does not
+  // manage. Taken from the processor's own verdict, which is authoritative for every provider.
+  const [unmanagedIndices, setUnmanagedIndices] = useState<ReadonlySet<number>>(
+    new Set()
+  );
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
-
-  const unmanagedKeys = new Set(
-    existing.filter((entry) => !entry.managed).map((entry) => unmanagedId(provider, entry.key)),
-  );
 
   // A drop landing anywhere but the zone would otherwise navigate away from the app, taking the
   // unsaved state with it and exposing the file path.
   useEffect(() => {
     const swallow = (event: DragEvent) => event.preventDefault();
-    window.addEventListener("dragover", swallow);
-    window.addEventListener("drop", swallow);
+    window.addEventListener('dragover', swallow);
+    window.addEventListener('drop', swallow);
     return () => {
-      window.removeEventListener("dragover", swallow);
-      window.removeEventListener("drop", swallow);
+      window.removeEventListener('dragover', swallow);
+      window.removeEventListener('drop', swallow);
     };
   }, []);
 
@@ -76,7 +81,8 @@ const BulkApplyModal = ({ provider, existing, onRun, onClose }: BulkApplyModalPr
     setResponse(null);
     setFileName(null);
     setAcknowledgeUnmanaged(false);
-    if (inputRef.current) inputRef.current.value = "";
+    setUnmanagedIndices(new Set());
+    if (inputRef.current) inputRef.current.value = '';
   };
 
   const handleFile = async (file: File | undefined) => {
@@ -89,7 +95,7 @@ const BulkApplyModal = ({ provider, existing, onRun, onClose }: BulkApplyModalPr
     if (file.size > MAX_FILE_BYTES) {
       setIssues([
         {
-          code: "tooLarge",
+          code: 'tooLarge',
           message: `"${file.name}" is too large. The limit is ${Math.round(MAX_FILE_BYTES / 1024)} KB.`,
         },
       ]);
@@ -97,7 +103,11 @@ const BulkApplyModal = ({ provider, existing, onRun, onClose }: BulkApplyModalPr
     }
 
     const text = await file.text();
-    const parsed = parseSecretsFile({ text, fileName: file.name, fileSize: file.size });
+    const parsed = parseSecretsFile({
+      text,
+      fileName: file.name,
+      fileSize: file.size,
+    });
 
     if (!parsed.ok) {
       setIssues(parsed.issues);
@@ -105,17 +115,44 @@ const BulkApplyModal = ({ provider, existing, onRun, onClose }: BulkApplyModalPr
       return;
     }
 
+    // The processor writes every entry to the request's provider and only echoes a per-entry one
+    // back, so a file aimed at another provider would land somewhere other than the preview says.
+    const otherProviders = [
+      ...new Set(
+        parsed.entries
+          .map((entry) => entry.provider)
+          .filter(
+            (p): p is string =>
+              !!p && p.toLowerCase() !== provider.toLowerCase()
+          )
+      ),
+    ];
+    if (otherProviders.length > 0) {
+      setIssues([
+        {
+          code: 'providerMismatch',
+          message: `This file is for ${otherProviders
+            .map((p) => `"${p}"`)
+            .join(
+              ', '
+            )}, not "${provider}". Switch to that provider to apply it, or remove the provider from the file.`,
+        },
+      ]);
+      setFileName(file.name);
+      return;
+    }
+
     setFileName(file.name);
     setEntries(parsed.entries);
     setWarnings(parsed.warnings);
-    await run(parsed.entries, "preview", overwrite, false);
+    await run(parsed.entries, 'preview', overwrite, false);
   };
 
   const run = async (
     toRun: BulkSecretEntry[],
-    mode: "preview" | "commit",
+    mode: 'preview' | 'commit',
     overwriteFlag: boolean,
-    allowUnmanaged: boolean,
+    allowUnmanaged: boolean
   ) => {
     setBusy(true);
     setError(null);
@@ -126,16 +163,31 @@ const BulkApplyModal = ({ provider, existing, onRun, onClose }: BulkApplyModalPr
         allowUnmanagedOverwrite: allowUnmanaged,
       });
       setResponse(result);
-      setStage(mode === "commit" ? "done" : "review");
+      setStage(mode === 'commit' ? 'done' : 'review');
 
-      if (mode === "commit") {
+      // Only a run that did NOT allow unmanaged overwrites reports them, as skips; once allowed
+      // they come back as ordinary overwrites, so keep the set from the last run that could see it.
+      if (!allowUnmanaged) {
+        setUnmanagedIndices(
+          new Set(
+            (result.entries ?? [])
+              .filter(
+                (entry) =>
+                  entry.action === 'skip' && entry.reason === 'unmanagedTarget'
+              )
+              .map((entry) => entry.index)
+          )
+        );
+      }
+
+      if (mode === 'commit') {
         // The values have served their purpose; drop them as soon as the write lands. The results
         // kept for display carry only keys and outcomes.
         setEntries([]);
-        if (inputRef.current) inputRef.current.value = "";
+        if (inputRef.current) inputRef.current.value = '';
       }
     } catch (e) {
-      setError(e instanceof Error ? e.message : "The request failed.");
+      setError(e instanceof Error ? e.message : 'The request failed.');
     } finally {
       setBusy(false);
     }
@@ -145,27 +197,21 @@ const BulkApplyModal = ({ provider, existing, onRun, onClose }: BulkApplyModalPr
     setOverwrite(next);
     setAcknowledgeUnmanaged(false);
     // Re-preview so what is shown always matches the flag that would actually be sent.
-    void run(entries, "preview", next, false);
+    void run(entries, 'preview', next, false);
   };
 
-  const wouldOverwriteUnmanaged =
-    response?.entries?.some(
-      (entry) =>
-        entry.action === "overwrite" && unmanagedKeys.has(unmanagedId(entry.provider, entry.key)),
-    ) ?? false;
+  const handleAcknowledgeChange = (next: boolean) => {
+    setAcknowledgeUnmanaged(next);
+    // Re-preview so the unmanaged rows show as the overwrites Apply would now perform.
+    void run(entries, 'preview', overwrite, next);
+  };
 
-  const unmanagedCount =
-    response?.entries?.filter(
-      (entry) =>
-        entry.action === "overwrite" && unmanagedKeys.has(unmanagedId(entry.provider, entry.key)),
-    ).length ?? 0;
+  const unmanagedCount = unmanagedIndices.size;
 
-  const applicable = (response?.summary.create ?? 0) + (response?.summary.overwrite ?? 0);
+  const applicable =
+    (response?.summary.create ?? 0) + (response?.summary.overwrite ?? 0);
   const blocked =
-    busy ||
-    applicable === 0 ||
-    (response?.summary.invalid ?? 0) > 0 ||
-    (wouldOverwriteUnmanaged && !acknowledgeUnmanaged);
+    busy || applicable === 0 || (response?.summary.invalid ?? 0) > 0;
 
   return (
     <Modal
@@ -174,24 +220,26 @@ const BulkApplyModal = ({ provider, existing, onRun, onClose }: BulkApplyModalPr
       centered
       size="lg"
       // Static once a file is loaded, so a stray backdrop click cannot discard a reviewed batch.
-      backdrop={stage === "choose" ? true : "static"}
+      backdrop={stage === 'choose' ? true : 'static'}
     >
       <Modal.Header closeButton>
         <Modal.Title>
-          {stage === "done" ? "Secrets applied" : `Apply a secrets file to ${provider}`}
+          {stage === 'done'
+            ? 'Secrets applied'
+            : `Apply a secrets file to ${provider}`}
         </Modal.Title>
       </Modal.Header>
 
       <Modal.Body>
-        {stage === "choose" && (
+        {stage === 'choose' && (
           <>
             <div className="alert alert-warning py-2 px-3 small" role="alert">
-              This file contains credentials in plain text. Delete it when you are finished, and do
-              not commit it to source control.
+              This file contains credentials in plain text. Delete it when you
+              are finished, and do not commit it to source control.
             </div>
 
             <div
-              className={`${styles.dropZone} ${isDragging ? styles.dropZoneActive : ""}`}
+              className={`${styles.dropZone} ${isDragging ? styles.dropZoneActive : ''}`}
               onDragEnter={(e) => {
                 e.preventDefault();
                 setIsDragging(true);
@@ -202,13 +250,17 @@ const BulkApplyModal = ({ provider, existing, onRun, onClose }: BulkApplyModalPr
                 e.preventDefault();
                 setIsDragging(false);
                 if (e.dataTransfer.files.length > 1) {
-                  setIssues([{ code: "notJson", message: "Drop one file at a time." }]);
+                  setIssues([
+                    { code: 'notJson', message: 'Drop one file at a time.' },
+                  ]);
                   return;
                 }
                 void handleFile(e.dataTransfer.files[0]);
               }}
             >
-              <p className="mb-2 text-muted">Drop a .json file here, or choose one:</p>
+              <p className="mb-2 text-muted">
+                Drop a .json file here, or choose one:
+              </p>
               <Form.Control
                 ref={inputRef}
                 type="file"
@@ -230,9 +282,14 @@ const BulkApplyModal = ({ provider, existing, onRun, onClose }: BulkApplyModalPr
             )}
 
             {issues.length > 0 && (
-              <div className="alert alert-danger py-2 px-3 small mt-3 mb-0" role="alert">
+              <div
+                className="alert alert-danger py-2 px-3 small mt-3 mb-0"
+                role="alert"
+              >
                 <div className="fw-semibold mb-1">
-                  {fileName ? `"${fileName}" could not be read:` : "The file could not be read:"}
+                  {fileName
+                    ? `"${fileName}" could not be read:`
+                    : 'The file could not be read:'}
                 </div>
                 <ul className="mb-0 ps-3">
                   {issues.map((issue, index) => (
@@ -245,7 +302,7 @@ const BulkApplyModal = ({ provider, existing, onRun, onClose }: BulkApplyModalPr
             <details className="mt-3 small">
               <summary className="text-muted">Expected file format</summary>
               <pre className="bg-body-secondary p-2 rounded mt-2 mb-0">
-{`{
+                {`{
   "provider": "${provider}",
   "secrets": {
     "displayPassword": "…",
@@ -254,13 +311,14 @@ const BulkApplyModal = ({ provider, existing, onRun, onClose }: BulkApplyModalPr
 }`}
               </pre>
               <p className="text-muted mt-2 mb-0">
-                Download a template to get this file pre-filled with the keys already stored here.
+                Download a template to get this file pre-filled with the keys
+                already stored here.
               </p>
             </details>
           </>
         )}
 
-        {stage !== "choose" && response && (
+        {stage !== 'choose' && response && (
           <>
             {fileName && (
               <div className="small text-muted mb-2">
@@ -272,72 +330,95 @@ const BulkApplyModal = ({ provider, existing, onRun, onClose }: BulkApplyModalPr
               results={response.entries ?? []}
               summary={response.summary}
               warnings={warnings}
-              unmanagedKeys={unmanagedKeys}
+              unmanagedIndices={unmanagedIndices}
               overwrite={overwrite}
               onOverwriteChange={handleOverwriteChange}
               isRefreshing={busy}
-              readOnly={stage === "done"}
+              readOnly={stage === 'done'}
             />
 
-            {stage === "review" && (response.summary.invalid ?? 0) > 0 && (
-              <div className="alert alert-danger py-2 px-3 small mt-3 mb-0" role="alert">
-                Fix the invalid entries before applying. Nothing will be written while any entry is
-                invalid.
+            {stage === 'review' && (response.summary.invalid ?? 0) > 0 && (
+              <div
+                className="alert alert-danger py-2 px-3 small mt-3 mb-0"
+                role="alert"
+              >
+                Fix the invalid entries before applying. Nothing will be written
+                while any entry is invalid.
               </div>
             )}
 
-            {stage === "review" && wouldOverwriteUnmanaged && (
-              <div className="alert alert-danger py-2 px-3 mt-3 mb-0" role="alert">
+            {stage === 'review' && unmanagedCount > 0 && (
+              <div
+                className="alert alert-danger py-2 px-3 mt-3 mb-0"
+                role="alert"
+              >
                 <Form.Check
                   type="checkbox"
                   id="bulk-ack-unmanaged"
                   checked={acknowledgeUnmanaged}
                   disabled={busy}
-                  onChange={(e) => setAcknowledgeUnmanaged(e.target.checked)}
-                  label={`I understand this will overwrite ${unmanagedCount} record${
-                    unmanagedCount === 1 ? "" : "s"
-                  } this tool does not manage`}
+                  onChange={(e) => handleAcknowledgeChange(e.target.checked)}
+                  label={`Also overwrite ${unmanagedCount} record${
+                    unmanagedCount === 1 ? '' : 's'
+                  } this tool does not manage. They may belong to another part of the system.`}
                 />
               </div>
             )}
 
-            {stage === "done" && (
-              <div className="alert alert-success py-2 px-3 small mt-3 mb-0" role="alert">
+            {stage === 'done' && (
+              <div
+                className="alert alert-success py-2 px-3 small mt-3 mb-0"
+                role="alert"
+              >
                 {response.summary.create + response.summary.overwrite} secret
-                {response.summary.create + response.summary.overwrite === 1 ? "" : "s"} written.
-                {response.indexUpdated === false && " Their details could not be recorded."}
+                {response.summary.create + response.summary.overwrite === 1
+                  ? ''
+                  : 's'}{' '}
+                written.
+                {response.indexUpdated === false &&
+                  ' Their details could not be recorded.'}
               </div>
             )}
           </>
         )}
 
         {error && (
-          <div className="alert alert-danger py-2 px-3 small mt-3 mb-0" role="alert">
+          <div
+            className="alert alert-danger py-2 px-3 small mt-3 mb-0"
+            role="alert"
+          >
             {error}
           </div>
         )}
       </Modal.Body>
 
       <Modal.Footer>
-        {stage === "review" && (
-          <Button variant="link" onClick={resetFile} disabled={busy} className="me-auto">
+        {stage === 'review' && (
+          <Button
+            variant="link"
+            onClick={resetFile}
+            disabled={busy}
+            className="me-auto"
+          >
             Choose a different file
           </Button>
         )}
 
         <Button variant="secondary" onClick={onClose} disabled={busy}>
-          {stage === "done" ? "Close" : "Cancel"}
+          {stage === 'done' ? 'Close' : 'Cancel'}
         </Button>
 
-        {stage === "review" && (
+        {stage === 'review' && (
           <Button
             variant="danger"
             disabled={blocked}
-            onClick={() => void run(entries, "commit", overwrite, acknowledgeUnmanaged)}
+            onClick={() =>
+              void run(entries, 'commit', overwrite, acknowledgeUnmanaged)
+            }
           >
             {busy
-              ? "Applying…"
-              : `Apply ${applicable} secret${applicable === 1 ? "" : "s"}`}
+              ? 'Applying…'
+              : `Apply ${applicable} secret${applicable === 1 ? '' : 's'}`}
           </Button>
         )}
       </Modal.Footer>

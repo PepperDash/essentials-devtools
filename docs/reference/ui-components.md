@@ -18,15 +18,16 @@ This document provides detailed information about every UI element, its purpose,
 - **Navigation Links**: Six main sections accessible via top menu
 
 **Navigation Links**:
-| Link | Route | Purpose |
-|------|-------|---------|
-| Home | `/home` | Welcome page and application starting point |
-| Debug Console | `/console` | Real-time system monitoring and debugging |
-| Versions | `/versions` | View loaded assemblies and version information |
-| Secrets | `/secrets` | View and manage stored credentials (capability-gated) |
-| Config File | `/config` | View complete merged configuration |
-| Devices | `/devices` | Browse and inspect configured devices |
-| Types | `/types` | View available device types and descriptions |
+
+| Link          | Route       | Purpose                                               |
+| ------------- | ----------- | ----------------------------------------------------- |
+| Home          | `/home`     | Welcome page and application starting point           |
+| Debug Console | `/console`  | Real-time system monitoring and debugging             |
+| Versions      | `/versions` | View loaded assemblies and version information        |
+| Secrets       | `/secrets`  | View and manage stored credentials (capability-gated) |
+| Config File   | `/config`   | View complete merged configuration                    |
+| Devices       | `/devices`  | Browse and inspect configured devices                 |
+| Types         | `/types`    | View available device types and descriptions          |
 
 **Visual States**:
 
@@ -184,11 +185,12 @@ This document provides detailed information about every UI element, its purpose,
 **Technology**: React Flow (`@xyflow/react`) canvas with Dagre auto-layout (left-to-right column layout, recomputed whenever the device/filter set changes; manually dragged node positions are preserved across live feedback updates)
 
 **Version requirements**:
-| PepperDashEssentials.dll version | Behavior |
-|-----------------------------------|----------|
-| < 2.29 | Routing page shows "Routing feature is not available for this version." |
-| 2.29 – 2.x | Static diagram only: devices, ports, and tie lines render, but there is no live current-source feedback, no internal route curves, no Live/Offline badge activity, and no multiview layout panels |
-| 3.0+ | Full functionality: live WebSocket feedback, signal path tracing, and multiview layout panels (all described below) |
+
+| PepperDashEssentials.dll version        | Behavior                                                                                                                                                                                                                   |
+| --------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| < 2.29                                  | Routing page shows "Routing feature is not available for this version."                                                                                                                                                    |
+| 2.29 – 2.x                              | Static diagram only: devices, ports, and tie lines render, but there is no live current-source feedback, no internal route curves, no Live/Offline badge activity, and no multiview layout panels                          |
+| 3.0+                                    | Full functionality: live WebSocket feedback, signal path tracing, and multiview layout panels (all described below)                                                                                                        |
 | 3.0+ with the `routingCommand` endpoint | Adds route editing (see **Route Popover** below). Detected by probing the processor's live CWS route table via `apiPaths` rather than by version number, so the affordances appear only where the endpoint actually exists |
 
 **Elements**:

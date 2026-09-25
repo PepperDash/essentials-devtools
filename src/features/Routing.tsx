@@ -34,8 +34,8 @@ import {
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import {
   describeRoutingError,
-  ROUTING_COMMAND_PATH,
   RoutingCommand,
+  supportsRoutingCommand,
 } from '../store/routingCommands';
 import {
   ROUTING_WS_CONNECT,
@@ -486,12 +486,6 @@ const Routing = () => {
   const [layoutPanels, setLayoutPanels] = useState<
     Record<string, MultiviewLayoutPanelPosition>
   >({});
-  // Tile number to highlight in each device's open layout panel, based on the current graph
-  // edge/path selection (see the selection-highlight effect below).
-  const [selectedTileNumberByDevice, setSelectedTileNumberByDevice] = useState<
-    Record<string, number>
-  >({});
-
   const toggleLayoutPanel = useCallback((deviceKey: string) => {
     setLayoutPanels((prev) => {
       if (prev[deviceKey]) {
@@ -541,12 +535,7 @@ const Routing = () => {
   // the probe confirms the route, so an older processor simply renders the read-only page.
   const { data: apiPaths } = useGetPathsQuery(appId ? { appId } : skipToken);
   const canEditRoutes = useMemo(
-    () =>
-      Boolean(
-        appId &&
-        isV3 &&
-        apiPaths?.routes?.some((r) => r.Url?.includes(ROUTING_COMMAND_PATH))
-      ),
+    () => Boolean(appId && isV3 && supportsRoutingCommand(apiPaths?.routes)),
     [appId, isV3, apiPaths]
   );
 
@@ -675,6 +664,24 @@ const Routing = () => {
 
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
   const [edges, setEdges] = useEdgesState<Edge>([]);
+
+  // Tile number to highlight in each device's open layout panel, derived from the edges in the
+  // current graph edge/path selection.
+  const selectedTileNumberByDevice = useMemo(() => {
+    const result: Record<string, number> = {};
+    if (selectedEdgeIds.size === 0) return result;
+    for (const e of edges) {
+      if (!selectedEdgeIds.has(e.id)) continue;
+      const ed = e.data as
+        | { destinationDeviceKey?: string; destinationPortKey?: string }
+        | undefined;
+      if (!ed?.destinationDeviceKey || !ed.destinationPortKey) continue;
+      const tileNumber = tileNumberOf(ed.destinationPortKey);
+      if (tileNumber !== undefined)
+        result[ed.destinationDeviceKey] = tileNumber;
+    }
+    return result;
+  }, [edges, selectedEdgeIds]);
 
   // Keep a ref to current edges for path tracing without triggering re-renders
   const edgesRef = useRef<Edge[]>([]);
@@ -853,6 +860,9 @@ const Routing = () => {
   // The updater returns `prev` unchanged when nothing resolved, so React bails out rather than
   // looping.
   useEffect(() => {
+    // Deliberately an effect: markers have to be re-checked each time feedback arrives, and the
+    // updater bails out with `prev` when nothing resolved, so there is no render cascade.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setPendingByPort((prev) => {
       const entries = Object.entries(prev);
       if (entries.length === 0) return prev;
@@ -996,6 +1006,9 @@ const Routing = () => {
       })
     );
     setEdges(layoutEdges);
+    // A rebuilt graph has new edges, so any selection refers to edges that may no longer exist.
+    // Cleared here, alongside the rebuild it belongs to, rather than tracked separately.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setSelectedEdgeIds(new Set());
   }, [
     data,
@@ -1093,11 +1106,9 @@ const Routing = () => {
           data: { ...n.data, highlightedRouteKeys: null },
         }))
       );
-      setSelectedTileNumberByDevice({});
     } else {
       const selectedDestPorts = new Set<string>();
       const selectedSrcPorts = new Set<string>();
-      const selectedTileNumberByDevice = new Map<string, number>();
       for (const e of edgesRef.current) {
         if (selectedEdgeIds.has(e.id)) {
           const ed = e.data as
@@ -1112,13 +1123,6 @@ const Routing = () => {
             selectedDestPorts.add(
               `${ed.destinationDeviceKey}:${ed.destinationPortKey}`
             );
-            const tileMatch = /^tile(\d+):/.exec(ed.destinationPortKey);
-            if (tileMatch) {
-              selectedTileNumberByDevice.set(
-                ed.destinationDeviceKey,
-                Number(tileMatch[1])
-              );
-            }
           }
           if (ed?.sourceDeviceKey && ed?.sourcePortKey) {
             selectedSrcPorts.add(`${ed.sourceDeviceKey}:${ed.sourcePortKey}`);
@@ -1152,9 +1156,6 @@ const Routing = () => {
             data: { ...n.data, highlightedRouteKeys: highlighted },
           };
         })
-      );
-      setSelectedTileNumberByDevice(
-        Object.fromEntries(selectedTileNumberByDevice)
       );
     }
   }, [selectedEdgeIds, setEdges, setNodes, midpointRoutes]);
@@ -1562,6 +1563,11 @@ const Routing = () => {
             canvas or scaled by its zoom transform. */}
         {routeEdit && (
           <RoutePopover
+            // Remount, and so reset its choices, when pointed at a different port
+            key={pendingId(
+              routeEdit.target.deviceKey,
+              routeEdit.target.port.key
+            )}
             target={routeEdit.target}
             anchorRect={routeEdit.anchorRect}
             darkMode={darkMode}
@@ -1570,7 +1576,7 @@ const Routing = () => {
             describeEmptySources={describeEmptySources}
             isSubmitting={isSendingCommand}
             errorMessage={commandError}
-            onSubmit={handleSubmitRouteCommand}
+            onSubmit={(command) => void handleSubmitRouteCommand(command)}
             onClose={closeRoutePopover}
           />
         )}

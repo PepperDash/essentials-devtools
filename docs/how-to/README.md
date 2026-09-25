@@ -114,15 +114,18 @@ These guides provide step-by-step solutions to specific problems you might encou
 ## 🔐 Credentials and Secrets
 
 ### [Manage Stored Secrets](./manage-secrets.md)
+
 **Problem**: Need to see which credentials a processor has stored, change one, or set up several programs with the same set
 
 **Common symptoms:**
+
 - A device fails to authenticate and you cannot tell whether its secret exists
 - You inherited a system and do not know what credentials are stored
 - The same credentials must be entered on several processors
 - A credential needs rotating
 
 **You'll learn to:**
+
 - See which secrets are stored, and which were created elsewhere
 - Add, replace and delete a secret
 - Apply a JSON file of secrets in bulk, with a preview before anything is written
@@ -186,6 +189,7 @@ Core troubleshooting skills for monitoring and analyzing system behavior
 Tools for understanding, documenting, and managing system configuration
 
 ### Credentials and Secrets (Commissioning)
+
 Managing the credentials devices use to authenticate, individually or in bulk
 
 ### Routing (Signal Visibility and Control)

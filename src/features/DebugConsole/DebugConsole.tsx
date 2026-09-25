@@ -61,7 +61,10 @@ const DebugConsole = ({
           `${item.Timestamp} [${item.Level}]${item.Properties?.Key ? ` [${item.Properties.Key}]` : ''} ${item.RenderedMessage}`
       )
       .join('\n');
-    downloadText(`debug-log-${new Date().toISOString().replace(/[:.]/g, '-')}.log`, content);
+    downloadText(
+      `debug-log-${new Date().toISOString().replace(/[:.]/g, '-')}.log`,
+      content
+    );
   };
 
   const clickRestart = () => {

@@ -18,7 +18,7 @@
  * `eRoutingSignalType`; comma-separated flag strings are decomposed structurally instead.
  */
 const COMPOSITES: Record<string, readonly string[]> = {
-  AudioVideo: ["Audio", "Video"],
+  AudioVideo: ['Audio', 'Video'],
 };
 
 /**
@@ -27,11 +27,13 @@ const COMPOSITES: Record<string, readonly string[]> = {
  *
  * "AudioVideo" -> {Audio, Video}; "Audio, SecondaryAudio" -> {Audio, SecondaryAudio}
  */
-function parseSignalFlags(signalType: string | null | undefined): ReadonlySet<string> {
+function parseSignalFlags(
+  signalType: string | null | undefined
+): ReadonlySet<string> {
   const atoms = new Set<string>();
   if (!signalType) return atoms;
 
-  for (const token of signalType.split(",")) {
+  for (const token of signalType.split(',')) {
     const name = token.trim();
     if (!name) continue;
     const expanded = COMPOSITES[name];
@@ -52,9 +54,10 @@ function parseSignalFlags(signalType: string | null | undefined): ReadonlySet<st
  */
 function formatSignalFlags(flags: ReadonlySet<string>): string {
   for (const [name, atoms] of Object.entries(COMPOSITES)) {
-    if (atoms.length === flags.size && atoms.every((a) => flags.has(a))) return name;
+    if (atoms.length === flags.size && atoms.every((a) => flags.has(a)))
+      return name;
   }
-  return Array.from(flags).join(", ");
+  return Array.from(flags).join(', ');
 }
 
 /**
@@ -62,7 +65,10 @@ function formatSignalFlags(flags: ReadonlySet<string>): string {
  * Deliberately asymmetric: containsAll(AudioVideo, Video) is true, containsAll(Video, AudioVideo)
  * is false. An empty `want` is vacuously satisfied, matching `(have & 0) == 0`.
  */
-function flagsContainAll(have: ReadonlySet<string>, want: ReadonlySet<string>): boolean {
+function flagsContainAll(
+  have: ReadonlySet<string>,
+  want: ReadonlySet<string>
+): boolean {
   for (const atom of want) {
     if (!have.has(atom)) return false;
   }
@@ -70,7 +76,10 @@ function flagsContainAll(have: ReadonlySet<string>, want: ReadonlySet<string>): 
 }
 
 /** True when the two flag sets share at least one atom. */
-function flagsIntersect(a: ReadonlySet<string>, b: ReadonlySet<string>): boolean {
+function flagsIntersect(
+  a: ReadonlySet<string>,
+  b: ReadonlySet<string>
+): boolean {
   // Iterate the smaller set.
   const [small, large] = a.size <= b.size ? [a, b] : [b, a];
   for (const atom of small) {
@@ -91,7 +100,9 @@ function atomsOf(signalType: string | null | undefined): string[] {
  *
  * "AudioVideo" -> ["AudioVideo", "Audio", "Video"]; "Video" -> ["Video"]
  */
-function signalTypeOptionsForPort(portSignalType: string | null | undefined): string[] {
+function signalTypeOptionsForPort(
+  portSignalType: string | null | undefined
+): string[] {
   if (!portSignalType) return [];
   const atoms = atomsOf(portSignalType);
   if (atoms.length <= 1) return [portSignalType];
@@ -105,9 +116,12 @@ function signalTypeOptionsForPort(portSignalType: string | null | undefined): st
  */
 function portSupportsSignalType(
   portSignalType: string | null | undefined,
-  requested: string,
+  requested: string
 ): boolean {
-  return flagsContainAll(parseSignalFlags(portSignalType), parseSignalFlags(requested));
+  return flagsContainAll(
+    parseSignalFlags(portSignalType),
+    parseSignalFlags(requested)
+  );
 }
 
 export {

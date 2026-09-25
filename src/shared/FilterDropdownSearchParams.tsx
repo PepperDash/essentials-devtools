@@ -1,4 +1,4 @@
-import { ChangeEvent, useEffect, useState } from 'react';
+import { ChangeEvent } from 'react';
 import { Badge } from 'react-bootstrap';
 import Dropdown from 'react-bootstrap/Dropdown';
 import Form from 'react-bootstrap/Form';
@@ -12,12 +12,8 @@ export const FilterDropdownSearchParams = (
   props: FilterDropdownSearchParamsProps
 ) => {
   const [searchParams, setSearchParams] = useSearchParams();
-  const [values, setValues] = useState<string[]>([]);
-
-  // React to search params and get the selected values, if any
-  useEffect(() => {
-    setValues(searchParams.getAll(props.paramName));
-  }, [searchParams, props.paramName]);
+  // The selected values, if any, straight from the search params
+  const values = searchParams.getAll(props.paramName);
 
   // Defined inside here for access to props
   const FilterCheckItem = (checkProps: {

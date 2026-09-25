@@ -1,18 +1,17 @@
-import { useEffect, useState } from "react";
-import { Button, Form, InputGroup, Modal } from "react-bootstrap";
+import { useState } from 'react';
+import { Button, Form, InputGroup, Modal } from 'react-bootstrap';
 
-import EyeIcon from "../../shared/components/EyeIcon";
+import EyeIcon from '../../shared/components/EyeIcon';
 import {
   DOCUMENTED_MAX_SECRET_KEY_LENGTH,
   MAX_SECRET_VALUE_LENGTH,
   SecretEntry,
   SecretProviderInfo,
-} from "../../store/secretsContract";
+} from '../../store/secretsContract';
 
 /** What the modal is doing: creating a new secret, or replacing an existing one's value. */
 export type SecretEditTarget =
-  | { mode: "add" }
-  | { mode: "update"; entry: SecretEntry };
+  { mode: 'add' } | { mode: 'update'; entry: SecretEntry };
 
 export interface SecretEditSubmission {
   provider: string;
@@ -51,30 +50,20 @@ const SecretEditModal = ({
   onSubmit,
   onClose,
 }: SecretEditModalProps) => {
-  const isUpdate = target.mode === "update";
+  const isUpdate = target.mode === 'update';
 
   const [selectedProvider, setSelectedProvider] = useState(provider);
-  const [key, setKey] = useState(isUpdate ? target.entry.key : "");
+  const [key, setKey] = useState(isUpdate ? target.entry.key : '');
   const [description, setDescription] = useState(
-    isUpdate ? (target.entry.description ?? "") : "",
+    isUpdate ? (target.entry.description ?? '') : ''
   );
-  const [value, setValue] = useState("");
+  const [value, setValue] = useState('');
   const [showValue, setShowValue] = useState(false);
   const [acknowledgeUnmanaged, setAcknowledgeUnmanaged] = useState(false);
 
-  // Re-seed when the modal is pointed at a different secret.
-  useEffect(() => {
-    setSelectedProvider(provider);
-    setKey(isUpdate ? target.entry.key : "");
-    setDescription(isUpdate ? (target.entry.description ?? "") : "");
-    setValue("");
-    setShowValue(false);
-    setAcknowledgeUnmanaged(false);
-  }, [target, provider, isUpdate]);
-
   const trimmedKey = key.trim();
   const collision = existingKeys.find(
-    (entry) => entry.key.toLowerCase() === trimmedKey.toLowerCase(),
+    (entry) => entry.key.toLowerCase() === trimmedKey.toLowerCase()
   );
   // An update is always a collision with itself; only a *new* key colliding is worth warning about.
   const collidesUnexpectedly = !isUpdate && collision !== undefined;
@@ -87,8 +76,8 @@ const SecretEditModal = ({
 
   const blocked =
     isSaving ||
-    trimmedKey === "" ||
-    value === "" ||
+    trimmedKey === '' ||
+    value === '' ||
     valueTooLong ||
     (collidesWithUnmanaged && !acknowledgeUnmanaged);
 
@@ -106,12 +95,20 @@ const SecretEditModal = ({
   return (
     <Modal show onHide={onClose} centered>
       <Modal.Header closeButton>
-        <Modal.Title>{isUpdate ? "Replace secret value" : "Add secret"}</Modal.Title>
+        <Modal.Title>
+          {isUpdate ? 'Replace secret value' : 'Add secret'}
+        </Modal.Title>
       </Modal.Header>
 
       <Modal.Body>
         {/* autoComplete off throughout so the browser never offers to save the credential. */}
-        <Form autoComplete="off" onSubmit={(e) => { e.preventDefault(); handleSubmit(); }}>
+        <Form
+          autoComplete="off"
+          onSubmit={(e) => {
+            e.preventDefault();
+            handleSubmit();
+          }}
+        >
           <Form.Group className="mb-3" controlId="secret-provider">
             <Form.Label>Provider</Form.Label>
             <Form.Select
@@ -122,7 +119,7 @@ const SecretEditModal = ({
               {providers.map((item) => (
                 <option key={item.key} value={item.key}>
                   {item.key}
-                  {item.scope === "global" ? " (shared across programs)" : ""}
+                  {item.scope === 'global' ? ' (shared across programs)' : ''}
                 </option>
               ))}
             </Form.Select>
@@ -142,14 +139,15 @@ const SecretEditModal = ({
             />
             {keyIsLong && (
               <Form.Text className="text-warning-emphasis">
-                This key is {trimmedKey.length} characters, longer than the documented limit of{" "}
-                {DOCUMENTED_MAX_SECRET_KEY_LENGTH}. The processor may reject it.
+                This key is {trimmedKey.length} characters, longer than the
+                documented limit of {DOCUMENTED_MAX_SECRET_KEY_LENGTH}. The
+                processor may reject it.
               </Form.Text>
             )}
             {!isUpdate && (
               <Form.Text className="text-muted">
-                This is the key a device config refers to, e.g.{" "}
-                <code>{`{"secret": {"provider": "${selectedProvider}", "key": "${trimmedKey || "yourKey"}"}}`}</code>
+                This is the key a device config refers to, e.g.{' '}
+                <code>{`{"secret": {"provider": "${selectedProvider}", "key": "${trimmedKey || 'yourKey'}"}}`}</code>
               </Form.Text>
             )}
           </Form.Group>
@@ -172,7 +170,7 @@ const SecretEditModal = ({
             </Form.Label>
             <InputGroup hasValidation>
               <Form.Control
-                type={showValue ? "text" : "password"}
+                type={showValue ? 'text' : 'password'}
                 value={value}
                 onChange={(e) => setValue(e.target.value)}
                 disabled={isSaving}
@@ -185,7 +183,7 @@ const SecretEditModal = ({
                 variant="outline-secondary"
                 onClick={() => setShowValue((prev) => !prev)}
                 disabled={isSaving}
-                aria-label={showValue ? "Hide value" : "Show value"}
+                aria-label={showValue ? 'Hide value' : 'Show value'}
                 aria-pressed={showValue}
               >
                 <EyeIcon slashed={showValue} />
@@ -196,22 +194,24 @@ const SecretEditModal = ({
             </InputGroup>
             {isUpdate && (
               <Form.Text className="text-muted">
-                The stored value is never readable, so enter the new value in full.
+                The stored value is never readable, so enter the new value in
+                full.
               </Form.Text>
             )}
           </Form.Group>
 
           {collidesUnexpectedly && !collidesWithUnmanaged && (
             <div className="alert alert-warning py-2 px-3" role="alert">
-              <strong>{trimmedKey}</strong> already exists. Saving will replace its value.
+              <strong>{trimmedKey}</strong> already exists. Saving will replace
+              its value.
             </div>
           )}
 
           {collidesWithUnmanaged && (
             <div className="alert alert-danger py-2 px-3" role="alert">
               <div className="mb-2">
-                <strong>{trimmedKey}</strong> exists in the data store but was not created here. It
-                may belong to another part of the system.
+                <strong>{trimmedKey}</strong> exists in the data store but was
+                not created here. It may belong to another part of the system.
               </div>
               <Form.Check
                 type="checkbox"
@@ -237,7 +237,7 @@ const SecretEditModal = ({
           Cancel
         </Button>
         <Button variant="primary" onClick={handleSubmit} disabled={blocked}>
-          {isSaving ? "Saving…" : isUpdate ? "Replace value" : "Add secret"}
+          {isSaving ? 'Saving…' : isUpdate ? 'Replace value' : 'Add secret'}
         </Button>
       </Modal.Footer>
     </Modal>

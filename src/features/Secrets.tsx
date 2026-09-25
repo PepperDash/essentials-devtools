@@ -1,9 +1,12 @@
-import { skipToken } from "@reduxjs/toolkit/query";
-import { useMemo, useState } from "react";
-import { Button, Form } from "react-bootstrap";
+import { skipToken } from '@reduxjs/toolkit/query';
+import { useMemo, useState } from 'react';
+import { Button, Form } from 'react-bootstrap';
 
-import useAppParams from "../shared/hooks/useAppParams";
-import { downloadJson, timestampedFilename } from "../shared/functions/downloadFile";
+import useAppParams from '../shared/hooks/useAppParams';
+import {
+  downloadJson,
+  timestampedFilename,
+} from '../shared/functions/downloadFile';
 import {
   useApplyBulkSecretsMutation,
   useGetPathsQuery,
@@ -11,7 +14,7 @@ import {
   useGetSecretsQuery,
   useLazyGetSecretsTemplateQuery,
   useSendSecretCommandMutation,
-} from "../store/apiSlice";
+} from '../store/apiSlice';
 import {
   BulkSecretEntry,
   BulkSecretsResponse,
@@ -21,12 +24,15 @@ import {
   SecretEntry,
   setSecretCommand,
   supportsSecretsApi,
-} from "../store/secretsContract";
-import BulkApplyModal from "./secrets/BulkApplyModal";
-import SecretDeleteModal from "./secrets/SecretDeleteModal";
-import SecretEditModal, { SecretEditSubmission, SecretEditTarget } from "./secrets/SecretEditModal";
+} from '../store/secretsContract';
+import BulkApplyModal from './secrets/BulkApplyModal';
+import SecretDeleteModal from './secrets/SecretDeleteModal';
+import SecretEditModal, {
+  SecretEditSubmission,
+  SecretEditTarget,
+} from './secrets/SecretEditModal';
 
-const DEFAULT_PROVIDER = "default";
+const DEFAULT_PROVIDER = 'default';
 
 /**
  * Manage the credentials stored on the processor.
@@ -38,7 +44,7 @@ const Secrets = () => {
   const { appId } = useAppParams();
 
   const [provider, setProvider] = useState(DEFAULT_PROVIDER);
-  const [filter, setFilter] = useState("");
+  const [filter, setFilter] = useState('');
   const [editing, setEditing] = useState<SecretEditTarget | null>(null);
   const [pendingDelete, setPendingDelete] = useState<SecretEntry | null>(null);
   const [showBulk, setShowBulk] = useState(false);
@@ -52,38 +58,37 @@ const Secrets = () => {
   } = useGetPathsQuery(appId ? { appId } : skipToken);
   const canManageSecrets = useMemo(
     () => supportsSecretsApi(apiPaths?.routes),
-    [apiPaths],
+    [apiPaths]
   );
 
   const { data: providerData } = useGetSecretProvidersQuery(
-    appId && canManageSecrets ? { appId } : skipToken,
+    appId && canManageSecrets ? { appId } : skipToken
   );
   const { data, isLoading, isError, refetch } = useGetSecretsQuery(
-    appId && canManageSecrets ? { appId, provider } : skipToken,
+    appId && canManageSecrets ? { appId, provider } : skipToken
   );
 
   const [sendCommand, { isLoading: isSending, reset: resetCommand }] =
     useSendSecretCommandMutation();
   const [applyBulk, { reset: resetBulk }] = useApplyBulkSecretsMutation();
-  const [fetchTemplate, { isFetching: isFetchingTemplate }] = useLazyGetSecretsTemplateQuery();
+  const [fetchTemplate, { isFetching: isFetchingTemplate }] =
+    useLazyGetSecretsTemplateQuery();
 
   const providers = providerData?.providers ?? [];
-  const secrets = data?.secrets ?? [];
+  const secrets = useMemo(() => data?.secrets ?? [], [data]);
 
-  const matches = (entry: SecretEntry) => {
+  const { managed, unmanaged } = useMemo(() => {
     const needle = filter.trim().toLowerCase();
-    if (!needle) return true;
-    return (
+    const matches = (entry: SecretEntry) =>
+      !needle ||
       entry.key.toLowerCase().includes(needle) ||
-      (entry.description ?? "").toLowerCase().includes(needle)
-    );
-  };
-
-  const managed = useMemo(() => secrets.filter((s) => s.managed && matches(s)), [secrets, filter]);
-  const unmanaged = useMemo(
-    () => secrets.filter((s) => !s.managed && matches(s)),
-    [secrets, filter],
-  );
+      (entry.description ?? '').toLowerCase().includes(needle);
+    const shown = secrets.filter(matches);
+    return {
+      managed: shown.filter((s) => s.managed),
+      unmanaged: shown.filter((s) => !s.managed),
+    };
+  }, [secrets, filter]);
 
   // ── Actions ───────────────────────────────────────────────────────────────
 
@@ -93,10 +98,15 @@ const Secrets = () => {
     try {
       await sendCommand({
         appId,
-        request: setSecretCommand(submission.provider, submission.key, submission.value, {
-          description: submission.description,
-          overwrite: submission.overwrite,
-        }),
+        request: setSecretCommand(
+          submission.provider,
+          submission.key,
+          submission.value,
+          {
+            description: submission.description,
+            overwrite: submission.overwrite,
+          }
+        ),
       }).unwrap();
       setEditing(null);
     } catch (error) {
@@ -126,16 +136,20 @@ const Secrets = () => {
 
   const handleBulkRun = async (
     entries: BulkSecretEntry[],
-    options: { mode: "preview" | "commit"; overwrite: boolean; allowUnmanagedOverwrite: boolean },
+    options: {
+      mode: 'preview' | 'commit';
+      overwrite: boolean;
+      allowUnmanagedOverwrite: boolean;
+    }
   ): Promise<BulkSecretsResponse> => {
-    if (!appId) throw new Error("No application selected.");
+    if (!appId) throw new Error('No application selected.');
     try {
       return await applyBulk({
         appId,
         request: bulkSecretsRequest(provider, entries, options),
       }).unwrap();
     } catch (error) {
-      throw new Error(describeSecretsError(error));
+      throw new Error(describeSecretsError(error), { cause: error });
     } finally {
       resetBulk();
     }
@@ -146,7 +160,10 @@ const Secrets = () => {
     setCommandError(null);
     try {
       const template = await fetchTemplate({ appId, provider }).unwrap();
-      downloadJson(timestampedFilename(`secrets-template-${appId}-${provider}`, "json"), template);
+      downloadJson(
+        timestampedFilename(`secrets-template-${appId}-${provider}`, 'json'),
+        template
+      );
     } catch (error) {
       setCommandError(describeSecretsError(error));
     }
@@ -166,7 +183,11 @@ const Secrets = () => {
         <div className="text-danger mb-2">
           Could not check whether this processor supports secrets management.
         </div>
-        <Button size="sm" variant="outline-secondary" onClick={() => retryProbe()}>
+        <Button
+          size="sm"
+          variant="outline-secondary"
+          onClick={() => void retryProbe()}
+        >
           Retry
         </Button>
       </div>
@@ -176,8 +197,8 @@ const Secrets = () => {
   if (!canManageSecrets) {
     return (
       <div className="p-3 text-danger">
-        Secrets management is not available on this processor. It requires a newer Essentials
-        version.
+        Secrets management is not available on this processor. It requires a
+        newer Essentials version.
       </div>
     );
   }
@@ -186,7 +207,11 @@ const Secrets = () => {
     return (
       <div className="p-3">
         <div className="text-danger mb-2">Failed to load secrets.</div>
-        <Button size="sm" variant="outline-secondary" onClick={() => refetch()}>
+        <Button
+          size="sm"
+          variant="outline-secondary"
+          onClick={() => void refetch()}
+        >
           Retry
         </Button>
       </div>
@@ -199,14 +224,14 @@ const Secrets = () => {
         <td className="text-break">{entry.key}</td>
         <td className="small text-muted">{entry.description}</td>
         <td className="small text-muted">
-          {entry.updatedUtc ?? entry.lastModifiedUtc ?? ""}
+          {entry.updatedUtc ?? entry.lastModifiedUtc ?? ''}
         </td>
         <td className="d-flex justify-content-end gap-1">
           {showActions && (
             <Button
               size="sm"
               variant="outline-primary"
-              onClick={() => setEditing({ mode: "update", entry })}
+              onClick={() => setEditing({ mode: 'update', entry })}
             >
               Replace value
             </Button>
@@ -230,38 +255,40 @@ const Secrets = () => {
       <div>
         <h2 className="mb-1">Secrets</h2>
         <p className="text-muted small mb-0">
-          Credentials stored on the processor, referenced from device configs as{" "}
+          Credentials stored on the processor, referenced from device configs as{' '}
           <code>{'{"secret": {"provider": "…", "key": "…"}}'}</code>.
         </p>
       </div>
 
       <div className="alert alert-secondary py-2 px-3 small mb-0" role="note">
-        Stored values are never readable, here or anywhere else. Replacing a secret means entering
-        the new value in full; a forgotten credential cannot be recovered.
+        Stored values are never readable, here or anywhere else. Replacing a
+        secret means entering the new value in full; a forgotten credential
+        cannot be recovered.
       </div>
 
       <div className="d-flex flex-wrap align-items-center gap-2">
         <Form.Select
           size="sm"
-          style={{ width: "auto" }}
+          style={{ width: 'auto' }}
           value={provider}
           onChange={(e) => setProvider(e.target.value)}
           aria-label="Secret provider"
         >
-          {(providers.length > 0 ? providers : [{ key: DEFAULT_PROVIDER, scope: "local" }]).map(
-            (item) => (
-              <option key={item.key} value={item.key}>
-                {item.key}
-                {item.scope === "global" ? " (shared across programs)" : ""}
-              </option>
-            ),
-          )}
+          {(providers.length > 0
+            ? providers
+            : [{ key: DEFAULT_PROVIDER, scope: 'local' }]
+          ).map((item) => (
+            <option key={item.key} value={item.key}>
+              {item.key}
+              {item.scope === 'global' ? ' (shared across programs)' : ''}
+            </option>
+          ))}
         </Form.Select>
 
         <Form.Control
           size="sm"
           type="search"
-          style={{ width: "auto" }}
+          style={{ width: 'auto' }}
           placeholder="Filter…"
           value={filter}
           onChange={(e) => setFilter(e.target.value)}
@@ -272,28 +299,34 @@ const Secrets = () => {
           <Button
             size="sm"
             variant="outline-secondary"
-            onClick={handleDownloadTemplate}
+            onClick={() => void handleDownloadTemplate()}
             disabled={isFetchingTemplate}
           >
-            {isFetchingTemplate ? "Preparing…" : "Download template"}
+            {isFetchingTemplate ? 'Preparing…' : 'Download template'}
           </Button>
-          <Button size="sm" variant="outline-primary" onClick={() => setShowBulk(true)}>
+          <Button
+            size="sm"
+            variant="outline-primary"
+            onClick={() => setShowBulk(true)}
+          >
             Apply file…
           </Button>
         </div>
       </div>
 
-      {data.indexStatus && data.indexStatus !== "ok" && (
+      {data.indexStatus && data.indexStatus !== 'ok' && (
         <div className="alert alert-warning py-2 px-3 small mb-0" role="alert">
-          The record of which secrets were created here is{" "}
-          {data.indexStatus === "missing" ? "missing" : "damaged"}, so everything below is listed as
-          unmanaged. The secrets themselves are unaffected and still work.
+          The record of which secrets were created here is{' '}
+          {data.indexStatus === 'missing' ? 'missing' : 'damaged'}, so
+          everything below is listed as unmanaged. The secrets themselves are
+          unaffected and still work.
         </div>
       )}
 
       {data.enumerationComplete === false && (
         <div className="alert alert-warning py-2 px-3 small mb-0" role="alert">
-          The processor could not list every record, so this page may be incomplete.
+          The processor could not list every record, so this page may be
+          incomplete.
         </div>
       )}
 
@@ -317,7 +350,7 @@ const Secrets = () => {
                   variant="outline-primary"
                   onClick={() => {
                     setCommandError(null);
-                    setEditing({ mode: "add" });
+                    setEditing({ mode: 'add' });
                   }}
                 >
                   Add +
@@ -332,8 +365,8 @@ const Secrets = () => {
               <tr>
                 <td colSpan={4} className="text-muted small">
                   {filter
-                    ? "No secrets match the filter."
-                    : "No secrets stored here yet. Add one, or apply a file."}
+                    ? 'No secrets match the filter.'
+                    : 'No secrets stored here yet. Add one, or apply a file.'}
                 </td>
               </tr>
             )}
@@ -344,9 +377,10 @@ const Secrets = () => {
           <>
             <h5 className="mb-1 mt-4">Other data store records</h5>
             <p className="text-muted small">
-              These exist on the processor but were not created here. Some belong to other parts of
-              the system — Mobile Control keeps its paired-client tokens this way — so deleting one
-              can break something unrelated.
+              These exist on the processor but were not created here. Some
+              belong to other parts of the system — Mobile Control keeps its
+              paired-client tokens this way — so deleting one can break
+              something unrelated.
             </p>
             <table className="table table-striped table-bordered">
               <thead className="table-light sticky-top">
@@ -361,11 +395,15 @@ const Secrets = () => {
                 {unmanaged.map((entry) => (
                   <tr key={entry.key}>
                     <td className="text-break">
-                      {entry.key}{" "}
-                      <span className="badge text-bg-secondary">Not managed here</span>
+                      {entry.key}{' '}
+                      <span className="badge text-bg-secondary">
+                        Not managed here
+                      </span>
                     </td>
                     <td className="small text-muted">{entry.owner}</td>
-                    <td className="small text-muted">{entry.lastModifiedUtc}</td>
+                    <td className="small text-muted">
+                      {entry.lastModifiedUtc}
+                    </td>
                     <td className="d-flex justify-content-end">
                       <Button
                         size="sm"
@@ -388,13 +426,15 @@ const Secrets = () => {
 
       {editing && (
         <SecretEditModal
+          // Remount, and so re-seed the form, when pointed at a different secret or provider
+          key={`${provider}\u0000${editing.mode === 'update' ? editing.entry.key : ''}`}
           target={editing}
           provider={provider}
           providers={providers}
           existingKeys={secrets}
           isSaving={isSending}
           errorMessage={commandError}
-          onSubmit={handleEditSubmit}
+          onSubmit={(submission) => void handleEditSubmit(submission)}
           onClose={() => {
             setEditing(null);
             setCommandError(null);
@@ -408,7 +448,7 @@ const Secrets = () => {
           provider={provider}
           isDeleting={isSending}
           errorMessage={commandError}
-          onConfirm={handleDeleteConfirm}
+          onConfirm={() => void handleDeleteConfirm()}
           onClose={() => {
             setPendingDelete(null);
             setCommandError(null);
@@ -419,7 +459,6 @@ const Secrets = () => {
       {showBulk && (
         <BulkApplyModal
           provider={provider}
-          existing={secrets}
           onRun={handleBulkRun}
           onClose={() => setShowBulk(false)}
         />

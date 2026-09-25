@@ -29,8 +29,12 @@
  * right side to be wrong on; the alternative would hide legitimately routable sources.
  */
 
-import { RoutingDevice, RoutingDevicesAndTieLines, TieLine } from "../../store/apiSlice";
-import { atomsOf, parseSignalFlags } from "./signalTypes";
+import {
+  RoutingDevice,
+  RoutingDevicesAndTieLines,
+  TieLine,
+} from '../../store/apiSlice';
+import { atomsOf, parseSignalFlags } from './signalTypes';
 
 /** A tie line with its signal type pre-parsed, so traversal never re-parses strings. */
 interface IndexedTieLine {
@@ -65,11 +69,11 @@ interface CandidateSource {
 type ReachabilityResolver = (
   destDeviceKey: string,
   destPortKey: string | null,
-  atom: string,
+  atom: string
 ) => ReadonlySet<string>;
 
 /** NUL is not legal in a device or port key, so it cannot collide with key content. */
-const PORT_SEP = "\u0000";
+const PORT_SEP = '\u0000';
 
 function portId(deviceKey: string, portKey: string): string {
   return `${deviceKey}${PORT_SEP}${portKey}`;
@@ -114,15 +118,26 @@ function buildRouteIndex(data: RoutingDevicesAndTieLines): RouteIndex {
   const byDestDevice = new Map<string, IndexedTieLine[]>();
   const byDestPort = new Map<string, IndexedTieLine[]>();
   for (const tieLine of data.tieLines) {
-    const indexed: IndexedTieLine = { tieLine, flags: parseSignalFlags(tieLine.signalType) };
+    const indexed: IndexedTieLine = {
+      tieLine,
+      flags: parseSignalFlags(tieLine.signalType),
+    };
     push(byDestDevice, tieLine.destinationDeviceKey, indexed);
-    push(byDestPort, portId(tieLine.destinationDeviceKey, tieLine.destinationPortKey), indexed);
+    push(
+      byDestPort,
+      portId(tieLine.destinationDeviceKey, tieLine.destinationPortKey),
+      indexed
+    );
   }
 
   return { deviceByKey, byDestDevice, byDestPort, midpointKeys };
 }
 
-function push(map: Map<string, IndexedTieLine[]>, key: string, value: IndexedTieLine): void {
+function push(
+  map: Map<string, IndexedTieLine[]>,
+  key: string,
+  value: IndexedTieLine
+): void {
   const existing = map.get(key);
   if (existing) existing.push(value);
   else map.set(key, [value]);
@@ -139,7 +154,7 @@ function findReachableUpstreamDevices(
   index: RouteIndex,
   destDeviceKey: string,
   destPortKey: string | null,
-  atom: string,
+  atom: string
 ): ReadonlySet<string> {
   const found = new Set<string>();
   const visited = new Set<string>([destDeviceKey]);
@@ -189,7 +204,7 @@ function findCandidateSources(
   destDeviceKey: string,
   destPortKey: string | null,
   signalType: string,
-  resolve?: ReachabilityResolver,
+  resolve?: ReachabilityResolver
 ): CandidateSource[] {
   const atoms = atomsOf(signalType);
   if (atoms.length === 0) return [];
@@ -199,7 +214,11 @@ function findCandidateSources(
 
   const matchedByDevice = new Map<string, string[]>();
   for (const atom of atoms) {
-    for (const deviceKey of resolveReachable(destDeviceKey, destPortKey, atom)) {
+    for (const deviceKey of resolveReachable(
+      destDeviceKey,
+      destPortKey,
+      atom
+    )) {
       // A device is never a source for itself, even if the graph loops back to it.
       if (deviceKey === destDeviceKey) continue;
       const matched = matchedByDevice.get(deviceKey);
@@ -223,7 +242,8 @@ function findCandidateSources(
 
   candidates.sort(
     (a, b) =>
-      Number(b.isPureSource) - Number(a.isPureSource) || a.name.localeCompare(b.name),
+      Number(b.isPureSource) - Number(a.isPureSource) ||
+      a.name.localeCompare(b.name)
   );
   return candidates;
 }
@@ -245,7 +265,7 @@ function describeNoCandidates(
   index: RouteIndex,
   destDeviceKey: string,
   destPortKey: string | null,
-  signalType: string,
+  signalType: string
 ): string {
   const incoming =
     (destPortKey !== null
@@ -253,10 +273,12 @@ function describeNoCandidates(
       : index.byDestDevice.get(destDeviceKey)) ?? [];
 
   if (incoming.length === 0) {
-    return "Nothing is wired to this input. Routing follows the tie lines in the configuration, and this port has none.";
+    return 'Nothing is wired to this input. Routing follows the tie lines in the configuration, and this port has none.';
   }
 
-  const wiredFor = [...new Set(incoming.map((t) => t.tieLine.signalType))].join(", ");
+  const wiredFor = [...new Set(incoming.map((t) => t.tieLine.signalType))].join(
+    ', '
+  );
   return `This input is wired for ${wiredFor}, which carries no part of ${signalType}.`;
 }
 

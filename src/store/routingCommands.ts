@@ -10,7 +10,7 @@
  */
 
 /** Path segment appended after `/{appId}/api/`. Also probed to detect endpoint support. */
-export const ROUTING_COMMAND_PATH = "routingCommand";
+export const ROUTING_COMMAND_PATH = 'routingCommand';
 
 /**
  * Route a source device to a sink input, switching every midpoint along the discovered path and
@@ -21,7 +21,7 @@ export const ROUTING_COMMAND_PATH = "routingCommand";
  * `GetRouteToSource` picks one, and the UI has no basis for choosing among a source's outputs.
  */
 export interface SinkRouteCommand {
-  command: "sinkRoute";
+  command: 'sinkRoute';
   deviceKey: string;
   inputPortKey?: string;
   sourceDeviceKey: string;
@@ -32,7 +32,7 @@ export interface SinkRouteCommand {
 
 /** Switch a single midpoint, input to output. No upstream or downstream routing. */
 export interface MidpointSwitchCommand {
-  command: "midpointSwitch";
+  command: 'midpointSwitch';
   deviceKey: string;
   inputPortKey: string;
   outputPortKey: string;
@@ -49,7 +49,7 @@ export interface MidpointSwitchCommand {
  * last input.
  */
 export interface ClearSinkCommand {
-  command: "clearSink";
+  command: 'clearSink';
   deviceKey: string;
   inputPortKey?: string;
   /** Stop usage tracking but leave the signal flowing, rather than tearing the path down. */
@@ -60,7 +60,7 @@ export interface ClearSinkCommand {
 
 /** Clear one output port on a midpoint. */
 export interface ClearMidpointOutputCommand {
-  command: "clearMidpointOutput";
+  command: 'clearMidpointOutput';
   deviceKey: string;
   outputPortKey: string;
   signalType: string;
@@ -96,17 +96,17 @@ export interface RoutingCommandError {
  * system's wiring cannot satisfy it.
  */
 export type RoutingCommandErrorCode =
-  | "invalidJson"
-  | "missingField"
-  | "unknownCommand"
-  | "invalidSignalType"
-  | "deviceNotFound"
-  | "deviceNotRoutable"
-  | "tileNotFound"
-  | "portNotFound"
-  | "signalTypeNotSupportedByPort"
-  | "noRouteFound"
-  | "executionError";
+  | 'invalidJson'
+  | 'missingField'
+  | 'unknownCommand'
+  | 'invalidSignalType'
+  | 'deviceNotFound'
+  | 'deviceNotRoutable'
+  | 'tileNotFound'
+  | 'portNotFound'
+  | 'signalTypeNotSupportedByPort'
+  | 'noRouteFound'
+  | 'executionError';
 
 export interface RoutingCommandResponse {
   /**
@@ -115,8 +115,8 @@ export interface RoutingCommandResponse {
    *   arrives over the routing feedback WebSocket, not here.
    * "validated" - dry run.
    */
-  status: "executed" | "accepted" | "validated" | "error";
-  command?: RoutingCommand["command"];
+  status: 'executed' | 'accepted' | 'validated' | 'error';
+  command?: RoutingCommand['command'];
   deviceKey?: string;
   /** Differs from `deviceKey` only when a "tile{N}:" port was de-qualified to its child sink. */
   resolvedDeviceKey?: string;
@@ -141,32 +141,73 @@ export function sinkRouteCommand(
   deviceKey: string,
   inputPortKey: string,
   sourceDeviceKey: string,
-  signalType: string,
+  signalType: string
 ): SinkRouteCommand {
-  return { command: "sinkRoute", deviceKey, inputPortKey, sourceDeviceKey, signalType };
+  return {
+    command: 'sinkRoute',
+    deviceKey,
+    inputPortKey,
+    sourceDeviceKey,
+    signalType,
+  };
 }
 
 export function midpointSwitchCommand(
   deviceKey: string,
   inputPortKey: string,
   outputPortKey: string,
-  signalType: string,
+  signalType: string
 ): MidpointSwitchCommand {
-  return { command: "midpointSwitch", deviceKey, inputPortKey, outputPortKey, signalType };
+  return {
+    command: 'midpointSwitch',
+    deviceKey,
+    inputPortKey,
+    outputPortKey,
+    signalType,
+  };
 }
 
-export function clearSinkCommand(deviceKey: string, inputPortKey: string): ClearSinkCommand {
+export function clearSinkCommand(
+  deviceKey: string,
+  inputPortKey: string
+): ClearSinkCommand {
   // Always deselect the destination's own input too - a user clearing a route expects the display
   // to stop showing the old source, not just for the path behind it to be released.
-  return { command: "clearSink", deviceKey, inputPortKey, clearSinkInput: true };
+  return {
+    command: 'clearSink',
+    deviceKey,
+    inputPortKey,
+    clearSinkInput: true,
+  };
 }
 
 export function clearMidpointOutputCommand(
   deviceKey: string,
   outputPortKey: string,
-  signalType: string,
+  signalType: string
 ): ClearMidpointOutputCommand {
-  return { command: "clearMidpointOutput", deviceKey, outputPortKey, signalType };
+  return {
+    command: 'clearMidpointOutput',
+    deviceKey,
+    outputPortKey,
+    signalType,
+  };
+}
+
+// ─── Capability detection ────────────────────────────────────────────────────
+
+const ROUTING_COMMAND_SEGMENT = new RegExp(
+  `(^|/)${ROUTING_COMMAND_PATH}(/|$)`,
+  'i'
+);
+
+/**
+ * True when the processor exposes the routing command endpoint, detected from its live CWS route
+ * table. Matches a whole path segment, so `/api/notRoutingCommand` doesn't read as support.
+ */
+export function supportsRoutingCommand(routes?: { Url?: string }[]): boolean {
+  if (!routes) return false;
+  return routes.some((route) => ROUTING_COMMAND_SEGMENT.test(route.Url ?? ''));
 }
 
 // ─── Error rendering ─────────────────────────────────────────────────────────
@@ -182,8 +223,8 @@ export function describeRoutingError(error: unknown): string {
   if (data?.error?.message) return data.error.message;
 
   const status = (error as { status?: number | string })?.status;
-  if (status === "FETCH_ERROR" || status === undefined) {
-    return "Could not reach the processor.";
+  if (status === 'FETCH_ERROR' || status === undefined) {
+    return 'Could not reach the processor.';
   }
   return `Routing command failed (${status}).`;
 }

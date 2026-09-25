@@ -18,7 +18,7 @@ export default defineConfig([
     ],
     languageOptions: {
       ecmaVersion: 2022,
-globals: { ...globals.browser, ...globals.node },
+      globals: { ...globals.browser, ...globals.node },
       parserOptions: {
         projectService: true,
         tsconfigRootDir: import.meta.dirname,

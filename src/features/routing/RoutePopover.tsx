@@ -1,23 +1,27 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { createPortal } from "react-dom";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 
-import { RoutingPort } from "../../store/apiSlice";
+import { RoutingPort } from '../../store/apiSlice';
 import {
   clearMidpointOutputCommand,
   clearSinkCommand,
   midpointSwitchCommand,
   RoutingCommand,
   sinkRouteCommand,
-} from "../../store/routingCommands";
-import { CandidateSource } from "./routeGraph";
-import { signalColor } from "./signalColors";
-import { atomsOf, portSupportsSignalType, signalTypeOptionsForPort } from "./signalTypes";
-import styles from "./RoutePopover.module.scss";
+} from '../../store/routingCommands';
+import { CandidateSource } from './routeGraph';
+import { signalColor } from './signalColors';
+import {
+  atomsOf,
+  portSupportsSignalType,
+  signalTypeOptionsForPort,
+} from './signalTypes';
+import styles from './RoutePopover.module.scss';
 
 /** What the user clicked, and therefore which of the two routing flows this popover drives. */
 export type RouteEditTarget =
   | {
-      kind: "sinkInput";
+      kind: 'sinkInput';
       deviceKey: string;
       deviceName: string;
       port: RoutingPort;
@@ -25,7 +29,7 @@ export type RouteEditTarget =
       tileNumber?: number;
     }
   | {
-      kind: "midpointOutput";
+      kind: 'midpointOutput';
       deviceKey: string;
       deviceName: string;
       port: RoutingPort;
@@ -63,7 +67,7 @@ const Z_INDEX = 1070;
 const FILTER_THRESHOLD = 12;
 
 function tileLabel(target: RouteEditTarget): string {
-  if (target.kind === "sinkInput" && target.tileNumber !== undefined) {
+  if (target.kind === 'sinkInput' && target.tileNumber !== undefined) {
     return `Tile ${target.tileNumber}`;
   }
   return target.port.key;
@@ -85,17 +89,11 @@ const RoutePopover = ({
 
   const signalTypeOptions = useMemo(
     () => signalTypeOptionsForPort(target.port.signalType),
-    [target.port.signalType],
+    [target.port.signalType]
   );
   // A single-atom port has nothing to choose, so step 1 collapses to a label.
-  const [signalType, setSignalType] = useState(signalTypeOptions[0] ?? "");
-  const [filter, setFilter] = useState("");
-
-  // Reset when the popover is pointed at a different port.
-  useEffect(() => {
-    setSignalType(signalTypeOptions[0] ?? "");
-    setFilter("");
-  }, [signalTypeOptions, target.deviceKey, target.port.key]);
+  const [signalType, setSignalType] = useState(signalTypeOptions[0] ?? '');
+  const [filter, setFilter] = useState('');
 
   // ── Positioning ──────────────────────────────────────────────────────────
   // anchorRect is already in viewport coordinates (the node is real DOM inside React Flow's
@@ -120,7 +118,7 @@ const RoutePopover = ({
 
     const top = Math.max(
       VIEWPORT_MARGIN_PX,
-      Math.min(anchorRect.top, window.innerHeight - height - VIEWPORT_MARGIN_PX),
+      Math.min(anchorRect.top, window.innerHeight - height - VIEWPORT_MARGIN_PX)
     );
 
     setPosition({ left, top });
@@ -132,37 +130,50 @@ const RoutePopover = ({
       if (!panelRef.current?.contains(e.target as globalThis.Node)) onClose();
     };
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
+      if (e.key === 'Escape') onClose();
     };
     // Capture phase, so a click on another port row closes this one before opening that one.
-    document.addEventListener("pointerdown", onPointerDown, true);
-    document.addEventListener("keydown", onKeyDown);
+    document.addEventListener('pointerdown', onPointerDown, true);
+    document.addEventListener('keydown', onKeyDown);
     return () => {
-      document.removeEventListener("pointerdown", onPointerDown, true);
-      document.removeEventListener("keydown", onKeyDown);
+      document.removeEventListener('pointerdown', onPointerDown, true);
+      document.removeEventListener('keydown', onKeyDown);
     };
   }, [onClose]);
 
   // ── Options ──────────────────────────────────────────────────────────────
   const candidates = useMemo(
-    () => (target.kind === "sinkInput" && signalType ? getCandidateSources(signalType) : []),
-    [target.kind, signalType, getCandidateSources],
+    () =>
+      target.kind === 'sinkInput' && signalType
+        ? getCandidateSources(signalType)
+        : [],
+    [target.kind, signalType, getCandidateSources]
   );
 
   const inputPortOptions = useMemo(
     () =>
-      target.kind === "midpointOutput" && signalType
-        ? target.inputPorts.filter((p) => portSupportsSignalType(p.signalType, signalType))
+      target.kind === 'midpointOutput' && signalType
+        ? target.inputPorts.filter((p) =>
+            portSupportsSignalType(p.signalType, signalType)
+          )
         : [],
-    [target, signalType],
+    [target, signalType]
   );
 
   // How many atoms the *selected* type asks for - not how many the port offers, which would
   // wrongly badge every candidate once the user narrows to a single breakaway type.
-  const requestedAtomCount = useMemo(() => atomsOf(signalType).length, [signalType]);
+  const requestedAtomCount = useMemo(
+    () => atomsOf(signalType).length,
+    [signalType]
+  );
 
-  const rows: { key: string; label: string; sublabel?: string; badge?: string }[] =
-    target.kind === "sinkInput"
+  const rows: {
+    key: string;
+    label: string;
+    sublabel?: string;
+    badge?: string;
+  }[] =
+    target.kind === 'sinkInput'
       ? candidates.map((c) => ({
           key: c.deviceKey,
           label: c.name,
@@ -171,7 +182,7 @@ const RoutePopover = ({
           // has a path, so offer it rather than hiding it, but say so.
           badge:
             c.matchedFlags.length < requestedAtomCount
-              ? `${c.matchedFlags.join(" + ").toLowerCase()} only`
+              ? `${c.matchedFlags.join(' + ').toLowerCase()} only`
               : undefined,
         }))
       : inputPortOptions.map((p) => ({
@@ -183,31 +194,44 @@ const RoutePopover = ({
   const filtered =
     rows.length > FILTER_THRESHOLD && filter
       ? rows.filter((r) =>
-          `${r.label} ${r.sublabel ?? ""}`.toLowerCase().includes(filter.toLowerCase()),
+          `${r.label} ${r.sublabel ?? ''}`
+            .toLowerCase()
+            .includes(filter.toLowerCase())
         )
       : rows;
 
   const currentKey =
-    target.kind === "sinkInput" ? current?.sourceDeviceKey : current?.inputPortKey;
+    target.kind === 'sinkInput'
+      ? current?.sourceDeviceKey
+      : current?.inputPortKey;
 
   function handlePick(key: string | null): void {
     if (key === null) {
       onSubmit(
-        target.kind === "sinkInput"
+        target.kind === 'sinkInput'
           ? clearSinkCommand(target.deviceKey, target.port.key)
-          : clearMidpointOutputCommand(target.deviceKey, target.port.key, signalType),
+          : clearMidpointOutputCommand(
+              target.deviceKey,
+              target.port.key,
+              signalType
+            )
       );
       return;
     }
     onSubmit(
-      target.kind === "sinkInput"
+      target.kind === 'sinkInput'
         ? sinkRouteCommand(target.deviceKey, target.port.key, key, signalType)
-        : midpointSwitchCommand(target.deviceKey, key, target.port.key, signalType),
+        : midpointSwitchCommand(
+            target.deviceKey,
+            key,
+            target.port.key,
+            signalType
+          )
     );
   }
 
   const emptyMessage =
-    target.kind === "sinkInput"
+    target.kind === 'sinkInput'
       ? (describeEmptySources?.(signalType) ??
         `No source has a path to this input for ${signalType}.`)
       : `No input on this device carries ${signalType}.`;
@@ -222,15 +246,19 @@ const RoutePopover = ({
       ref={panelRef}
       role="dialog"
       aria-label={`Route ${tileLabel(target)} on ${target.deviceName}`}
-      className={`${styles.panel} ${darkMode ? styles.panelDark : ""}`}
+      className={`${styles.panel} ${darkMode ? styles.panelDark : ''}`}
       style={{ left: position.left, top: position.top, zIndex: Z_INDEX }}
     >
       <div className={`py-2 px-3 ${styles.header}`}>
         <div className="d-flex align-items-start">
           <div className={`flex-grow-1 ${styles.minWidth0}`}>
             <div className="fw-semibold text-truncate">{target.deviceName}</div>
-            <div className={`text-muted text-truncate ${styles.portLabel}`} title={target.port.key}>
-              {target.kind === "sinkInput" ? "Input" : "Output"} · {tileLabel(target)}
+            <div
+              className={`text-muted text-truncate ${styles.portLabel}`}
+              title={target.port.key}
+            >
+              {target.kind === 'sinkInput' ? 'Input' : 'Output'} ·{' '}
+              {tileLabel(target)}
             </div>
           </div>
           <button
@@ -247,13 +275,15 @@ const RoutePopover = ({
       <div>
         {/* Step 1 - signal type */}
         <div className={`px-3 py-2 ${styles.section}`}>
-          <div className={`text-muted mb-1 ${styles.sectionLabel}`}>Signal type</div>
+          <div className={`text-muted mb-1 ${styles.sectionLabel}`}>
+            Signal type
+          </div>
           {signalTypeOptions.length <= 1 ? (
             <span
               className={`badge ${styles.signalTypeStatic}`}
               style={{ backgroundColor: signalColor(signalType) }}
             >
-              {signalType || "Unknown"}
+              {signalType || 'Unknown'}
             </span>
           ) : (
             <div className="d-flex flex-wrap gap-1">
@@ -262,9 +292,9 @@ const RoutePopover = ({
                   key={option}
                   type="button"
                   className={`btn btn-sm ${styles.signalTypeBtn} ${
-                    option === signalType ? "" : styles.signalTypeBtnInactive
+                    option === signalType ? '' : styles.signalTypeBtnInactive
                   }`}
-                  style={{ ["--signal-color" as string]: signalColor(option) }}
+                  style={{ ['--signal-color' as string]: signalColor(option) }}
                   aria-pressed={option === signalType}
                   onClick={() => setSignalType(option)}
                 >
@@ -278,7 +308,7 @@ const RoutePopover = ({
         {/* Step 2 - source device, or input port on the same midpoint */}
         <div className={`px-3 pt-2 ${styles.section}`}>
           <div className={`text-muted mb-1 ${styles.sectionLabel}`}>
-            {target.kind === "sinkInput" ? "Source" : "Route from input"}
+            {target.kind === 'sinkInput' ? 'Source' : 'Route from input'}
           </div>
           {rows.length > FILTER_THRESHOLD && (
             <input
@@ -308,23 +338,33 @@ const RoutePopover = ({
               <button
                 key={row.key}
                 type="button"
-                className={`${styles.option} ${isCurrent ? styles.optionCurrent : ""}`}
+                className={`${styles.option} ${isCurrent ? styles.optionCurrent : ''}`}
                 disabled={isSubmitting}
                 onClick={() => handlePick(row.key)}
               >
                 <span className={styles.optionCheck} aria-hidden="true">
-                  {isCurrent ? "✓" : ""}
+                  {isCurrent ? '✓' : ''}
                 </span>
                 <span className={`flex-grow-1 ${styles.minWidth0}`}>
-                  <span className={`d-block text-truncate ${styles.optionLabel}`}>{row.label}</span>
+                  <span
+                    className={`d-block text-truncate ${styles.optionLabel}`}
+                  >
+                    {row.label}
+                  </span>
                   {row.sublabel && (
-                    <span className={`d-block text-truncate text-muted ${styles.optionSublabel}`}>
+                    <span
+                      className={`d-block text-truncate text-muted ${styles.optionSublabel}`}
+                    >
                       {row.sublabel}
                     </span>
                   )}
                 </span>
                 {row.badge && (
-                  <span className={`badge text-bg-warning ${styles.optionBadge}`}>{row.badge}</span>
+                  <span
+                    className={`badge text-bg-warning ${styles.optionBadge}`}
+                  >
+                    {row.badge}
+                  </span>
                 )}
               </button>
             );
@@ -332,26 +372,35 @@ const RoutePopover = ({
 
           {filtered.length === 0 && (
             <div className={`text-muted px-3 py-2 ${styles.emptyMessage}`}>
-              {filter ? "No matches." : emptyMessage}
+              {filter ? 'No matches.' : emptyMessage}
             </div>
           )}
         </div>
 
         {isSubmitting && (
-          <div className={`d-flex align-items-center gap-2 px-3 py-2 ${styles.status}`}>
-            <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true" />
+          <div
+            className={`d-flex align-items-center gap-2 px-3 py-2 ${styles.status}`}
+          >
+            <span
+              className="spinner-border spinner-border-sm"
+              role="status"
+              aria-hidden="true"
+            />
             <span>Sending…</span>
           </div>
         )}
 
         {errorMessage && (
-          <div className={`alert alert-danger m-2 py-1 px-2 ${styles.status}`} role="alert">
+          <div
+            className={`alert alert-danger m-2 py-1 px-2 ${styles.status}`}
+            role="alert"
+          >
             {errorMessage}
           </div>
         )}
       </div>
     </div>,
-    document.body,
+    document.body
   );
 };
 

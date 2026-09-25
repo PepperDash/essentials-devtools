@@ -8,13 +8,13 @@
  * the expected feedback lands - or until it plainly never will.
  */
 
-import { MidpointRoute, SinkRoute } from "../../store/apiSlice";
-import { RoutingCommand } from "../../store/routingCommands";
+import { MidpointRoute, SinkRoute } from '../../store/apiSlice';
+import { RoutingCommand } from '../../store/routingCommands';
 
 export interface PendingRoute {
   deviceKey: string;
   portKey: string;
-  kind: "sinkInput" | "midpointOutput";
+  kind: 'sinkInput' | 'midpointOutput';
   /** Null for a clear, where the expectation is the ABSENCE of a route. */
   expectedSourceDeviceKey: string | null;
   expectedInputPortKey: string | null;
@@ -36,18 +36,24 @@ export function pendingId(deviceKey: string, portKey: string): string {
  * Derives what to watch for from the command that was sent, or null when the command names no
  * port to attach a marker to (a `clearSink` with no input port clears whatever the sink has).
  */
-export function pendingFromCommand(command: RoutingCommand, now: number): PendingRoute | null {
+export function pendingFromCommand(
+  command: RoutingCommand,
+  now: number
+): PendingRoute | null {
   const isMidpoint =
-    command.command === "midpointSwitch" || command.command === "clearMidpointOutput";
+    command.command === 'midpointSwitch' ||
+    command.command === 'clearMidpointOutput';
   const portKey = isMidpoint ? command.outputPortKey : command.inputPortKey;
   if (!portKey) return null;
 
   return {
     deviceKey: command.deviceKey,
     portKey,
-    kind: isMidpoint ? "midpointOutput" : "sinkInput",
-    expectedSourceDeviceKey: command.command === "sinkRoute" ? command.sourceDeviceKey : null,
-    expectedInputPortKey: command.command === "midpointSwitch" ? command.inputPortKey : null,
+    kind: isMidpoint ? 'midpointOutput' : 'sinkInput',
+    expectedSourceDeviceKey:
+      command.command === 'sinkRoute' ? command.sourceDeviceKey : null,
+    expectedInputPortKey:
+      command.command === 'midpointSwitch' ? command.inputPortKey : null,
     startedAt: now,
   };
 }
@@ -59,10 +65,10 @@ export function pendingFromCommand(command: RoutingCommand, now: number): Pendin
  */
 export function isSinkExpectationMet(
   sinkRoutes: Record<string, SinkRoute[]>,
-  pending: PendingRoute,
+  pending: PendingRoute
 ): boolean {
   const route = (sinkRoutes[pending.deviceKey] ?? []).find(
-    (r) => r.inputPortKey === pending.portKey,
+    (r) => r.inputPortKey === pending.portKey
   );
   if (pending.expectedSourceDeviceKey === null) return route === undefined;
   return route?.sourceDeviceKey === pending.expectedSourceDeviceKey;
@@ -71,10 +77,10 @@ export function isSinkExpectationMet(
 /** The same for a midpoint output: the requested input, or no route on that output for a clear. */
 export function isMidpointExpectationMet(
   midpointRoutes: Record<string, MidpointRoute[]>,
-  pending: PendingRoute,
+  pending: PendingRoute
 ): boolean {
   const route = (midpointRoutes[pending.deviceKey] ?? []).find(
-    (r) => r.outputPortKey === pending.portKey,
+    (r) => r.outputPortKey === pending.portKey
   );
   if (pending.expectedInputPortKey === null) return route === undefined;
   return route?.inputPortKey === pending.expectedInputPortKey;
@@ -84,9 +90,9 @@ export function isMidpointExpectationMet(
 export function isExpectationMet(
   sinkRoutes: Record<string, SinkRoute[]>,
   midpointRoutes: Record<string, MidpointRoute[]>,
-  pending: PendingRoute,
+  pending: PendingRoute
 ): boolean {
-  return pending.kind === "sinkInput"
+  return pending.kind === 'sinkInput'
     ? isSinkExpectationMet(sinkRoutes, pending)
     : isMidpointExpectationMet(midpointRoutes, pending);
 }
@@ -97,7 +103,7 @@ export function isExpectationMet(
  */
 export function agePendingRoutes(
   pending: Record<string, PendingRoute>,
-  now: number,
+  now: number
 ): Record<string, PendingRoute> {
   const next: Record<string, PendingRoute> = {};
   let changed = false;

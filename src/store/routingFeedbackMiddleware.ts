@@ -57,32 +57,42 @@ export const routingFeedbackMiddleware: Middleware = (store) => {
 
     currentUrl = url;
     if (!attemptedUrls.includes(url)) attemptedUrls.push(url);
-    socket = new WebSocket(url);
+    const ws = new WebSocket(url);
+    socket = ws;
 
-    socket.onopen = () => {
+    // Every handler checks it still owns `socket`, so a callback already queued
+    // for a replaced connection can't clobber the new one
+    ws.onopen = () => {
+      if (socket !== ws) return;
       reconnectAttempts = 0;
       attemptedUrls = [];
       store.dispatch(routingWsConnected());
     };
 
-    socket.onclose = () => {
+    ws.onclose = () => {
+      if (socket !== ws) return;
       store.dispatch(routingWsDisconnected());
       socket = null;
       attemptReconnect();
     };
 
-    socket.onerror = (err) => {
+    ws.onerror = (err) => {
+      if (socket !== ws) return;
       console.error('[routing-ws] WebSocket error', err);
       if (fallback) {
         console.log(
           '[routing-ws] Primary connection failed, falling back to',
           fallback
         );
+        // connectToUrl detaches this socket's onclose, which is otherwise the only place the
+        // disconnect is reported - so a socket that was already open would leave the badge Live
+        store.dispatch(routingWsDisconnected());
         connectToUrl(fallback);
       }
     };
 
-    socket.onmessage = (event: MessageEvent<string>) => {
+    ws.onmessage = (event: MessageEvent<string>) => {
+      if (socket !== ws) return;
       try {
         const msg = JSON.parse(event.data) as RoutingFeedbackMessage;
         switch (msg.type) {

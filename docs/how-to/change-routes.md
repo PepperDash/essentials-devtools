@@ -16,11 +16,13 @@ Check the **Live** badge in the toolbar before making changes. If it shows "Offl
 ## Quick Actions
 
 **To route a source to a display:**
+
 1. Click the **input port name** on the destination device
 2. Pick a signal type (skipped if the port only carries one)
 3. Pick a source from the list
 
 **To switch a single matrix output:**
+
 1. Click the **output port name** on the matrix
 2. Pick a signal type
 3. Pick an input port on that same device
@@ -61,7 +63,7 @@ Both open the same popover and behave identically. The candidate list is specifi
 
 Choose **None — clear route** at the top of either popover.
 
-On a destination, this tears down the route through every midpoint feeding it *and* deselects the destination's own input, so the display stops showing its last source rather than freezing on it. On a midpoint output, it clears just that output.
+On a destination, this tears down the route through every midpoint feeding it _and_ deselects the destination's own input, so the display stops showing its last source rather than freezing on it. On a midpoint output, it clears just that output.
 
 ## Confirming a Change Took Effect
 
@@ -75,13 +77,13 @@ An **amber `!`** means no confirmation arrived within about ten seconds. That do
 
 If the processor rejects the command, the popover stays open with the reason:
 
-| Message | What it means |
-|---|---|
-| No path exists… | The tie-line graph has no wiring path for that signal type. Nothing to retry. |
-| …does not implement… | The device can't perform the requested kind of switch. |
-| …has no input/output port… | The port key no longer exists — hit **Refresh** to reload the diagram. |
-| …carries *X*, which cannot serve a *Y* request… | The port can't carry that signal type. Pick a narrower type. |
-| Could not reach the processor. | Network or session problem — see [Troubleshoot Connection](./troubleshoot-connection.md). |
+| Message                                         | What it means                                                                             |
+| ----------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| No path exists…                                 | The tie-line graph has no wiring path for that signal type. Nothing to retry.             |
+| …does not implement…                            | The device can't perform the requested kind of switch.                                    |
+| …has no input/output port…                      | The port key no longer exists — hit **Refresh** to reload the diagram.                    |
+| …carries _X_, which cannot serve a _Y_ request… | The port can't carry that signal type. Pick a narrower type.                              |
+| Could not reach the processor.                  | Network or session problem — see [Troubleshoot Connection](./troubleshoot-connection.md). |
 
 An empty source list is not an error. It means exactly what it says: nothing is wired to reach that port with that signal type.
 

@@ -20,9 +20,9 @@ At startup the processor swaps that object for the stored value. If the secret i
 
 ### Providers
 
-| Provider | Scope |
-|---|---|
-| `default` | This program slot only |
+| Provider                | Scope                                         |
+| ----------------------- | --------------------------------------------- |
+| `default`               | This program slot only                        |
 | `CrestronGlobalSecrets` | Shared by every program slot on the processor |
 
 Pick the provider with the dropdown at the top of the page. Both are independent — the same key can exist in each with different values.
@@ -97,20 +97,20 @@ A plain array also works, if you want per-entry descriptions or providers:
 ### What happens when you apply one
 
 1. The file is checked in your browser first. Bad JSON, wrong shape, oversized files, over-long keys and blank values are all caught before anything is sent.
-2. The processor is asked what the file *would* do — **nothing is written at this stage**.
+2. The processor is asked what the file _would_ do — **nothing is written at this stage**.
 3. You get a preview table, one row per entry:
 
-| Action | Meaning |
-|---|---|
-| **Create** | The key does not exist yet |
-| **Overwrite** | It exists and will be replaced |
-| **Skip** | It exists and will be left alone |
-| **Invalid** | Something is wrong with the entry; it will not be written |
-| **Failed** | The processor refused the write (commit only) |
+| Action        | Meaning                                                   |
+| ------------- | --------------------------------------------------------- |
+| **Create**    | The key does not exist yet                                |
+| **Overwrite** | It exists and will be replaced                            |
+| **Skip**      | It exists and will be left alone                          |
+| **Invalid**   | Something is wrong with the entry; it will not be written |
+| **Failed**    | The processor refused the write (commit only)             |
 
 4. Only when you press **Apply** does anything get written.
 
-**Existing secrets are skipped by default.** Turn on *Replace secrets that already exist* to overwrite them — the preview updates immediately so you can see exactly what changes.
+**Existing secrets are skipped by default.** Turn on _Replace secrets that already exist_ to overwrite them — the preview updates immediately so you can see exactly what changes.
 
 **If any entry is invalid, nothing is written at all.** Fix the file and try again rather than applying a partial batch.
 
@@ -118,7 +118,7 @@ A plain array also works, if you want per-entry descriptions or providers:
 
 ### Blank values are rejected
 
-A blank value would *delete* the secret on the processor, so the file checker treats one as an error rather than a no-op. If every value in the file is blank, you are told you are probably applying an unfilled template.
+A blank value would _delete_ the secret on the processor, so the file checker treats one as an error rather than a no-op. If every value in the file is blank, you are told you are probably applying an unfilled template.
 
 ### Handle the file carefully
 

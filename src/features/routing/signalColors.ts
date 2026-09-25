@@ -8,16 +8,16 @@
  * own entry rather than being decomposed.
  */
 const SIGNAL_COLORS: Record<string, string> = {
-  AudioVideo: "#6f42c1",
-  Video: "#0d6efd",
-  Audio: "#dc3545",
-  "Audio, SecondaryAudio": "#dc3545",
-  "UsbOutput, UsbInput": "#fd7e14",
-  UsbOutput: "#fd7e14",
-  UsbInput: "#fd7e14",
+  AudioVideo: '#6f42c1',
+  Video: '#0d6efd',
+  Audio: '#dc3545',
+  'Audio, SecondaryAudio': '#dc3545',
+  'UsbOutput, UsbInput': '#fd7e14',
+  UsbOutput: '#fd7e14',
+  UsbInput: '#fd7e14',
 };
 
-const FALLBACK_COLOR = "#adb5bd";
+const FALLBACK_COLOR = '#adb5bd';
 
 /** Returns the display color for a signal type, falling back to grey for unrecognized values. */
 function signalColor(signalType: string): string {

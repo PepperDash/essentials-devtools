@@ -1,7 +1,7 @@
-import { useState } from "react";
-import { Button, Form, Modal } from "react-bootstrap";
+import { useState } from 'react';
+import { Button, Form, Modal } from 'react-bootstrap';
 
-import { SecretEntry } from "../../store/secretsContract";
+import { SecretEntry } from '../../store/secretsContract';
 
 export interface SecretDeleteModalProps {
   entry: SecretEntry;
@@ -28,7 +28,7 @@ const SecretDeleteModal = ({
   onConfirm,
   onClose,
 }: SecretDeleteModalProps) => {
-  const [typedKey, setTypedKey] = useState("");
+  const [typedKey, setTypedKey] = useState('');
 
   const strict = !entry.managed;
   const confirmed = !strict || typedKey.trim() === entry.key;
@@ -44,15 +44,15 @@ const SecretDeleteModal = ({
           Delete <strong>{entry.key}</strong> from <strong>{provider}</strong>?
         </p>
         <p className="text-muted small">
-          Any device configured to use this secret will fail to authenticate until it is replaced.
-          The value cannot be recovered.
+          Any device configured to use this secret will fail to authenticate
+          until it is replaced. The value cannot be recovered.
         </p>
 
         {strict && (
           <div className="alert alert-danger py-2 px-3" role="alert">
             <div className="mb-2">
-              This record was not created by this tool and may belong to another part of the
-              system, such as Mobile Control's paired clients.
+              This record was not created by this tool and may belong to another
+              part of the system, such as Mobile Control's paired clients.
             </div>
             <Form.Group controlId="secret-delete-confirm">
               <Form.Label className="small mb-1">
@@ -81,8 +81,12 @@ const SecretDeleteModal = ({
         <Button variant="secondary" onClick={onClose} disabled={isDeleting}>
           Cancel
         </Button>
-        <Button variant="danger" onClick={onConfirm} disabled={isDeleting || !confirmed}>
-          {isDeleting ? "Deleting…" : "Delete"}
+        <Button
+          variant="danger"
+          onClick={onConfirm}
+          disabled={isDeleting || !confirmed}
+        >
+          {isDeleting ? 'Deleting…' : 'Delete'}
         </Button>
       </Modal.Footer>
     </Modal>

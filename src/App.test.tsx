@@ -1,6 +1,10 @@
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { Provider } from 'react-redux';
-import { createMemoryRouter, MemoryRouter, RouterProvider } from 'react-router-dom';
+import {
+  createMemoryRouter,
+  MemoryRouter,
+  RouterProvider,
+} from 'react-router-dom';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import App from './App';
 import { authActions } from './store/auth/authSlice';
@@ -22,9 +26,10 @@ const {
 }));
 
 vi.mock('./store/apiSlice', async () => {
-  const actual = await vi.importActual<typeof import('./store/apiSlice')>(
-    './store/apiSlice'
-  );
+  const actual =
+    await vi.importActual<typeof import('./store/apiSlice')>(
+      './store/apiSlice'
+    );
 
   return {
     ...actual,

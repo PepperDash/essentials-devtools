@@ -33,7 +33,9 @@
   // Inset ring rather than the outline, so focus stays distinguishable from the
   // selected state (which owns outline-color).
   &:focus-visible {
-    box-shadow: inset 0 0 0 2px #fff, inset 0 0 0 4px rgba(0, 0, 0, 0.6);
+    box-shadow:
+      inset 0 0 0 2px #fff,
+      inset 0 0 0 4px rgba(0, 0, 0, 0.6);
   }
 }
 

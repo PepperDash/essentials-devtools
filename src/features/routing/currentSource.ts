@@ -19,16 +19,16 @@
  * the latter should fall back to `sinkRoutes`.
  */
 
-import { MidpointRoute } from "../../store/apiSlice";
-import { portId, RouteIndex } from "./routeGraph";
+import { MidpointRoute } from '../../store/apiSlice';
+import { portId, RouteIndex } from './routeGraph';
 
 export type CurrentSourceResolution =
   /** Traced all the way to an originating device. */
-  | { status: "resolved"; sourceDeviceKey: string }
+  | { status: 'resolved'; sourceDeviceKey: string }
   /** Traced to a midpoint that has no active route on the feeding output - nothing is getting through. */
-  | { status: "cleared" }
+  | { status: 'cleared' }
   /** The walk ran out of information; the caller should fall back to the sink's own bookkeeping. */
-  | { status: "unknown" };
+  | { status: 'unknown' };
 
 /**
  * Traces backwards from a destination port to whatever is feeding it, following live midpoint
@@ -38,7 +38,7 @@ export function resolveCurrentSource(
   index: RouteIndex,
   midpointRoutes: Record<string, MidpointRoute[]>,
   destDeviceKey: string,
-  destPortKey: string,
+  destPortKey: string
 ): CurrentSourceResolution {
   const visited = new Set<string>();
   let deviceKey = destDeviceKey;
@@ -47,12 +47,12 @@ export function resolveCurrentSource(
   for (;;) {
     const id = portId(deviceKey, portKey);
     // A miswired loop must not hang the popover.
-    if (visited.has(id)) return { status: "unknown" };
+    if (visited.has(id)) return { status: 'unknown' };
     visited.add(id);
 
     const incoming = index.byDestPort.get(id);
     // No tie line to follow - e.g. a dynamically routed system with no static wiring.
-    if (!incoming || incoming.length === 0) return { status: "unknown" };
+    if (!incoming || incoming.length === 0) return { status: 'unknown' };
 
     // A physical input port is fed by one wire; if a config models more, the first is as good a
     // guess as any and the alternative is inventing a tie-break the hardware does not have.
@@ -61,16 +61,16 @@ export function resolveCurrentSource(
     // Anything that is not a midpoint is the origin: the backend refuses to route through
     // non-midpoints too, so the chain genuinely ends here.
     if (!index.midpointKeys.has(sourceDeviceKey)) {
-      return { status: "resolved", sourceDeviceKey };
+      return { status: 'resolved', sourceDeviceKey };
     }
 
     const routes = midpointRoutes[sourceDeviceKey];
     // The device publishes no route feedback at all, so its crossbar state is unknowable.
-    if (!routes) return { status: "unknown" };
+    if (!routes) return { status: 'unknown' };
 
     const active = routes.find((r) => r.outputPortKey === sourcePortKey);
     // It does publish feedback, and reports nothing on this output - a real "nothing is routed".
-    if (!active) return { status: "cleared" };
+    if (!active) return { status: 'cleared' };
 
     deviceKey = sourceDeviceKey;
     portKey = active.inputPortKey;

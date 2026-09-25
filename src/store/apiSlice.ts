@@ -21,12 +21,6 @@ import {
   SecretsTemplateResponse,
 } from './secretsContract';
 
-function getAppIdFromPath(): string {
-  const path = window.location.pathname;
-  const pathParts = path.split('/');
-  return pathParts[2];
-}
-
 function getBaseApiPath(): string {
   return `/cws`;
 }
@@ -161,7 +155,7 @@ const apiSlice = createApi({
       }),
     }),
 
-    getConfig: builder.query<any, { appId: string }>({
+    getConfig: builder.query<unknown, { appId: string }>({
       query: ({ appId }) => ({
         url: `/${appId}/api/config`,
         method: 'GET',
@@ -694,9 +688,4 @@ export type RoutingFeedbackMessage =
   | LayoutChangedMessage;
 
 export type LogEventLevel =
-  | 'Verbose'
-  | 'Debug'
-  | 'Information'
-  | 'Warning'
-  | 'Error'
-  | 'Fatal';
+  'Verbose' | 'Debug' | 'Information' | 'Warning' | 'Error' | 'Fatal';

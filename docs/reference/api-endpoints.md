@@ -600,6 +600,7 @@ POST /loadConfig
 Requires PepperDashEssentials.dll 3.0 or later.
 
 ### Get Routing Devices and Tie Lines
+
 **Purpose**: Retrieve the complete routing graph — devices, ports, tie lines, and current route state
 
 ```http
@@ -607,6 +608,7 @@ GET /routingDevicesAndTieLines
 ```
 
 **Response**:
+
 ```json
 {
   "devices": [
@@ -617,7 +619,12 @@ GET /routingDevicesAndTieLines
       "hasOutputs": false,
       "hasInputsAndOutputs": false,
       "inputPorts": [
-        { "key": "hdmiIn1", "signalType": "AudioVideo", "connectionType": "Hdmi", "isInternal": false }
+        {
+          "key": "hdmiIn1",
+          "signalType": "AudioVideo",
+          "connectionType": "Hdmi",
+          "isInternal": false
+        }
       ]
     }
   ],
@@ -644,6 +651,7 @@ GET /routingDevicesAndTieLines
 ---
 
 ### Start Routing Feedback Session
+
 **Purpose**: Start the routing feedback WebSocket server and obtain its URL
 
 ```http
@@ -651,6 +659,7 @@ GET /routingFeedbackSession
 ```
 
 **Response**:
+
 ```json
 {
   "url": "wss://192.168.1.164:65401/routing/join/",
@@ -663,6 +672,7 @@ GET /routingFeedbackSession
 ---
 
 ### Execute Routing Command
+
 **Purpose**: Make or clear a route, addressed entirely by device and port keys
 
 ```http
@@ -672,6 +682,7 @@ POST /routingCommand
 Ports are addressed by **key**, never by selector: a routing port's selector is a driver-defined object that cannot be expressed in JSON, so the processor resolves key → port → selector itself.
 
 **Request Body** — one of four commands:
+
 ```json
 { "command": "sinkRoute", "deviceKey": "display-1", "inputPortKey": "hdmiIn1",
   "sourceDeviceKey": "laptop-1", "signalType": "AudioVideo" }
@@ -687,6 +698,7 @@ Ports are addressed by **key**, never by selector: a routing port's selector is 
 ```
 
 **Request Fields**:
+
 - `command` (string): `sinkRoute`, `midpointSwitch`, `clearSink` or `clearMidpointOutput`. Case-insensitive
 - `deviceKey` (string): Target device. For sink commands this is the destination — or the multiview parent when addressing a tile
 - `inputPortKey` (string, optional): May be multiview-qualified (`tile2:tileInput`); the processor de-qualifies it to the child tile sink. Optional for `clearSink`, where omitting it clears whatever route the sink has
@@ -699,6 +711,7 @@ Ports are addressed by **key**, never by selector: a routing port's selector is 
 - `dryRun` (bool): Validate and compute the path, execute nothing
 
 **Response**:
+
 ```json
 {
   "status": "accepted",
@@ -710,13 +723,18 @@ Ports are addressed by **key**, never by selector: a routing port's selector is 
   "effectiveSignalType": "AudioVideo",
   "partial": false,
   "steps": [
-    { "signalType": "Video", "switchingDeviceKey": "dm-chassis-1",
-      "inputPortKey": "inputCard3", "outputPortKey": "outputCard5" }
+    {
+      "signalType": "Video",
+      "switchingDeviceKey": "dm-chassis-1",
+      "inputPortKey": "inputCard3",
+      "outputPortKey": "outputCard5"
+    }
   ]
 }
 ```
 
 **Response Fields**:
+
 - `status`: `executed` (done before the response was written), `accepted` (validated and queued), `validated` (dry run), or `error`
 - `resolvedDeviceKey` / `resolvedInputPortKey`: The real device and port the command ran against. These differ from the requested values only when a `tile{N}:` port was de-qualified
 - `effectiveSignalType`: What was actually handed to the devices. May be **wider** than `signalType` — a pre-mapped route descriptor takes its type from the port's declared type, so an Audio-only request across all-`AudioVideo` ports executes as `AudioVideo` rather than breaking away
@@ -724,17 +742,19 @@ Ports are addressed by **key**, never by selector: a routing port's selector is 
 - `partial`: An `AudioVideo` request that found a path for only one half. The half that was found is still routed
 
 **Status Codes**:
-| Status | Meaning |
-|---|---|
-| `200` | `midpointSwitch` / `clearMidpointOutput` executed inline, or a dry run validated |
-| `202` | `sinkRoute` / `clearSink` validated and queued. Confirmation arrives over the feedback WebSocket, not here |
-| `400` | Malformed request: `invalidJson`, `missingField`, `unknownCommand`, `invalidSignalType` |
-| `404` | `deviceNotFound` — the key is wrong |
-| `409` | `noRouteFound` — the keys are valid but no wiring path exists |
-| `422` | `deviceNotRoutable`, `tileNotFound`, `portNotFound`, `signalTypeNotSupportedByPort` — the keys exist but the request is impossible on that device |
-| `500` | `executionError` — the device threw while switching |
+
+| Status | Meaning                                                                                                                                           |
+| ------ | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `200`  | `midpointSwitch` / `clearMidpointOutput` executed inline, or a dry run validated                                                                  |
+| `202`  | `sinkRoute` / `clearSink` validated and queued. Confirmation arrives over the feedback WebSocket, not here                                        |
+| `400`  | Malformed request: `invalidJson`, `missingField`, `unknownCommand`, `invalidSignalType`                                                           |
+| `404`  | `deviceNotFound` — the key is wrong                                                                                                               |
+| `409`  | `noRouteFound` — the keys are valid but no wiring path exists                                                                                     |
+| `422`  | `deviceNotRoutable`, `tileNotFound`, `portNotFound`, `signalTypeNotSupportedByPort` — the keys exist but the request is impossible on that device |
+| `500`  | `executionError` — the device threw while switching                                                                                               |
 
 **Error Response Body**:
+
 ```json
 {
   "status": "error",
@@ -769,12 +789,22 @@ GET /secrets/providers
 ```json
 {
   "providers": [
-    { "key": "default", "description": "Default secret provider serving Essentials Application 1",
-      "scope": "local", "enumerationSupported": true,
-      "maxKeyLength": 32, "maxValueLength": 1600 },
-    { "key": "CrestronGlobalSecrets", "description": "Default secret provider serving all local applications",
-      "scope": "global", "enumerationSupported": true,
-      "maxKeyLength": 32, "maxValueLength": 1600 }
+    {
+      "key": "default",
+      "description": "Default secret provider serving Essentials Application 1",
+      "scope": "local",
+      "enumerationSupported": true,
+      "maxKeyLength": 32,
+      "maxValueLength": 1600
+    },
+    {
+      "key": "CrestronGlobalSecrets",
+      "description": "Default secret provider serving all local applications",
+      "scope": "global",
+      "enumerationSupported": true,
+      "maxKeyLength": 32,
+      "maxValueLength": 1600
+    }
   ]
 }
 ```
@@ -795,14 +825,22 @@ include each value's character count.
 
 ```json
 {
-  "provider": "default", "scope": "local",
+  "provider": "default",
+  "scope": "local",
   "indexStatus": "ok",
   "enumerationComplete": true,
   "counts": { "total": 3, "managed": 1, "unmanaged": 2, "stale": 0 },
   "secrets": [
-    { "key": "displayPassword", "managed": true, "description": "Display admin",
-      "createdUtc": "2026-09-10T14:00:00Z", "updatedUtc": "2026-09-16T18:22:05Z",
-      "lastModifiedUtc": "2026-09-16T18:22:05Z", "owner": "app01", "type": "String" }
+    {
+      "key": "displayPassword",
+      "managed": true,
+      "description": "Display admin",
+      "createdUtc": "2026-09-10T14:00:00Z",
+      "updatedUtc": "2026-09-16T18:22:05Z",
+      "lastModifiedUtc": "2026-09-16T18:22:05Z",
+      "owner": "app01",
+      "type": "String"
+    }
   ],
   "staleIndexEntries": [],
   "warnings": []
@@ -810,6 +848,7 @@ include each value's character count.
 ```
 
 **Response Fields**:
+
 - `managed` — whether the key was written through this API. Unmanaged records exist in the same flat
   Data Store but were created elsewhere; Mobile Control's paired-client tokens are one
 - `indexStatus` — `ok`, `missing`, or `corrupt:<reason>`. Anything but `ok` means classification is
@@ -829,22 +868,34 @@ POST /secrets/command
 ```
 
 ```json
-{ "action": "set", "provider": "default", "key": "displayPassword",
-  "value": "…", "description": "Display admin", "overwrite": false }
+{
+  "action": "set",
+  "provider": "default",
+  "key": "displayPassword",
+  "value": "…",
+  "description": "Display admin",
+  "overwrite": false
+}
 ```
 
-| Action | Semantics |
-|---|---|
-| `set` | Creates. Existing key + `overwrite:false` → `409 alreadyExists` |
-| `update` | Must already exist, else `404 notFound` |
-| `delete` | Removes the secret and its index entry |
-| `test` | Existence probe → `{"exists": true}`. Never a value |
-| `pruneIndex` | Drops index entries with no matching record. `409` if the walk was incomplete |
+| Action         | Semantics                                                                                                        |
+| -------------- | ---------------------------------------------------------------------------------------------------------------- |
+| `set`          | Creates. Existing key + `overwrite:false` → `409 alreadyExists`                                                  |
+| `update`       | Must already exist, else `404 notFound`                                                                          |
+| `delete`       | Removes the secret and its index entry                                                                           |
+| `test`         | Existence probe → `{"exists": true}`. Never a value                                                              |
+| `pruneIndex`   | Drops index entries with no matching record. `409` if the walk was incomplete                                    |
 | `rebuildIndex` | Repairs a damaged index. `adoptKeys` marks existing keys as managed **without reading or changing their values** |
 
 ```json
-{ "status": "ok", "action": "set", "provider": "default", "key": "displayPassword",
-  "existedBefore": false, "indexUpdated": true }
+{
+  "status": "ok",
+  "action": "set",
+  "provider": "default",
+  "key": "displayPassword",
+  "existedBefore": false,
+  "indexUpdated": true
+}
 ```
 
 `indexUpdated: false` with a `warning` means the secret was written but its metadata was not. That is
@@ -853,13 +904,13 @@ error would invite retrying a write that already happened.
 
 **Validation** (all before any store access):
 
-| Rule | Code | Status |
-|---|---|---|
-| Key empty or whitespace | `emptyKey` | 400 |
-| Key over 32 characters, or containing control characters | `keyTooLong` / `invalidKey` | 400 |
-| Key starts with `__essSecretsIdx` | `reservedKey` | 400 |
-| Value empty (empty means *delete* in the store) | `emptyValue` | 400 |
-| Value over 1600 characters | `valueTooLong` | 400 |
+| Rule                                                     | Code                        | Status |
+| -------------------------------------------------------- | --------------------------- | ------ |
+| Key empty or whitespace                                  | `emptyKey`                  | 400    |
+| Key over 32 characters, or containing control characters | `keyTooLong` / `invalidKey` | 400    |
+| Key starts with `__essSecretsIdx`                        | `reservedKey`               | 400    |
+| Value empty (empty means _delete_ in the store)          | `emptyValue`                | 400    |
+| Value over 1600 characters                               | `valueTooLong`              | 400    |
 
 The empty-key rule is not cosmetic: an empty key reaches a Data Store call that deletes **every
 record belonging to the application**.
@@ -876,8 +927,12 @@ POST /secrets/bulk
 ```
 
 ```json
-{ "mode": "preview", "provider": "default", "overwrite": false,
-  "secrets": { "displayPassword": "…", "codecPassword": "…" } }
+{
+  "mode": "preview",
+  "provider": "default",
+  "overwrite": false,
+  "secrets": { "displayPassword": "…", "codecPassword": "…" }
+}
 ```
 
 `secrets` accepts either the flat map above — which is what the template endpoint emits — or an
@@ -885,17 +940,32 @@ array of `{key, value, provider?, description?}`.
 
 ```json
 {
-  "mode": "preview", "provider": "default", "overwrite": false,
-  "summary": { "total": 3, "create": 1, "overwrite": 1, "skip": 1, "invalid": 0, "failed": 0 },
+  "mode": "preview",
+  "provider": "default",
+  "overwrite": false,
+  "summary": {
+    "total": 3,
+    "create": 1,
+    "overwrite": 1,
+    "skip": 1,
+    "invalid": 0,
+    "failed": 0
+  },
   "entries": [
-    { "index": 0, "key": "displayPassword", "provider": "default",
-      "action": "create", "applied": false }
+    {
+      "index": 0,
+      "key": "displayPassword",
+      "provider": "default",
+      "action": "create",
+      "applied": false
+    }
   ],
   "indexUpdated": false
 }
 ```
 
 Rules worth knowing:
+
 - **Preview writes nothing.** `applied` is always `false`, and the response is `200` even when
   entries are invalid — a successful preview of a bad file is not a failed request
 - **A commit with any invalid entry returns `422` and writes nothing**
@@ -921,8 +991,14 @@ GET /secrets/template?provider=default
   "generatedUtc": "2026-09-16T18:30:00Z",
   "note": "Values are intentionally blank. Fill them in, then apply this file.",
   "secrets": { "displayPassword": "", "codecPassword": "" },
-  "metadata": [ { "key": "displayPassword", "provider": "default",
-                  "description": "Display admin", "managed": true } ]
+  "metadata": [
+    {
+      "key": "displayPassword",
+      "provider": "default",
+      "description": "Display admin",
+      "managed": true
+    }
+  ]
 }
 ```
 
