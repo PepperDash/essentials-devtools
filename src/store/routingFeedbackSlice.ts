@@ -1,13 +1,13 @@
-import { createSlice, PayloadAction } from "@reduxjs/toolkit";
+import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import {
-    LayoutChangedMessage,
-    MidpointRoute,
-    MidpointRouteChangedMessage,
-    MultiviewLayoutState,
-    RoutingSnapshotMessage,
-    SinkInputChangedMessage,
-    SinkRoute,
-} from "./apiSlice";
+  LayoutChangedMessage,
+  MidpointRoute,
+  MidpointRouteChangedMessage,
+  MultiviewLayoutState,
+  RoutingSnapshotMessage,
+  SinkInputChangedMessage,
+  SinkRoute,
+} from './apiSlice';
 
 export interface RoutingFeedbackState {
   midpointRoutes: Record<string, MidpointRoute[]>;
@@ -30,7 +30,7 @@ const initialState: RoutingFeedbackState = {
 };
 
 const routingFeedbackSlice = createSlice({
-  name: "routingFeedback",
+  name: 'routingFeedback',
   initialState,
   reducers: {
     routingWsConnected(state) {
@@ -45,7 +45,7 @@ const routingFeedbackSlice = createSlice({
     },
     routingSnapshotReceived(
       state,
-      action: PayloadAction<RoutingSnapshotMessage>,
+      action: PayloadAction<RoutingSnapshotMessage>
     ) {
       state.midpointRoutes = action.payload.midpointRoutes;
       state.sinkRoutes = action.payload.sinkRoutes;
@@ -53,7 +53,7 @@ const routingFeedbackSlice = createSlice({
     },
     midpointRouteChanged(
       state,
-      action: PayloadAction<MidpointRouteChangedMessage>,
+      action: PayloadAction<MidpointRouteChangedMessage>
     ) {
       state.midpointRoutes[action.payload.deviceKey] = action.payload.routes;
     },
@@ -93,8 +93,8 @@ export const {
 export default routingFeedbackSlice.reducer;
 
 // ── Action type constants used by the middleware ─────────────────────────────
-export const ROUTING_WS_CONNECT = "routingFeedback/wsConnect";
-export const ROUTING_WS_DISCONNECT = "routingFeedback/wsDisconnect";
+export const ROUTING_WS_CONNECT = 'routingFeedback/wsConnect';
+export const ROUTING_WS_DISCONNECT = 'routingFeedback/wsDisconnect';
 
 export interface RoutingWsConnectAction {
   type: typeof ROUTING_WS_CONNECT;

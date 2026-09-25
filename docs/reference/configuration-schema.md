@@ -17,7 +17,7 @@ This document provides complete reference information about the configuration da
   "devices": {
     "deviceKey": {
       "key": "string",
-      "name": "string", 
+      "name": "string",
       "type": "string",
       "group": "string",
       "properties": {},
@@ -27,7 +27,7 @@ This document provides complete reference information about the configuration da
   "tieLines": [
     {
       "sourceDevice": "string",
-      "destinationDevice": "string", 
+      "destinationDevice": "string",
       "type": "string"
     }
   ],
@@ -50,20 +50,21 @@ This document provides complete reference information about the configuration da
 
 All devices share these common configuration properties:
 
-| Property | Type | Required | Description |
-|----------|------|----------|-------------|
-| `key` | string | Yes | Unique identifier for the device |
-| `name` | string | Yes | Human-readable display name |
-| `type` | string | Yes | Device type identifier |
-| `group` | string | No | Logical grouping for organization |
-| `enabled` | boolean | No | Whether device is active (default: true) |
-| `description` | string | No | Additional device description |
+| Property      | Type    | Required | Description                              |
+| ------------- | ------- | -------- | ---------------------------------------- |
+| `key`         | string  | Yes      | Unique identifier for the device         |
+| `name`        | string  | Yes      | Human-readable display name              |
+| `type`        | string  | Yes      | Device type identifier                   |
+| `group`       | string  | No       | Logical grouping for organization        |
+| `enabled`     | boolean | No       | Whether device is active (default: true) |
+| `description` | string  | No       | Additional device description            |
 
 ### Device-Specific Properties
 
 Device properties vary by type. Common property categories include:
 
 #### Connection Properties
+
 ```json
 {
   "control": {
@@ -79,6 +80,7 @@ Device properties vary by type. Common property categories include:
 ```
 
 #### Communication Properties
+
 ```json
 {
   "communicationMonitorProperties": {
@@ -95,6 +97,7 @@ Device properties vary by type. Common property categories include:
 ### Display Devices
 
 #### Generic Display
+
 ```json
 {
   "type": "genericDisplay",
@@ -113,6 +116,7 @@ Device properties vary by type. Common property categories include:
 ```
 
 #### Sony Display
+
 ```json
 {
   "type": "sonyDisplay",
@@ -131,7 +135,8 @@ Device properties vary by type. Common property categories include:
 
 ### Audio Devices
 
-#### Generic Audio DSP  
+#### Generic Audio DSP
+
 ```json
 {
   "type": "genericAudioDsp",
@@ -157,6 +162,7 @@ Device properties vary by type. Common property categories include:
 ```
 
 #### Cisco Codec
+
 ```json
 {
   "type": "ciscoCodec",
@@ -178,15 +184,16 @@ Device properties vary by type. Common property categories include:
 ### Control System Devices
 
 #### Crestron Processor
+
 ```json
 {
-  "type": "crestron3Series",  
+  "type": "crestron3Series",
   "properties": {
     "control": {
       "method": "crestronCom",
       "comParams": {
         "hardwareHandshake": "None",
-        "parity": "None", 
+        "parity": "None",
         "baudRate": 38400,
         "dataBits": 8,
         "stopBits": 1
@@ -202,6 +209,7 @@ Device properties vary by type. Common property categories include:
 ## Room Configuration Schema
 
 ### Basic Room Structure
+
 ```json
 {
   "roomKey": {
@@ -226,18 +234,19 @@ Device properties vary by type. Common property categories include:
 
 ### Room Properties
 
-| Property | Type | Required | Description |
-|----------|------|----------|-------------|
-| `key` | string | Yes | Unique room identifier |
-| `name` | string | Yes | Display name for the room |
-| `description` | string | No | Additional room information |
-| `sourceListKey` | string | No | Reference to source list configuration |
-| `defaultSourceItem` | string | No | Default active source |
-| `devices` | array | No | List of device keys in this room |
+| Property            | Type   | Required | Description                            |
+| ------------------- | ------ | -------- | -------------------------------------- |
+| `key`               | string | Yes      | Unique room identifier                 |
+| `name`              | string | Yes      | Display name for the room              |
+| `description`       | string | No       | Additional room information            |
+| `sourceListKey`     | string | No       | Reference to source list configuration |
+| `defaultSourceItem` | string | No       | Default active source                  |
+| `devices`           | array  | No       | List of device keys in this room       |
 
 ## Source List Configuration
 
 ### Source List Structure
+
 ```json
 {
   "sourceListKey": {
@@ -254,7 +263,7 @@ Device properties vary by type. Common property categories include:
         },
         "routingOutputs": {
           "videoOutputs": ["output1"],
-          "audioOutputs": ["output1"] 
+          "audioOutputs": ["output1"]
         }
       }
     }
@@ -267,22 +276,24 @@ Device properties vary by type. Common property categories include:
 ### Tie Line Types
 
 #### Audio Tie Lines
+
 ```json
 {
   "sourceDevice": "dsp1",
-  "destinationDevice": "codec1", 
+  "destinationDevice": "codec1",
   "type": "audio",
   "sourceOutput": "programOut",
   "destinationInput": "micIn"
 }
 ```
 
-#### Video Tie Lines  
+#### Video Tie Lines
+
 ```json
 {
   "sourceDevice": "switcher1",
   "destinationDevice": "display1",
-  "type": "video", 
+  "type": "video",
   "sourceOutput": "output1",
   "destinationInput": "hdmi1"
 }
@@ -293,13 +304,15 @@ Device properties vary by type. Common property categories include:
 ### Required Fields Validation
 
 The system validates that all required fields are present:
+
 - Device `key` and `type` are mandatory
-- Room `key` and `name` are mandatory  
+- Room `key` and `name` are mandatory
 - Tie line `sourceDevice` and `destinationDevice` must reference existing devices
 
 ### Type Validation
 
 Device types must match registered factory types:
+
 - Unknown device types will generate warnings
 - Missing required properties for device types will cause errors
 - Invalid property values will be flagged during validation
@@ -307,6 +320,7 @@ Device types must match registered factory types:
 ### Reference Validation
 
 Cross-references between configuration objects are validated:
+
 - Device keys referenced in rooms must exist
 - Source list references must point to valid source lists
 - Tie line device references must point to existing devices
@@ -316,8 +330,9 @@ Cross-references between configuration objects are validated:
 ### Merge Priority Order
 
 When multiple configuration files are present, they are merged in this order:
+
 1. Base system configuration
-2. Template configurations  
+2. Template configurations
 3. User configuration files
 4. Environment-specific overrides
 
@@ -329,6 +344,7 @@ When multiple configuration files are present, they are merged in this order:
 - **Null/Undefined**: Explicit null values remove properties
 
 ### Example Merge Behavior
+
 ```json
 // Base config
 {
@@ -343,11 +359,11 @@ When multiple configuration files are present, they are merged in this order:
   }
 }
 
-// Override config  
+// Override config
 {
   "devices": {
     "display1": {
-      "name": "Main Display", 
+      "name": "Main Display",
       "properties": {
         "volume": 75
       }
@@ -374,6 +390,7 @@ When multiple configuration files are present, they are merged in this order:
 ### Read-Only Access
 
 The web config app provides read-only access to merged configuration:
+
 - Cannot modify configuration through the web interface
 - Configuration changes require file system access to the processor
 - Changes take effect after configuration reload
@@ -381,6 +398,7 @@ The web config app provides read-only access to merged configuration:
 ### Configuration Refresh
 
 Configuration can be refreshed without restarting:
+
 - Use the "Reload Configuration" function in the web app
 - Configuration is re-read and merged from files
 - Active devices maintain state where possible
@@ -389,6 +407,7 @@ Configuration can be refreshed without restarting:
 ## Common Configuration Patterns
 
 ### Multi-Room Systems
+
 ```json
 {
   "devices": {
@@ -409,7 +428,7 @@ Configuration can be refreshed without restarting:
       "volumeControlKey": "room1Volume"
     },
     "room2": {
-      "devices": ["mainDsp"], 
+      "devices": ["mainDsp"],
       "volumeControlKey": "room2Volume"
     }
   }
@@ -417,6 +436,7 @@ Configuration can be refreshed without restarting:
 ```
 
 ### Video Switching Systems
+
 ```json
 {
   "devices": {
@@ -444,24 +464,29 @@ Configuration can be refreshed without restarting:
 ### Common Problems
 
 **Missing Device References**:
+
 - Symptoms: Warnings in debug console about unknown devices
 - Solution: Verify device keys match exactly between references
 
 **Invalid Device Types**:
+
 - Symptoms: Errors during system startup
 - Solution: Check device type names against factory registrations
 
 **Circular References**:
+
 - Symptoms: System fails to start or infinite loops
 - Solution: Review tie line configurations for circular routing
 
 **Property Type Mismatches**:
+
 - Symptoms: Device properties not working as expected
 - Solution: Verify property types match device expectations
 
 ### Configuration Debugging
 
 Use the debug console to identify configuration issues:
+
 1. Look for configuration validation messages during startup
 2. Check device initialization messages for failures
 3. Monitor property change messages to verify configuration application
@@ -469,4 +494,4 @@ Use the debug console to identify configuration issues:
 
 ---
 
-*This reference provides complete information about configuration structure and validation. Use it to understand how configuration files are structured and how to interpret configuration data displayed in the web app.*
+_This reference provides complete information about configuration structure and validation. Use it to understand how configuration files are structured and how to interpret configuration data displayed in the web app._

@@ -1,11 +1,11 @@
-import { Link, useParams } from "react-router-dom";
-import HelpArticle from "./HelpArticle";
-import HelpSidebar from "./HelpSidebar";
-import { getDocBySlug } from "./docsContent";
+import { Link, useParams } from 'react-router-dom';
+import HelpArticle from './HelpArticle';
+import HelpSidebar from './HelpSidebar';
+import { getDocBySlug } from './docsContent';
 
 const Help = () => {
   const params = useParams();
-  const slug = params["*"] ?? "";
+  const slug = params['*'] ?? '';
   const doc = getDocBySlug(slug);
 
   return (

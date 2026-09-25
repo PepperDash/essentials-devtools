@@ -1,6 +1,6 @@
 import { skipToken } from '@reduxjs/toolkit/query';
-import { useState } from "react";
-import { Button, Form, Modal } from "react-bootstrap";
+import { useState } from 'react';
+import { Button, Form, Modal } from 'react-bootstrap';
 import useAppParams from '../shared/hooks/useAppParams';
 import {
   DeviceFeedbacks,
@@ -11,16 +11,21 @@ import {
   useGetDeviceMethodsQuery,
   useGetDevicePropertiesQuery,
   useSetDeviceJsonCommandMutation,
-} from "../store/apiSlice";
+} from '../store/apiSlice';
 
 const DeviceDetail = ({ item }: DeviceDetailProps) => {
   const { appId } = useAppParams();
-  const { data: properties } = useGetDevicePropertiesQuery(appId && item?.Key ? { appId, key: item.Key } : skipToken
+  const { data: properties } = useGetDevicePropertiesQuery(
+    appId && item?.Key ? { appId, key: item.Key } : skipToken
   );
-  const { data: methods } = useGetDeviceMethodsQuery(appId && item?.Key ? { appId, key: item.Key } : skipToken);
-  const { data: feedbacks } = useGetDeviceFeedbacksQuery(appId && item?.Key ? { appId, key: item.Key } : skipToken);
+  const { data: methods } = useGetDeviceMethodsQuery(
+    appId && item?.Key ? { appId, key: item.Key } : skipToken
+  );
+  const { data: feedbacks } = useGetDeviceFeedbacksQuery(
+    appId && item?.Key ? { appId, key: item.Key } : skipToken
+  );
 
-  console.log("DeviceDetail == ", { item, properties, methods, feedbacks });
+  console.log('DeviceDetail == ', { item, properties, methods, feedbacks });
 
   if (!properties || !methods) {
     return <div>Loading...</div>;
@@ -49,13 +54,16 @@ const DeviceDetailRender = ({
   deviceKey,
 }: DeviceDetailRenderProps) => {
   const { appId } = useAppParams();
-  const [selectedMethod, setSelectedMethod] = useState<DeviceMethods | null>(null);
+  const [selectedMethod, setSelectedMethod] = useState<DeviceMethods | null>(
+    null
+  );
   const [paramValues, setParamValues] = useState<Record<string, string>>({});
-  const [executeMethod, { isLoading: isExecuting }] = useSetDeviceJsonCommandMutation();
+  const [executeMethod, { isLoading: isExecuting }] =
+    useSetDeviceJsonCommandMutation();
 
   const handleOpen = (method: DeviceMethods) => {
     setSelectedMethod(method);
-    setParamValues(Object.fromEntries(method.Params.map((p) => [p.Name, ""])));
+    setParamValues(Object.fromEntries(method.Params.map((p) => [p.Name, ''])));
   };
 
   const handleClose = () => {
@@ -65,7 +73,12 @@ const DeviceDetailRender = ({
 
   const handleExecute = async () => {
     if (!selectedMethod || !appId) return;
-    await executeMethod({ appId, deviceKey, methodName: selectedMethod.Name, params: Object.values(paramValues) });
+    await executeMethod({
+      appId,
+      deviceKey,
+      methodName: selectedMethod.Name,
+      params: Object.values(paramValues),
+    });
     handleClose();
   };
 
@@ -90,8 +103,8 @@ const DeviceDetailRender = ({
                 <td>{p.Name}</td>
                 <td>{p.Type}</td>
                 <td>{p.Value}</td>
-                <td>{p.CanRead ? "Yes" : "No"}</td>
-                <td>{p.canWrite ? "Yes" : "No"}</td>
+                <td>{p.CanRead ? 'Yes' : 'No'}</td>
+                <td>{p.canWrite ? 'Yes' : 'No'}</td>
               </tr>
             ))}
           </tbody>
@@ -111,10 +124,17 @@ const DeviceDetailRender = ({
               <tr key={m.Name}>
                 <td>{m.Name}</td>
                 <td>
-                  {m.Params.map((param) => `${param.Name}: ${param.Type}`).join(", ")}
+                  {m.Params.map((param) => `${param.Name}: ${param.Type}`).join(
+                    ', '
+                  )}
                 </td>
                 <td>
-                  <button className="btn btn-sm btn-primary" onClick={() => handleOpen(m)}>Execute</button>
+                  <button
+                    className="btn btn-sm btn-primary"
+                    onClick={() => handleOpen(m)}
+                  >
+                    Execute
+                  </button>
                 </td>
               </tr>
             ))}
@@ -133,14 +153,18 @@ const DeviceDetailRender = ({
                 {selectedMethod?.Params.map((param) => (
                   <Form.Group key={param.Name} className="mb-3">
                     <Form.Label>
-                      {param.Name} <small className="text-muted">({param.Type})</small>
+                      {param.Name}{' '}
+                      <small className="text-muted">({param.Type})</small>
                     </Form.Label>
                     <Form.Control
                       type="text"
                       placeholder={param.Type}
-                      value={paramValues[param.Name] ?? ""}
+                      value={paramValues[param.Name] ?? ''}
                       onChange={(e) =>
-                        setParamValues((prev) => ({ ...prev, [param.Name]: e.target.value }))
+                        setParamValues((prev) => ({
+                          ...prev,
+                          [param.Name]: e.target.value,
+                        }))
                       }
                     />
                   </Form.Group>
@@ -149,9 +173,15 @@ const DeviceDetailRender = ({
             )}
           </Modal.Body>
           <Modal.Footer>
-            <Button variant="secondary" onClick={handleClose}>Cancel</Button>
-            <Button variant="primary" onClick={handleExecute} disabled={isExecuting}>
-              {isExecuting ? "Executing…" : "Execute"}
+            <Button variant="secondary" onClick={handleClose}>
+              Cancel
+            </Button>
+            <Button
+              variant="primary"
+              onClick={() => void handleExecute()}
+              disabled={isExecuting}
+            >
+              {isExecuting ? 'Executing…' : 'Execute'}
             </Button>
           </Modal.Footer>
         </Modal>
@@ -176,7 +206,9 @@ const DeviceDetailRender = ({
                     </tr>
                   ))
                 ) : (
-                  <tr><td colSpan={2}>None</td></tr>
+                  <tr>
+                    <td colSpan={2}>None</td>
+                  </tr>
                 )}
               </tbody>
             </table>
@@ -198,7 +230,9 @@ const DeviceDetailRender = ({
                     </tr>
                   ))
                 ) : (
-                  <tr><td colSpan={2}>None</td></tr>
+                  <tr>
+                    <td colSpan={2}>None</td>
+                  </tr>
                 )}
               </tbody>
             </table>
@@ -220,7 +254,9 @@ const DeviceDetailRender = ({
                     </tr>
                   ))
                 ) : (
-                  <tr><td colSpan={2}>None</td></tr>
+                  <tr>
+                    <td colSpan={2}>None</td>
+                  </tr>
                 )}
               </tbody>
             </table>

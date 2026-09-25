@@ -1,5 +1,5 @@
-import { Offcanvas } from "react-bootstrap";
-import { LogMessage } from "../../shared/types/LogMessage";
+import { Offcanvas } from 'react-bootstrap';
+import { LogMessage } from '../../shared/types/LogMessage';
 
 const LogMessageDetailDrawer = ({
   show,

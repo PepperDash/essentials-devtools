@@ -7,9 +7,11 @@ This document provides comprehensive reference information about all supported d
 ### Display Devices
 
 #### Generic Display (`genericDisplay`)
+
 **Purpose**: Universal display control for most display devices using standard protocols.
 
 **Key Properties**:
+
 - `supportsDiscretePower`: boolean - Whether device supports separate on/off commands
 - `supportsVolumeControl`: boolean - Whether display has volume control
 - `warmupTimeMs`: number - Time in milliseconds for display warmup
@@ -18,6 +20,7 @@ This document provides comprehensive reference information about all supported d
 **Control Methods**: TCP/IP, RS-232, IR
 
 **Example Configuration**:
+
 ```json
 {
   "type": "genericDisplay",
@@ -31,9 +34,11 @@ This document provides comprehensive reference information about all supported d
 ```
 
 #### Sony Professional Display (`sonyDisplay`)
+
 **Purpose**: Enhanced control for Sony professional displays with advanced features.
 
 **Key Properties**:
+
 - `id`: string - Display ID for multi-display setups (01-99)
 - `supportsAdvancedPicture`: boolean - Advanced picture control support
 - `inputCount`: number - Number of available inputs
@@ -41,9 +46,10 @@ This document provides comprehensive reference information about all supported d
 **Control Methods**: TCP/IP (port 20060), RS-232
 
 **Example Configuration**:
+
 ```json
 {
-  "type": "sonyDisplay", 
+  "type": "sonyDisplay",
   "properties": {
     "id": "01",
     "supportsAdvancedPicture": true,
@@ -53,9 +59,11 @@ This document provides comprehensive reference information about all supported d
 ```
 
 #### Samsung Commercial Display (`samsungDisplay`)
+
 **Purpose**: Control for Samsung commercial display series with MDC protocol.
 
 **Key Properties**:
+
 - `displayId`: number - Display ID for daisy-chained displays (0-254)
 - `supportsNetworkStandby`: boolean - Network wake-on-LAN support
 - `maxVolumeLevel`: number - Maximum volume level (default: 100)
@@ -65,14 +73,17 @@ This document provides comprehensive reference information about all supported d
 ### Audio DSP Devices
 
 #### Generic Audio DSP (`genericAudioDsp`)
+
 **Purpose**: Universal audio processor control with configurable level and routing blocks.
 
 **Key Properties**:
+
 - `levelControlBlocks`: object - Named level control configurations
 - `presetCount`: number - Number of available presets
 - `supportsAdvancedRouting`: boolean - Matrix routing capabilities
 
 **Level Control Block Properties**:
+
 - `enabled`: boolean - Whether this control is active
 - `hasLevel`: boolean - Volume level control available
 - `hasMute`: boolean - Mute control available
@@ -83,6 +94,7 @@ This document provides comprehensive reference information about all supported d
 **Control Methods**: TCP/IP, RS-232
 
 **Example Configuration**:
+
 ```json
 {
   "type": "genericAudioDsp",
@@ -109,9 +121,11 @@ This document provides comprehensive reference information about all supported d
 ```
 
 #### Biamp Tesira DSP (`biampTesiraDsp`)
+
 **Purpose**: Advanced control for Biamp Tesira series audio processors.
 
 **Key Properties**:
+
 - `instanceTag`: string - Tesira instance identifier
 - `controlBlocks`: object - Named control block configurations
 - `supportsSubscriptions`: boolean - Real-time property subscriptions
@@ -119,9 +133,11 @@ This document provides comprehensive reference information about all supported d
 **Control Methods**: TCP/IP (port 23)
 
 #### QSC Q-SYS Core (`qscQSysCore`)
+
 **Purpose**: Control for QSC Q-SYS platform processors and components.
 
 **Key Properties**:
+
 - `coreId`: string - Q-SYS Core identifier
 - `namedControls`: object - Named control configurations
 - `supportsExternalControl`: boolean - External control script support
@@ -131,9 +147,11 @@ This document provides comprehensive reference information about all supported d
 ### Video Switching Devices
 
 #### Extron Video Switcher (`extronVideoSwitcher`)
+
 **Purpose**: Control for Extron matrix switchers and presentation systems.
 
 **Key Properties**:
+
 - `inputCount`: number - Number of inputs available
 - `outputCount`: number - Number of outputs available
 - `supportsAudioSwitching`: boolean - Audio switching capabilities
@@ -142,6 +160,7 @@ This document provides comprehensive reference information about all supported d
 **Control Methods**: TCP/IP (port 23), RS-232
 
 **Example Configuration**:
+
 ```json
 {
   "type": "extronVideoSwitcher",
@@ -155,9 +174,11 @@ This document provides comprehensive reference information about all supported d
 ```
 
 #### Crestron DmMd Series (`crestronDmMd`)
+
 **Purpose**: Control for Crestron DigitalMedia switcher series.
 
 **Key Properties**:
+
 - `dmChassisId`: number - DM chassis ID for larger systems
 - `inputSlots`: array - Available input slot configurations
 - `outputSlots`: array - Available output slot configurations
@@ -167,9 +188,11 @@ This document provides comprehensive reference information about all supported d
 ### Codec and Communication Devices
 
 #### Cisco Video Codec (`ciscoCodec`)
+
 **Purpose**: Control for Cisco video conferencing systems (SX, MX, Room series).
 
 **Key Properties**:
+
 - `sipPhoneLineKeys`: array - Available SIP line identifiers
 - `supportsContacts`: boolean - Contact directory integration
 - `maxCallCount`: number - Maximum simultaneous calls
@@ -178,6 +201,7 @@ This document provides comprehensive reference information about all supported d
 **Control Methods**: SSH (port 22), HTTP API
 
 **Example Configuration**:
+
 ```json
 {
   "type": "ciscoCodec",
@@ -191,9 +215,11 @@ This document provides comprehensive reference information about all supported d
 ```
 
 #### Polycom Group Series (`polycomGroupSeries`)
+
 **Purpose**: Control for Polycom Group series video systems.
 
 **Key Properties**:
+
 - `apiVersion`: string - Polycom API version (v1, v2)
 - `supportsDirectoryServices`: boolean - Directory integration
 - `audioInputCount`: number - Number of audio inputs
@@ -201,9 +227,11 @@ This document provides comprehensive reference information about all supported d
 **Control Methods**: HTTP API (port 80/443)
 
 #### Generic VoIP Phone (`genericVoipPhone`)
+
 **Purpose**: Basic control for SIP-based VoIP phones.
 
 **Key Properties**:
+
 - `lineCount`: number - Number of phone lines
 - `supportsCallControl`: boolean - Call control capabilities
 - `registrarAddress`: string - SIP registrar server
@@ -213,9 +241,11 @@ This document provides comprehensive reference information about all supported d
 ### Lighting Control Devices
 
 #### Lutron Quantum (`lutronQuantum`)
+
 **Purpose**: Integration with Lutron Quantum lighting systems.
 
 **Key Properties**:
+
 - `integrationId`: number - Quantum integration ID (1-100)
 - `zoneCount`: number - Number of lighting zones
 - `supportsShades`: boolean - Motorized shade control
@@ -223,9 +253,11 @@ This document provides comprehensive reference information about all supported d
 **Control Methods**: TCP/IP (port 23)
 
 #### Generic Lighting Controller (`genericLighting`)
+
 **Purpose**: Universal lighting control for various protocols.
 
 **Key Properties**:
+
 - `channelCount`: number - Number of lighting channels
 - `supportsScenes`: boolean - Lighting scene recall
 - `dimmingCurve`: string - Dimming curve type (linear, logarithmic)
@@ -235,9 +267,11 @@ This document provides comprehensive reference information about all supported d
 ### Environmental Control Devices
 
 #### Generic Climate Control (`genericClimate`)
+
 **Purpose**: HVAC and environmental control integration.
 
 **Key Properties**:
+
 - `supportsHeating`: boolean - Heating control available
 - `supportsCooling`: boolean - Cooling control available
 - `tempRange`: object - Temperature control range
@@ -246,9 +280,11 @@ This document provides comprehensive reference information about all supported d
 **Control Methods**: TCP/IP, RS-232, BACnet
 
 #### Generic Relay Controller (`genericRelay`)
+
 **Purpose**: Control for relay-based switching systems.
 
 **Key Properties**:
+
 - `relayCount`: number - Number of available relays
 - `relayType`: string - Relay type (NO, NC, SPDT)
 - `pulseDurationMs`: number - Default pulse duration
@@ -258,9 +294,11 @@ This document provides comprehensive reference information about all supported d
 ### Control System Devices
 
 #### Crestron 3-Series Processor (`crestron3Series`)
+
 **Purpose**: Integration with Crestron 3-Series control processors.
 
 **Key Properties**:
+
 - `eiscp`: object - EISCP server configuration
 - `cip`: object - CIP communication settings
 - `roomId`: number - Room ID for multi-room systems
@@ -268,6 +306,7 @@ This document provides comprehensive reference information about all supported d
 **Control Methods**: CresNet, Ethernet (CIP)
 
 **Example Configuration**:
+
 ```json
 {
   "type": "crestron3Series",
@@ -281,9 +320,11 @@ This document provides comprehensive reference information about all supported d
 ```
 
 #### Generic IR Controller (`genericIr`)
+
 **Purpose**: Infrared control device integration.
 
 **Key Properties**:
+
 - `irPorts`: array - Available IR port configurations
 - `supportsLearning`: boolean - IR learning capability
 - `carrierFrequency`: number - IR carrier frequency (Hz)
@@ -293,9 +334,11 @@ This document provides comprehensive reference information about all supported d
 ### Camera and PTZ Devices
 
 #### Generic PTZ Camera (`genericPtzCamera`)
+
 **Purpose**: Pan-tilt-zoom camera control.
 
 **Key Properties**:
+
 - `presetCount`: number - Number of camera presets
 - `supportsAutoFocus`: boolean - Auto-focus capability
 - `zoomRange`: object - Optical zoom range
@@ -304,6 +347,7 @@ This document provides comprehensive reference information about all supported d
 **Control Methods**: TCP/IP, RS-232, VISCA
 
 **Example Configuration**:
+
 ```json
 {
   "type": "genericPtzCamera",
@@ -326,6 +370,7 @@ This document provides comprehensive reference information about all supported d
 All network-connected devices support these communication properties:
 
 #### TCP/IP Properties (`tcpSshProperties`)
+
 ```json
 {
   "address": "192.168.1.100",
@@ -338,6 +383,7 @@ All network-connected devices support these communication properties:
 ```
 
 #### Serial Properties (`comParams`)
+
 ```json
 {
   "baudRate": 9600,
@@ -352,6 +398,7 @@ All network-connected devices support these communication properties:
 ### Monitoring Properties
 
 #### Communication Monitor (`communicationMonitorProperties`)
+
 ```json
 {
   "pollString": "?",
@@ -365,6 +412,7 @@ All network-connected devices support these communication properties:
 ### Device Status Properties
 
 All devices provide these status indicators:
+
 - **CommunicationMonitor**: Connection health (OK, Warning, Error)
 - **PowerIsOn**: Device power state (when applicable)
 - **IsOnline**: Network connectivity status
@@ -377,13 +425,14 @@ All devices provide these status indicators:
 Each device type must be registered with a factory class:
 
 ```csharp
-DeviceFactory.RegisterDeviceFactory("genericDisplay", 
+DeviceFactory.RegisterDeviceFactory("genericDisplay",
     typeof(GenericDisplayFactory));
 ```
 
 ### Properties Schema Validation
 
 Device factories define property schemas for validation:
+
 - Required properties are enforced during configuration load
 - Property types are validated against expected types
 - Unknown properties generate warnings but don't prevent loading
@@ -391,6 +440,7 @@ Device factories define property schemas for validation:
 ### Device Capabilities
 
 Devices expose capabilities through interfaces:
+
 - `IBasicVolumeControls`: Volume and mute control
 - `IPower`: Power control with discrete on/off
 - `IRoutingInputsOutputs`: Signal routing capabilities
@@ -415,6 +465,7 @@ Devices expose capabilities through interfaces:
 ### Property Validation
 
 Custom device types can implement property validation:
+
 - Override `ValidateProperties()` method
 - Return validation messages for invalid configurations
 - Support both warnings and errors
@@ -422,6 +473,7 @@ Custom device types can implement property validation:
 ### Device Communication
 
 Implement communication patterns:
+
 - Override communication methods for device-specific protocols
 - Implement heartbeat and monitoring patterns
 - Handle connection state changes appropriately
@@ -431,16 +483,19 @@ Implement communication patterns:
 ### Common Issues
 
 **Device Type Not Found**:
+
 - Verify device type name matches factory registration exactly
 - Check that required assemblies are loaded
 - Review plugin loading and factory registration logs
 
 **Property Validation Errors**:
+
 - Compare device properties against schema requirements
 - Check property data types and value ranges
 - Verify required properties are present
 
 **Communication Failures**:
+
 - Verify network connectivity and device addresses
 - Check protocol-specific settings (ports, credentials)
 - Review device-specific communication requirements
@@ -448,6 +503,7 @@ Implement communication patterns:
 ### Debugging Device Behavior
 
 Use the debug console to troubleshoot device issues:
+
 1. Monitor device initialization messages
 2. Check communication monitor status changes
 3. Review property change notifications
@@ -455,4 +511,4 @@ Use the debug console to troubleshoot device issues:
 
 ---
 
-*This reference provides complete information about all supported device types and their configuration requirements. Use it to understand device capabilities and configure devices properly in your system.*
+_This reference provides complete information about all supported device types and their configuration requirements. Use it to understand device capabilities and configure devices properly in your system._

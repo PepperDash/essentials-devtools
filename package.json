@@ -3,6 +3,9 @@
   "version": "1.0.0-local",
   "type": "module",
   "private": true,
+  "engines": {
+    "node": "^20.19.0 || ^22.13.0 || >=24"
+  },
   "dependencies": {
     "@monaco-editor/react": "^4.7.0",
     "@reduxjs/toolkit": "^2.11.2",
@@ -26,9 +29,14 @@
     "start": "vite",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
-    "test": "vitest"
+    "test": "vitest",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.0",
     "@types/dagre": "^0.7.54",
@@ -38,8 +46,15 @@
     "@types/react-dom": "^19.2.3",
     "@types/react-scroll-to-bottom": "^4.2.5",
     "@vitejs/plugin-react": "^6.0.1",
+    "eslint": "^10.11.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "eslint-plugin-react-refresh": "^0.5.7",
+    "globals": "^17.12.0",
     "jsdom": "^29.0.1",
+    "prettier": "^3.9.9",
     "typescript": "^6.0.2",
+    "typescript-eslint": "^8.70.1",
     "vite": "^8.0.3",
     "vite-plugin-svgr": "^5.0.0",
     "vitest": "^4.1.2"

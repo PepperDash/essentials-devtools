@@ -1,5 +1,5 @@
-import { MultiviewLayoutState, MultiviewTileState } from "../store/apiSlice";
-import styles from "./MultiviewLayoutCanvas.module.scss";
+import { MultiviewLayoutState, MultiviewTileState } from '../store/apiSlice';
+import styles from './MultiviewLayoutCanvas.module.scss';
 
 export interface MultiviewLayoutCanvasProps {
   /** Current multiview canvas/tile layout to render. */
@@ -35,8 +35,13 @@ const MultiviewLayoutCanvas = ({
         {layout.canvasWidth}&times;{layout.canvasHeight}
       </div>
       <div
-        className={`${styles.canvas}${darkMode ? "" : ` ${styles.canvasLight}`}`}
-        style={{ aspectRatio: Number.isFinite(aspectRatio) && aspectRatio > 0 ? aspectRatio : 16 / 9 }}
+        className={`${styles.canvas}${darkMode ? '' : ` ${styles.canvasLight}`}`}
+        style={{
+          aspectRatio:
+            Number.isFinite(aspectRatio) && aspectRatio > 0
+              ? aspectRatio
+              : 16 / 9,
+        }}
       >
         {[...layout.tiles]
           .sort((a, b) => a.zOrder - b.zOrder)
@@ -45,12 +50,12 @@ const MultiviewLayoutCanvas = ({
             const isSelected = selectedTileNumber === tile.tileNumber;
             const sourceName = tile.sourceDeviceKey
               ? resolveSourceName(tile.sourceDeviceKey)
-              : "Empty";
+              : 'Empty';
 
             return (
               <div
                 key={tile.tileNumber}
-                className={`${styles.tile}${isEmpty ? ` ${styles.tileEmpty}` : ""}${isSelected ? ` ${styles.tileSelected}` : ""}`}
+                className={`${styles.tile}${isEmpty ? ` ${styles.tileEmpty}` : ''}${isSelected ? ` ${styles.tileSelected}` : ''}`}
                 style={{
                   left: `${(tile.x / layout.canvasWidth) * 100}%`,
                   top: `${(tile.y / layout.canvasHeight) * 100}%`,
@@ -64,7 +69,9 @@ const MultiviewLayoutCanvas = ({
                   onTileClick?.(tile);
                 }}
               >
-                <span className={styles.tileNumberBadge}>{tile.tileNumber}</span>
+                <span className={styles.tileNumberBadge}>
+                  {tile.tileNumber}
+                </span>
                 <span className={styles.tileLabel}>{sourceName}</span>
               </div>
             );
@@ -75,4 +82,3 @@ const MultiviewLayoutCanvas = ({
 };
 
 export default MultiviewLayoutCanvas;
-

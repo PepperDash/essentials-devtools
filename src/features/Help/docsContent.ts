@@ -1,4 +1,4 @@
-export type DocCategory = "tutorials" | "how-to" | "reference" | "explanation";
+export type DocCategory = 'tutorials' | 'how-to' | 'reference' | 'explanation';
 
 export interface DocEntry {
   slug: string;
@@ -16,26 +16,26 @@ interface CategoryNav {
 }
 
 const CATEGORY_LABELS: Record<DocCategory, string> = {
-  tutorials: "Tutorials",
-  "how-to": "How-to Guides",
-  reference: "Reference",
-  explanation: "Explanation",
+  tutorials: 'Tutorials',
+  'how-to': 'How-to Guides',
+  reference: 'Reference',
+  explanation: 'Explanation',
 };
 
 const CATEGORY_ORDER: DocCategory[] = [
-  "tutorials",
-  "how-to",
-  "reference",
-  "explanation",
+  'tutorials',
+  'how-to',
+  'reference',
+  'explanation',
 ];
 
 function normalizePath(raw: string): { slug: string; isIndex: boolean } {
-  const trimmed = raw.replace(/^\/docs\//, "").replace(/\.md$/, "");
-  if (trimmed === "README") {
-    return { slug: "", isIndex: true };
+  const trimmed = raw.replace(/^\/docs\//, '').replace(/\.md$/, '');
+  if (trimmed === 'README') {
+    return { slug: '', isIndex: true };
   }
-  if (trimmed.endsWith("/README")) {
-    return { slug: trimmed.slice(0, -"/README".length), isIndex: true };
+  if (trimmed.endsWith('/README')) {
+    return { slug: trimmed.slice(0, -'/README'.length), isIndex: true };
   }
   return { slug: trimmed, isIndex: false };
 }
@@ -43,37 +43,37 @@ function normalizePath(raw: string): { slug: string; isIndex: boolean } {
 function deriveTitle(content: string, slug: string): string {
   const match = content.match(/^#\s+(.+)$/m);
   if (match) return match[1].trim();
-  const last = slug.split("/").pop() || slug;
+  const last = slug.split('/').pop() || slug;
   return last
-    .split("-")
+    .split('-')
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(" ");
+    .join(' ');
 }
 
 // Joins a markdown-relative href against the directory of the doc that
 // contains it, collapsing "." and ".." segments manually (no Node `path`
 // module available in the browser bundle).
 function joinRelative(baseDir: string, href: string): string {
-  const baseSegments = baseDir ? baseDir.split("/") : [];
-  const hrefSegments = href.split("/");
+  const baseSegments = baseDir ? baseDir.split('/') : [];
+  const hrefSegments = href.split('/');
   const stack = [...baseSegments];
 
   for (const segment of hrefSegments) {
-    if (segment === "" || segment === ".") continue;
-    if (segment === "..") {
+    if (segment === '' || segment === '.') continue;
+    if (segment === '..') {
       stack.pop();
     } else {
       stack.push(segment);
     }
   }
 
-  return stack.join("/");
+  return stack.join('/');
 }
 
 function buildDocsMap(): Map<string, DocEntry> {
-  const rawModules = import.meta.glob("/docs/**/*.md", {
-    query: "?raw",
-    import: "default",
+  const rawModules = import.meta.glob('/docs/**/*.md', {
+    query: '?raw',
+    import: 'default',
     eager: true,
   }) as Record<string, string>;
 
@@ -82,7 +82,7 @@ function buildDocsMap(): Map<string, DocEntry> {
   for (const [path, content] of Object.entries(rawModules)) {
     const { slug, isIndex } = normalizePath(path);
     const category = slug
-      ? ((slug.split("/")[0] as DocCategory) ?? null)
+      ? ((slug.split('/')[0] as DocCategory) ?? null)
       : null;
 
     map.set(slug, {
@@ -121,8 +121,8 @@ function buildNavTree(docsMap: Map<string, DocEntry>): CategoryNav[] {
     const pages = Array.from(docsMap.values())
       .filter((doc) => doc.category === category && !doc.isIndex)
       .sort((a, b) => {
-        const aName = a.slug.split("/").pop() ?? a.slug;
-        const bName = b.slug.split("/").pop() ?? b.slug;
+        const aName = a.slug.split('/').pop() ?? a.slug;
+        const bName = b.slug.split('/').pop() ?? b.slug;
         const aIndex = linkOrder.indexOf(aName);
         const bIndex = linkOrder.indexOf(bName);
         if (aIndex === -1 && bIndex === -1) return aName.localeCompare(bName);
@@ -154,23 +154,23 @@ export function getDocBySlug(slug: string): DocEntry | undefined {
 // doc link (callers should render those as plain external anchors).
 export function resolveRelativeLink(
   currentSlug: string,
-  href: string,
+  href: string
 ): string | null {
   if (/^([a-z][a-z0-9+.-]*:|#)/i.test(href)) return null;
 
-  const hashIndex = href.indexOf("#");
+  const hashIndex = href.indexOf('#');
   const path = hashIndex === -1 ? href : href.slice(0, hashIndex);
-  const hash = hashIndex === -1 ? "" : href.slice(hashIndex);
+  const hash = hashIndex === -1 ? '' : href.slice(hashIndex);
 
-  const currentDir = currentSlug.includes("/")
-    ? currentSlug.slice(0, currentSlug.lastIndexOf("/"))
-    : "";
+  const currentDir = currentSlug.includes('/')
+    ? currentSlug.slice(0, currentSlug.lastIndexOf('/'))
+    : '';
 
   const joined = joinRelative(currentDir, path)
-    .replace(/\.md$/, "")
-    .replace(/\/$/, "");
+    .replace(/\.md$/, '')
+    .replace(/\/$/, '');
   const { slug } = normalizePath(`/docs/${joined}.md`);
 
   if (!docsMap.has(slug)) return null;
-  return (slug === "" ? "/help" : `/help/${slug}`) + hash;
+  return (slug === '' ? '/help' : `/help/${slug}`) + hash;
 }

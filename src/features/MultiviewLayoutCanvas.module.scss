@@ -20,7 +20,9 @@
   color: #fff;
   background-color: rgba(13, 110, 253, 0.35);
   cursor: pointer;
-  transition: outline-color 0.1s, background-color 0.1s;
+  transition:
+    outline-color 0.1s,
+    background-color 0.1s;
   outline: 2px solid transparent;
   outline-offset: -2px;
 
@@ -62,4 +64,3 @@
 .canvasMeta {
   font-size: 0.68rem;
 }
-
