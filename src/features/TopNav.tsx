@@ -1,12 +1,18 @@
-import { useMemo } from "react";
-import { Dropdown, Nav, Navbar } from "react-bootstrap";
-import { NavLink, useLocation } from "react-router-dom";
-import { meetsMinVersion } from "../shared/functions/meetsMinimumVersion";
-import useAppParams from "../shared/hooks/useAppParams";
-import { IconDarkChevronDown, IconDarkEllipse } from "../shared/icons";
-import { useGetVersionsQuery } from "../store/apiSlice";
-import { selectAvailableApps } from "../store/auth/authSelectors";
-import { useAppSelector } from "../store/hooks";
+import { skipToken } from '@reduxjs/toolkit/query';
+import { useMemo } from 'react';
+import { Dropdown, Nav, Navbar } from 'react-bootstrap';
+import { NavLink, useLocation } from 'react-router-dom';
+import { meetsMinVersion } from '../shared/functions/meetsMinimumVersion';
+import useAppParams from '../shared/hooks/useAppParams';
+import {
+  IconDarkChevronDown,
+  IconDarkEllipse,
+  IconDarkHelp,
+} from '../shared/icons';
+import { useGetPathsQuery, useGetVersionsQuery } from '../store/apiSlice';
+import { selectAvailableApps } from '../store/auth/authSelectors';
+import { useAppSelector } from '../store/hooks';
+import { supportsSecretsApi } from '../store/secretsContract';
 
 const AppNavLink = ({
   appId,
@@ -31,7 +37,7 @@ const AppNavLink = ({
   }
   return (
     <NavLink
-      className={({ isActive }) => (isActive ? "me-3 text-secondary" : "me-3")}
+      className={({ isActive }) => (isActive ? 'me-3 text-secondary' : 'me-3')}
       to={`/${appId}/${path}`}
     >
       {children}
@@ -48,8 +54,8 @@ const TopNav = ({ isConnected }: { isConnected: boolean }) => {
 
   // Single version query for the currently active app only (used for feature flagging)
   const { data: currentVersions } = useGetVersionsQuery(
-    params.appId ? { appId: params.appId } : { appId: "" },
-    { skip: !params.appId },
+    params.appId ? { appId: params.appId } : { appId: '' },
+    { skip: !params.appId }
   );
 
   const appIdOptions = availableApps;
@@ -59,15 +65,26 @@ const TopNav = ({ isConnected }: { isConnected: boolean }) => {
   // app-scoped route yet.
   const currentSubRoute = useMemo(() => {
     const match = location.pathname.match(/^\/app\d+\/(.+)/);
-    return match ? match[1] : "console";
+    return match ? match[1] : 'console';
   }, [location.pathname]);
+
+  // Detected from the processor's live route table rather than a version number, so the link
+  // appears exactly where the endpoint exists. RTK Query dedupes this with the Routing page's
+  // identical probe, so it costs no extra request.
+  const { data: apiPaths } = useGetPathsQuery(
+    params.appId ? { appId: params.appId } : skipToken
+  );
+  const showSecrets = useMemo(
+    () => supportsSecretsApi(apiPaths?.routes),
+    [apiPaths]
+  );
 
   const showInitializationExceptions = useMemo(() => {
     const essentialsVersion = currentVersions?.find(
-      (v) => v.Name === "PepperDashEssentials.dll",
+      (v) => v.Name === 'PepperDashEssentials.dll'
     )?.Version;
     if (!essentialsVersion) return false;
-    return meetsMinVersion(essentialsVersion, "3.0.0");
+    return meetsMinVersion(essentialsVersion, '3.0.0');
   }, [currentVersions]);
 
   return (
@@ -87,7 +104,7 @@ const TopNav = ({ isConnected }: { isConnected: boolean }) => {
             <Dropdown.Toggle variant="link" id="dropdown-basic">
               {/* display the currently selected appId or "Select Application" if no appId is selected */}
               {/* if no appIdOptions are available, display "No Loaded Applications" */}
-              {params.appId || "Select Application"}
+              {params.appId || 'Select Application'}
               <IconDarkChevronDown />
             </Dropdown.Toggle>
             <Dropdown.Menu>
@@ -133,16 +150,30 @@ const TopNav = ({ isConnected }: { isConnected: boolean }) => {
           <AppNavLink appId={params.appId} path="mobileControl">
             Mobile Control
           </AppNavLink>
+          {showSecrets && (
+            <AppNavLink appId={params.appId} path="secrets">
+              Secrets
+            </AppNavLink>
+          )}
+          <NavLink
+            className={({ isActive }) =>
+              isActive ? 'me-3 text-secondary' : 'me-3'
+            }
+            to="/help"
+          >
+            <IconDarkHelp className="me-1" />
+            Help
+          </NavLink>
         </Nav>
         <div className="d-flex flex-column align-items-end">
           <span>Version: {reactAppVersion}</span>
 
           <div className="d-flex align-items-center">
             <IconDarkEllipse
-              className={isConnected ? "text-success" : "text-danger"}
+              className={isConnected ? 'text-success' : 'text-danger'}
             />
             <span className="ms-2">
-              Debug Console {isConnected ? "Connected" : "Disconnected"}
+              Debug Console {isConnected ? 'Connected' : 'Disconnected'}
             </span>
           </div>
         </div>

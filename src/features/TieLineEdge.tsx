@@ -3,8 +3,8 @@ import {
   EdgeLabelRenderer,
   EdgeProps,
   getBezierPath,
-} from "@xyflow/react";
-import styles from "./Routing.module.scss";
+} from '@xyflow/react';
+import styles from './Routing.module.scss';
 
 export interface TieLineEdgeData {
   signalColor: string;

@@ -7,6 +7,7 @@ Welcome to the comprehensive documentation for the PepperDash Essentials Web Con
 This documentation follows the [Diataxis framework](https://diataxis.fr/) to provide you with the right information at the right time:
 
 ### 🎯 [Tutorials](./tutorials/) - Learning-oriented
+
 **"Take me by the hand and teach me"**
 
 Step-by-step guides that take you through your first experiences with the application. Perfect for newcomers who want to get started quickly.
@@ -16,6 +17,7 @@ Step-by-step guides that take you through your first experiences with the applic
 - **[Device Management Tutorial](./tutorials/device-management-basics.md)** - Basic device inspection and management
 
 ### 🔧 [How-to Guides](./how-to/) - Problem-oriented
+
 **"Show me how to solve this specific problem"**
 
 Practical guides that solve specific problems you might encounter. These assume you have basic familiarity with the system.
@@ -25,8 +27,10 @@ Practical guides that solve specific problems you might encounter. These assume 
 - **[Export and Analyze Configuration](./how-to/export-configuration.md)**
 - **[Monitor System Performance](./how-to/monitor-performance.md)**
 - **[Restart and Reload Configuration](./how-to/restart-reload-config.md)**
+- **[Trace Signal Routes and Read the Routing Diagram](./how-to/trace-signal-routes.md)**
 
 ### 📚 [Reference](./reference/) - Information-oriented
+
 **"Tell me the facts"**
 
 Complete technical information about all features, APIs, and components. Organized for easy lookup.
@@ -38,6 +42,7 @@ Complete technical information about all features, APIs, and components. Organiz
 - **[Log Levels and Filters](./reference/log-levels.md)** - Complete logging reference
 
 ### 💡 [Explanation](./explanation/) - Understanding-oriented
+
 **"Help me understand why and how this works"**
 
 Background information and design decisions that help you understand the system's architecture and concepts.
@@ -66,7 +71,7 @@ The PepperDash Essentials Web Config App provides several key features:
 - **⚙️ Device Management**: Inspect and interact with connected devices
 - **📄 Configuration Viewer**: View and analyze merged configuration files
 - **📦 Version Information**: Check loaded assemblies and versions
-- **🔀 Routing**: Visual signal routing diagram between devices and tie lines
+- **🔀 Routing**: Interactive signal routing diagram with live current-source feedback, click-to-trace signal paths, and multiview layout panels (PepperDashEssentials.dll 3.0+)
 - **📱 Mobile Control**: Mobile control interface management
 - **🗺️ API Paths**: Browse all available REST API routes on the processor
 - **🏷️ Type Registry**: Browse supported device types and their properties
@@ -84,10 +89,11 @@ The app supports up to 10 simultaneous PepperDash Essentials program slots (`app
 ## Support
 
 For technical support and questions:
+
 - Check the [How-to Guides](./how-to/) for common solutions
 - Review the [Reference](./reference/) documentation for technical details
 - Consult the [Explanation](./explanation/) articles for deeper understanding
 
 ---
 
-*This documentation is organized using the [Diataxis framework](https://diataxis.fr/) to ensure you get the right type of information for your needs.*
+_This documentation is organized using the [Diataxis framework](https://diataxis.fr/) to ensure you get the right type of information for your needs._

@@ -1,7 +1,7 @@
-import { skipToken } from "@reduxjs/toolkit/query";
-import { useState } from "react";
-import { Button, Modal } from "react-bootstrap";
-import useAppParams from "../shared/hooks/useAppParams";
+import { skipToken } from '@reduxjs/toolkit/query';
+import { useState } from 'react';
+import { Button, Modal } from 'react-bootstrap';
+import useAppParams from '../shared/hooks/useAppParams';
 import {
   ActionPath,
   ClientRequest,
@@ -12,16 +12,16 @@ import {
   useDeleteMobileControlUiClientMutation,
   useGetMobileControlActionPathsQuery,
   useGetMobileControlInfoQuery,
-} from "../store/apiSlice";
+} from '../store/apiSlice';
 
 const MobileControl = () => {
   const { appId } = useAppParams();
 
   const { data: info } = useGetMobileControlInfoQuery(
-    appId ? { appId, deviceKey: "appServer" } : skipToken,
+    appId ? { appId, deviceKey: 'appServer' } : skipToken
   );
   const { data: actionPaths } = useGetMobileControlActionPathsQuery(
-    appId ? { appId, deviceKey: "appServer" } : skipToken,
+    appId ? { appId, deviceKey: 'appServer' } : skipToken
   );
 
   const [deleteClient] = useDeleteMobileControlUiClientMutation();
@@ -31,19 +31,19 @@ const MobileControl = () => {
     useState<MobileControlClient | null>(null);
   const [confirmDeleteAll, setConfirmDeleteAll] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [newRoomKey, setNewRoomKey] = useState("");
-  const [newGrantCode, setNewGrantCode] = useState("");
+  const [newRoomKey, setNewRoomKey] = useState('');
+  const [newGrantCode, setNewGrantCode] = useState('');
 
   const handleConfirmDelete = async () => {
     if (!appId || !pendingDelete) return;
     const clientPayload: ClientResponse = {
-      error: "",
+      error: '',
       token: pendingDelete.token,
-      path: "",
+      path: '',
     };
     await deleteClient({
       appId,
-      deviceKey: "appServer-directServer",
+      deviceKey: 'appServer-directServer',
       client: clientPayload,
     });
     setPendingDelete(null);
@@ -51,7 +51,7 @@ const MobileControl = () => {
 
   const handleConfirmDeleteAll = async () => {
     if (!appId) return;
-    await deleteAllClients({ appId, deviceKey: "appServer-directServer" });
+    await deleteAllClients({ appId, deviceKey: 'appServer-directServer' });
     setConfirmDeleteAll(false);
   };
 
@@ -60,12 +60,12 @@ const MobileControl = () => {
     const request: ClientRequest = {
       roomKey: newRoomKey.trim(),
       grantCode: newGrantCode.trim(),
-      token: "",
+      token: '',
     };
-    await createClient({ appId, deviceKey: "appServer-directServer", request });
+    await createClient({ appId, deviceKey: 'appServer-directServer', request });
     setShowCreateModal(false);
-    setNewRoomKey("");
-    setNewGrantCode("");
+    setNewRoomKey('');
+    setNewGrantCode('');
   };
 
   if (!info || !actionPaths) {
@@ -115,9 +115,7 @@ const MobileControl = () => {
                 <th>#</th>
                 <th>Room Key</th>
                 <th>Touchpanel Key</th>
-                <th>
-                  Token
-                </th>
+                <th>Token</th>
                 <th>URL</th>
                 <th>
                   <div className="d-flex justify-content-end gap-1">
@@ -155,7 +153,7 @@ const MobileControl = () => {
                       {client.url}
                     </a>
                   </td>
-                  <td className='d-flex justify-content-end'>
+                  <td className="d-flex justify-content-end">
                     <Button
                       size="sm"
                       variant="outline-danger"
@@ -204,14 +202,14 @@ const MobileControl = () => {
           <Modal.Title>Delete Client</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          Are you sure you want to delete client{" "}
+          Are you sure you want to delete client{' '}
           <strong>{pendingDelete?.clientNumber}</strong>?
         </Modal.Body>
         <Modal.Footer>
           <Button variant="secondary" onClick={() => setPendingDelete(null)}>
             Cancel
           </Button>
-          <Button variant="danger" onClick={handleConfirmDelete}>
+          <Button variant="danger" onClick={() => void handleConfirmDelete()}>
             Delete
           </Button>
         </Modal.Footer>
@@ -235,7 +233,10 @@ const MobileControl = () => {
           >
             Cancel
           </Button>
-          <Button variant="danger" onClick={handleConfirmDeleteAll}>
+          <Button
+            variant="danger"
+            onClick={() => void handleConfirmDeleteAll()}
+          >
             Delete All
           </Button>
         </Modal.Footer>
@@ -281,7 +282,7 @@ const MobileControl = () => {
           </Button>
           <Button
             variant="primary"
-            onClick={handleCreateClient}
+            onClick={() => void handleCreateClient()}
             disabled={!newRoomKey.trim()}
           >
             Create

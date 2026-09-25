@@ -214,34 +214,28 @@ $theme-colors: map-merge($theme-colors, $custom-colors);
 $utilities: map-merge(
   $utilities,
   (
-    'background-color':
-      map-merge(
+    'background-color': map-merge(
         map-get($utilities, 'background-color'),
         (
-          values:
-            map-merge(
+          values: map-merge(
               map-get(map-get($utilities, 'background-color'), 'values'),
               ($theme-colors)
             ),
         )
       ),
-    'border-color':
-      map-merge(
+    'border-color': map-merge(
         map-get($utilities, 'border-color'),
         (
-          values:
-            map-merge(
+          values: map-merge(
               map-get(map-get($utilities, 'border-color'), 'values'),
               ($theme-colors)
             ),
         )
       ),
-    'color':
-      map-merge(
+    'color': map-merge(
         map-get($utilities, 'color'),
         (
-          values:
-            map-merge(
+          values: map-merge(
               map-get(map-get($utilities, 'color'), 'values'),
               ($theme-colors)
             ),

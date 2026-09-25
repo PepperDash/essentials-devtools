@@ -4,7 +4,8 @@
 
 **Time required**: 25-30 minutes
 
-**Prerequisites**: 
+**Prerequisites**:
+
 - Completed the [Getting Started Tutorial](./getting-started.md)
 - Access to a running PepperDash Essentials system
 - Basic familiarity with the web app interface
@@ -26,8 +27,9 @@
 3. **Generate various activities** on your system to see different message types
 
 **Log levels you'll encounter** (from most to least critical):
+
 - **Error**: System failures, connection problems, critical issues
-- **Warning**: Potential issues, deprecated features, recoverable problems  
+- **Warning**: Potential issues, deprecated features, recoverable problems
 - **Information**: Normal operations, status changes, confirmations
 - **Debug**: Detailed technical information for developers
 - **Verbose**: Extremely detailed trace information
@@ -53,7 +55,8 @@
 4. **Set a per-device minimum level**: Once a device is checked, an inline level dropdown appears next to its name. Change it to `Warning` to suppress that device's `Information` and `Debug` messages while keeping other devices at a lower threshold
 5. **Combine multiple devices** each with their own levels
 
-**Practical example**: 
+**Practical example**:
+
 - If one display is flooding the console with `Information` messages, check it and set its level to `Warning`
 - Keep other devices at `Information` so you see their normal activity
 
@@ -68,6 +71,7 @@
 ### Step 5: Understand Filter State Persistence
 
 Filter selections are stored in Redux state:
+
 - **Persists across navigation**: Switching to Versions and back preserves your filters
 - **Resets on page reload**: Refreshing the browser clears all filter state (along with the login session)
 - **Clear Filters button**: Resets device selections, per-device levels, and search text in one click
@@ -79,6 +83,7 @@ Filter selections are stored in Redux state:
 Real systems generate patterns of messages. Learn to recognize them:
 
 1. **Normal startup sequence**:
+
    ```
    Information: Device [DisplayRoom1] initializing
    Information: Device [DisplayRoom1] connection established
@@ -86,6 +91,7 @@ Real systems generate patterns of messages. Learn to recognize them:
    ```
 
 2. **Error patterns**:
+
    ```
    Warning: Device [DisplayRoom1] connection timeout
    Error: Device [DisplayRoom1] failed to respond
@@ -110,6 +116,7 @@ Real systems generate patterns of messages. Learn to recognize them:
    - Timing information
 
 **Common properties you'll see**:
+
 - `Key`: The device that generated the message
 - `SourceContext`: Which part of the code generated the message
 - `CommandType`: What type of command was executed
@@ -159,11 +166,12 @@ Real systems generate patterns of messages. Learn to recognize them:
 4. **Check message timestamps** to see when problems started
 
 **Expected findings**:
+
 - Connection timeout errors
 - Power command confirmations (or lack thereof)
 - Network connectivity issues
 
-### Scenario 2: System Running Slowly  
+### Scenario 2: System Running Slowly
 
 **Goal**: Identify performance bottlenecks
 
@@ -188,6 +196,7 @@ Real systems generate patterns of messages. Learn to recognize them:
 ## Best Practices Summary
 
 ### Do's:
+
 - ✅ Start with broad filters, then narrow down
 - ✅ Use appropriate log levels for your task
 - ✅ Stop sessions when not actively debugging
@@ -195,6 +204,7 @@ Real systems generate patterns of messages. Learn to recognize them:
 - ✅ Use search terms related to your specific problem
 
 ### Don'ts:
+
 - ❌ Leave debug sessions running indefinitely
 - ❌ Use "Verbose" level unless absolutely necessary
 - ❌ Ignore the message count - it indicates system load
@@ -227,16 +237,19 @@ You now have advanced skills in using the Debug Console:
 ## Troubleshooting This Tutorial
 
 **Not seeing expected message types?**
+
 - Your system may be configured with a higher minimum log level
 - Try generating more system activity
 - Check if your devices are actually connected and functioning
 
 **Too many messages to follow?**
+
 - Use more restrictive filtering
 - Increase the minimum log level temporarily
 - Focus on one device or message type at a time
 
 **Messages seem delayed?**
+
 - This can indicate network latency or system load
 - Check your network connection
 - Consider if other users are also connected

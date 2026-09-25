@@ -7,28 +7,41 @@ import {
   useGetDoNotLoadConfigOnNextBootQuery,
   useSetDoNotLoadConfigOnNextBootMutation,
   useSetLoadConfigMutation,
-  useSetRestartMutation
+  useSetRestartMutation,
 } from '../../store/apiSlice';
 import { selectSearchText } from '../../store/debugConsole/debugConsoleSelectors';
 import { debugConsoleActions } from '../../store/debugConsole/debugConsoleSlice';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import type { RootState } from '../../store/store';
+import { downloadText } from '../../shared/functions/downloadFile';
 import ConsoleWindow from './ConsoleWindow';
 import { DebugFilters } from './DebugFilters';
 import MinimumLogLevelDropdown from './MinimumLogLevelDropdown';
 import RestartConfirmModal from './RestartConfirmModal';
 import { useFilteredMessages } from './hooks/useFilteredMessages';
 
-const DebugConsole = ({isConnected, join, stop, clear}: DebugConsoleProps) => {
+const DebugConsole = ({
+  isConnected,
+  isConnecting,
+  join,
+  stop,
+  clear,
+}: DebugConsoleProps) => {
   //* HOOKS ***********************************************************/
   const [showModal, setShowModal] = useState(false);
   const { appId } = useAppParams();
   const dispatch = useAppDispatch();
-  const messages = useAppSelector((state: RootState) => state.websocket.messages);
-  const failedUrls = useAppSelector((state: RootState) => state.websocket.failedUrls);
+  const messages = useAppSelector(
+    (state: RootState) => state.websocket.messages
+  );
+  const failedUrls = useAppSelector(
+    (state: RootState) => state.websocket.failedUrls
+  );
   const searchText = useAppSelector(selectSearchText);
   const certUrls = failedUrls
-    ? failedUrls.map((u: string) => new URL(u).origin.replace(/^wss:/, 'https:').replace(/^ws:/, 'http:'))
+    ? failedUrls.map((u: string) =>
+        new URL(u).origin.replace(/^wss:/, 'https:').replace(/^ws:/, 'http:')
+      )
     : null;
 
   const { data: doNotLoadConfigOnNextBoot } =
@@ -43,19 +56,15 @@ const DebugConsole = ({isConnected, join, stop, clear}: DebugConsoleProps) => {
 
   const exportFilteredItems = () => {
     const content = filteredItems
-      .map((item) => `${item.Timestamp} [${item.Level}]${item.Properties?.Key ? ` [${item.Properties.Key}]` : ''} ${item.RenderedMessage}`)
+      .map(
+        (item) =>
+          `${item.Timestamp} [${item.Level}]${item.Properties?.Key ? ` [${item.Properties.Key}]` : ''} ${item.RenderedMessage}`
+      )
       .join('\n');
-    const blob = new Blob([content], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `debug-log-${new Date().toISOString().replace(/[:.]/g, '-')}.log`;
-    document.body.appendChild(a);
-    a.click();
-    setTimeout(() => {
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-    }, 0);
+    downloadText(
+      `debug-log-${new Date().toISOString().replace(/[:.]/g, '-')}.log`,
+      content
+    );
   };
 
   const clickRestart = () => {
@@ -63,9 +72,9 @@ const DebugConsole = ({isConnected, join, stop, clear}: DebugConsoleProps) => {
   };
 
   const clickLoadConfig = () => {
-    if(!appId) return;
-    console.log("Loading config");
-    loadConfig({ appId });
+    if (!appId) return;
+    console.log('Loading config');
+    void loadConfig({ appId });
   };
 
   if (!doNotLoadConfigOnNextBoot || !appId) return null;
@@ -79,14 +88,24 @@ const DebugConsole = ({isConnected, join, stop, clear}: DebugConsoleProps) => {
         </div>
         <div className="d-flex align-items-center justify-content-start mb-2">
           {!isConnected ? (
-          <Button className="mx-1" variant="success" size="sm" onClick={() => join(appId)}>
-            Start Debug Session
-          </Button>
-          )
-          : (
-            <Button className="mx-1" variant="danger" size="sm" onClick={() => stop(appId)}>
-            Stop Debug Session
-          </Button>
+            <Button
+              className="mx-1"
+              variant="success"
+              size="sm"
+              disabled={isConnecting}
+              onClick={() => void join(appId)}
+            >
+              {isConnecting ? 'Connecting...' : 'Start Debug Session'}
+            </Button>
+          ) : (
+            <Button
+              className="mx-1"
+              variant="danger"
+              size="sm"
+              onClick={() => stop(appId)}
+            >
+              Stop Debug Session
+            </Button>
           )}
           <MinimumLogLevelDropdown />
           <Form.Check
@@ -97,28 +116,26 @@ const DebugConsole = ({isConnected, join, stop, clear}: DebugConsoleProps) => {
             id="doNotLoadConfig"
             checked={doNotLoadConfigOnNextBoot?.doNotLoadConfigOnNextBoot}
             onChange={() => {
-              if(!appId) return;
-              setDoNotLoadConfig(
-                { appId, doNotLoadConfigOnNextBoot: !doNotLoadConfigOnNextBoot?.doNotLoadConfigOnNextBoot }
-              )
+              if (!appId) return;
+              void setDoNotLoadConfig({
+                appId,
+                doNotLoadConfigOnNextBoot:
+                  !doNotLoadConfigOnNextBoot?.doNotLoadConfigOnNextBoot,
+              });
             }}
           />
           {doNotLoadConfigOnNextBoot?.doNotLoadConfigOnNextBoot && (
-          <Button
-            className="mx-1"
-            variant="primary"
-            size="sm"
-            onClick={clickLoadConfig}
-            disabled={!doNotLoadConfigOnNextBoot.doNotLoadConfigOnNextBoot}
-          >
-            Load Config
-          </Button>)}
-          <Button
-            className="mx-1"
-            variant="primary"
-            size="sm"
-            onClick={clear}
-          >
+            <Button
+              className="mx-1"
+              variant="primary"
+              size="sm"
+              onClick={clickLoadConfig}
+              disabled={!doNotLoadConfigOnNextBoot.doNotLoadConfigOnNextBoot}
+            >
+              Load Config
+            </Button>
+          )}
+          <Button className="mx-1" variant="primary" size="sm" onClick={clear}>
             Clear Console Trace
           </Button>
           <Button
@@ -141,8 +158,13 @@ const DebugConsole = ({isConnected, join, stop, clear}: DebugConsoleProps) => {
           <span className="ps-2">Message Count: {messages.length}</span>
         </div>
         {certUrls && certUrls.length > 0 && (
-          <Alert variant="warning" className="py-2 px-3 mb-2" style={{ fontSize: '0.82rem' }}>
-            <strong>Connection failed.</strong> The debug server may have an untrusted certificate.{' '}
+          <Alert
+            variant="warning"
+            className="py-2 px-3 mb-2"
+            style={{ fontSize: '0.82rem' }}
+          >
+            <strong>Connection failed.</strong> The debug server may have an
+            untrusted certificate.{' '}
             {certUrls.map((certUrl: string, i: number) => (
               <span key={certUrl}>
                 {i > 0 && ' or '}
@@ -157,18 +179,20 @@ const DebugConsole = ({isConnected, join, stop, clear}: DebugConsoleProps) => {
         <ListFiltersHeader
           showSearch
           searchValue={searchText}
-          onSearchChange={(val) => dispatch(debugConsoleActions.setSearchText(val))}
+          onSearchChange={(val) =>
+            dispatch(debugConsoleActions.setSearchText(val))
+          }
           filters={<DebugFilters />}
         />
-        <ConsoleWindow filteredItems={filteredItems}/>
+        <ConsoleWindow filteredItems={filteredItems} />
       </div>
 
       <RestartConfirmModal
         show={showModal}
         handleClose={() => setShowModal(false)}
         handleConfirm={() => {
-          if(!appId) return;
-          restart({ appId });
+          if (!appId) return;
+          void restart({ appId });
           setShowModal(false);
         }}
       />
@@ -178,11 +202,10 @@ const DebugConsole = ({isConnected, join, stop, clear}: DebugConsoleProps) => {
 
 export default DebugConsole;
 
-
 interface DebugConsoleProps {
   isConnected: boolean;
-  join: (appId: string) => void;
+  isConnecting: boolean;
+  join: (appId: string) => Promise<void>;
   stop: (appId: string) => void;
   clear: () => void;
 }
-

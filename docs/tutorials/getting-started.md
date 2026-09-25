@@ -4,7 +4,8 @@
 
 **Time required**: 15-20 minutes
 
-**Prerequisites**: 
+**Prerequisites**:
+
 - Access to a PepperDash Essentials processor on your network
 - Valid credentials for the processor
 - Basic understanding of network connectivity
@@ -57,38 +58,48 @@
 The application has several main sections accessible from the top navigation:
 
 ### Versions
+
 - Lists all loaded software assemblies and their versions
 - Useful for verifying what software is running
 
 ### API Paths
+
 - Shows all REST API routes available on the processor
 - Click a route row to see its full URL and details
 
 ### Initialization Exceptions
+
 - Only visible when PepperDashEssentials.dll ≥ 3.0
 - Lists any exceptions from system startup
 
 ### Debug Console
+
 - Real-time log messages from your system
 - The most powerful feature for troubleshooting
 
 ### Config File
+
 - Shows the complete merged configuration
 - Displays the JSON structure of your system setup
 
 ### Devices
+
 - Lists all configured devices in your system
 - Allows inspection of device properties and methods
 
 ### Types
+
 - Shows all supported device types
 - Useful for understanding what devices can be configured
 
 ### Routing
-- Visual diagram of signal routing between devices and tie lines
-- Color-coded by signal type
+
+- Visual diagram of signal routing between devices and tie lines, color-coded by signal type
+- Click a tie line, device, or multiview tile to trace and highlight its full signal path
+- Shows live current-source feedback on systems running PepperDashEssentials.dll 3.0+
 
 ### Mobile Control
+
 - Management interface for connected mobile control clients
 
 **Try this**: Click through each navigation item to see the different sections.
@@ -152,12 +163,12 @@ Let’s learn to filter messages:
    - Click **Clear Filters** to reset the device selections and search text
    - Filter selections are saved in memory — navigating to another page and returning preserves them
 
-3. **Filter by log level**
+4. **Filter by log level**
    - Click the "Log Level" dropdown
    - Try selecting only "Error" and "Warning" to see problems
    - This helps focus on issues that need attention
 
-4. **Clear filters**
+5. **Clear filters**
    - Click the "Clear" button to remove all filters
    - All messages will be visible again
 
@@ -201,16 +212,19 @@ Now that you understand the basics, you can:
 ## Troubleshooting
 
 **Can't access the web app?**
+
 - Verify the processor IP address
 - Check network connectivity
 - Ensure the processor is powered on and running
 
 **No debug messages appearing?**
+
 - Verify the debug session started successfully
 - Check if your system is generating activity
 - Try reloading the page and starting a new session
 
 **Browser security warnings?**
+
 - This is normal for internal devices with self-signed certificates
 - Safe to proceed on your internal network
 - Don't ignore these warnings on public networks

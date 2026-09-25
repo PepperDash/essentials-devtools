@@ -10,9 +10,14 @@ export const FilterSearchText = ({
 }: FilterSearchTextProps) => {
   /* HOOKS ***********************************************************/
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const PARAM = "searchText";
+  const PARAM = 'searchText';
   const [searchParams, setSearchParams] = useSearchParams();
-  const [searchText, setSearchText] = useState<string>(controlledValue ?? "");
+  // The value from outside: the prop in controlled mode, otherwise the URL params
+  const externalText = onChangeValue
+    ? (controlledValue ?? '')
+    : searchParams.getAll(PARAM).join(' ');
+  const [searchText, setSearchText] = useState<string>(externalText);
+  const [syncedText, setSyncedText] = useState(externalText);
 
   /* FUNCTIONS *******************************************************/
   /** Handles search text change, after 1s debounce */
@@ -45,15 +50,12 @@ export const FilterSearchText = ({
     };
   }, []);
 
-  /** In URL-params mode, sync local state from params. In controlled mode, sync from prop. **/
-  useEffect(() => {
-    if (onChangeValue) {
-      setSearchText(controlledValue ?? "");
-    } else {
-      setSearchText(searchParams.getAll(PARAM).join(" "));
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [controlledValue, searchParams]);
+  /** Replace the draft whenever the outside value changes. Done during render rather than in an
+   *  effect, so the input never paints the stale value first. **/
+  if (externalText !== syncedText) {
+    setSyncedText(externalText);
+    setSearchText(externalText);
+  }
 
   /* RENDER **********************************************************/
   return (
@@ -85,5 +87,4 @@ type FilterSearchTextUncontrolledProps = FilterSearchTextBaseProps & {
 };
 
 type FilterSearchTextProps =
-  | FilterSearchTextControlledProps
-  | FilterSearchTextUncontrolledProps;
+  FilterSearchTextControlledProps | FilterSearchTextUncontrolledProps;
