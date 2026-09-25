@@ -134,6 +134,29 @@ describe("sink routing", () => {
     expect(within(optionButton(/av-1/)).queryByText(/only/)).not.toBeInTheDocument();
   });
 
+  // A partial match is offerable, not blocked: the request goes out as the selected AudioVideo and
+  // the processor routes whichever half has a path. Narrowing it to "Video" here would silently
+  // change what the user asked for.
+  it("submits a partial-match candidate with the selected signal type, unnarrowed", () => {
+    const { onSubmit } = renderPopover({
+      getCandidateSources: () => [candidate("cam-1", ["Video"])],
+    });
+    fireEvent.click(optionButton(/cam-1/));
+
+    expect(onSubmit).toHaveBeenCalledWith({
+      command: "sinkRoute",
+      deviceKey: "display-1",
+      inputPortKey: "hdmiIn1",
+      sourceDeviceKey: "cam-1",
+      signalType: "AudioVideo",
+    });
+  });
+
+  it("does not disable a partial-match candidate", () => {
+    renderPopover({ getCandidateSources: () => [candidate("cam-1", ["Video"])] });
+    expect(optionButton(/cam-1/)).not.toBeDisabled();
+  });
+
   it("does not badge anything once the request is narrowed to one atom", () => {
     renderPopover({ getCandidateSources: () => [candidate("cam-1", ["Video"])] });
     fireEvent.click(optionButton("Video"));

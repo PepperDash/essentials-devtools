@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { RoutingDevice, RoutingDevicesAndTieLines, TieLine } from "../../store/apiSlice";
 import {
   buildRouteIndex,
+  describeNoCandidates,
   findCandidateSources,
   findReachableUpstreamDevices,
   isMidpoint,
@@ -427,5 +428,46 @@ describe("findReachableUpstreamDevices", () => {
       "mic",
     ]);
     expect(findReachableUpstreamDevices(index, "display", "hdmi1", "Usb").size).toBe(0);
+  });
+});
+
+// ─── Empty-state diagnosis ───────────────────────────────────────────────────
+
+describe("describeNoCandidates", () => {
+  const index = buildRouteIndex(
+    system(
+      [
+        device("cam", "source", { out: ["out1"] }),
+        device("display", "sink", { in: ["hdmi1", "hdmi2"] }),
+      ],
+      [tie("cam", "out1", "display", "hdmi1", "Video")],
+    ),
+  );
+
+  it("reports an unwired port as a configuration gap", () => {
+    expect(describeNoCandidates(index, "display", "hdmi2", "AudioVideo")).toMatch(
+      /Nothing is wired to this input/,
+    );
+  });
+
+  it("reports a wired port carrying a disjoint type, naming what it does carry", () => {
+    const message = describeNoCandidates(index, "display", "hdmi1", "Audio");
+    expect(message).toMatch(/wired for Video/);
+    expect(message).toMatch(/carries no part of Audio/);
+  });
+
+  // A candidate qualifies on ANY matching atom, so a Video tie line still answers an AudioVideo
+  // request - badged "video only". Only a genuinely disjoint request empties the list, which is
+  // what the wording above has to reflect.
+  it("does not claim a narrower overlap is empty, because it is not", () => {
+    expect(findCandidateSources(index, "display", "hdmi1", "AudioVideo")).toHaveLength(1);
+    expect(findCandidateSources(index, "display", "hdmi1", "Video")).toHaveLength(1);
+  });
+
+  // The two cases are exhaustive: a tie line sharing any atom with the request always contributes
+  // at least its own source, so the list could not have been empty.
+  it("only ever explains a genuinely empty list", () => {
+    expect(findCandidateSources(index, "display", "hdmi1", "Audio")).toHaveLength(0);
+    expect(findCandidateSources(index, "display", "hdmi2", "Video")).toHaveLength(0);
   });
 });

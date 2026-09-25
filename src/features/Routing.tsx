@@ -46,6 +46,7 @@ import MultiviewLayoutPanel, {
   MultiviewLayoutPanelPosition,
 } from './MultiviewLayoutPanel';
 import styles from './Routing.module.scss';
+import { resolveCurrentSource } from './routing/currentSource';
 import {
   agePendingRoutes,
   isExpectationMet,
@@ -55,6 +56,7 @@ import {
 } from './routing/pendingRoutes';
 import {
   buildRouteIndex,
+  describeNoCandidates,
   isMidpoint,
   isRouteDestination,
 } from './routing/routeGraph';
@@ -882,17 +884,36 @@ const Routing = () => {
   const routeEditCurrent = useMemo(() => {
     if (!routeEdit) return null;
     const { target } = routeEdit;
-    if (target.kind === 'sinkInput') {
-      const route = sinkRoutes[target.deviceKey]?.find(
-        (r: SinkRoute) => r.inputPortKey === target.port.key
+
+    if (target.kind === 'midpointOutput') {
+      const route = midpointRoutes[target.deviceKey]?.find(
+        (r: MidpointRoute) => r.outputPortKey === target.port.key
       );
-      return { sourceDeviceKey: route?.sourceDeviceKey ?? null };
+      return { inputPortKey: route?.inputPortKey ?? null };
     }
-    const route = midpointRoutes[target.deviceKey]?.find(
-      (r: MidpointRoute) => r.outputPortKey === target.port.key
+
+    // Trace the live midpoint state rather than trusting the sink's own current-source
+    // bookkeeping, which the processor only updates on a graph-level route - switching a midpoint
+    // directly leaves it stale. Fall back to that bookkeeping only when the trace cannot answer,
+    // which is the dynamically-routed case where it is the sole source of truth.
+    const traced = routeIndex
+      ? resolveCurrentSource(
+          routeIndex,
+          midpointRoutes,
+          target.deviceKey,
+          target.port.key
+        )
+      : ({ status: 'unknown' } as const);
+
+    if (traced.status === 'resolved')
+      return { sourceDeviceKey: traced.sourceDeviceKey };
+    if (traced.status === 'cleared') return { sourceDeviceKey: null };
+
+    const route = sinkRoutes[target.deviceKey]?.find(
+      (r: SinkRoute) => r.inputPortKey === target.port.key
     );
-    return { inputPortKey: route?.inputPortKey ?? null };
-  }, [routeEdit, sinkRoutes, midpointRoutes]);
+    return { sourceDeviceKey: route?.sourceDeviceKey ?? null };
+  }, [routeEdit, sinkRoutes, midpointRoutes, routeIndex]);
 
   const getCandidatesForOpenPopover = useCallback(
     (signalType: string) =>
@@ -904,6 +925,19 @@ const Routing = () => {
           )
         : [],
     [routeEdit, getCandidates]
+  );
+
+  const describeEmptySources = useCallback(
+    (signalType: string) =>
+      routeIndex && routeEdit
+        ? describeNoCandidates(
+            routeIndex,
+            routeEdit.target.deviceKey,
+            routeEdit.target.port.key,
+            signalType
+          )
+        : '',
+    [routeIndex, routeEdit]
   );
 
   // Re-run dagre layout only when the source data or filters change.
@@ -1522,6 +1556,7 @@ const Routing = () => {
             darkMode={darkMode}
             current={routeEditCurrent}
             getCandidateSources={getCandidatesForOpenPopover}
+            describeEmptySources={describeEmptySources}
             isSubmitting={isSendingCommand}
             errorMessage={commandError}
             onSubmit={handleSubmitRouteCommand}
