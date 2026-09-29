@@ -71,7 +71,7 @@ const LoginForm = () => {
       return;
     }
 
-    dispatch(authActions.loginSuccess(availableApps));
+    dispatch(authActions.loginSuccess({ availableApps, credentials: { username, password } }));
 
     const destination = from ?? `/${availableApps[0] ?? probeAppId}/versions`;
     navigate(destination, { replace: true });

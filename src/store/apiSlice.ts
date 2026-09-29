@@ -205,6 +205,20 @@ const apiSlice = createApi({
       }),
     }),
 
+    getConsoleSession: builder.mutation<DebugSession, { appId: string }>({
+      query: ({ appId }) => ({
+        url: `/${appId}/api/consoleSession`,
+        method: "GET",
+      }),
+    }),
+
+    stopConsoleSession: builder.mutation<void, { appId: string }>({
+      query: ({ appId }) => ({
+        url: `/${appId}/api/consoleSession`,
+        method: "POST",
+      }),
+    }),
+
     getDoNotLoadConfigOnNextBoot: builder.query<
       { doNotLoadConfigOnNextBoot: boolean },
       { appId: string }
@@ -294,6 +308,8 @@ export const {
   useGetMobileControlActionPathsQuery,
   useGetDebugSessionMutation,
   useStopDebugSessionMutation,
+  useGetConsoleSessionMutation,
+  useStopConsoleSessionMutation,
   useGetDoNotLoadConfigOnNextBootQuery,
   useSetDoNotLoadConfigOnNextBootMutation,
   useSetRestartMutation,

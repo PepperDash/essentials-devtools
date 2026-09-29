@@ -12,3 +12,8 @@ export const selectAvailableApps = createSelector(
   selectAuth,
   (auth) => auth.availableApps
 );
+
+export const selectCredentials = createSelector(
+  selectAuth,
+  (auth) => auth.credentials
+);
