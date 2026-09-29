@@ -121,6 +121,9 @@ const TopNav = ({ isConnected }: { isConnected: boolean }) => {
           <AppNavLink appId={params.appId} path="sshConsole">
             SSH Console
           </AppNavLink>
+          <AppNavLink appId={params.appId} path="sigScope">
+            SigScope
+          </AppNavLink>
           <AppNavLink appId={params.appId} path="config">
             Config File
           </AppNavLink>

@@ -12,6 +12,7 @@ import MainLayout from "./features/MainLayout";
 import MobileControl from './features/MobileControl';
 import RequireAuth from "./features/RequireAuth";
 import Routing from './features/Routing';
+import SigScope from "./features/SigScope/SigScope";
 import SshConsole from "./features/SshConsole/SshConsole";
 import Types from "./features/Types";
 import Versions from "./features/Versions";
@@ -69,6 +70,7 @@ function App() {
             <Route path="routing" element={<Routing />} />
             <Route path="mobileControl" element={<MobileControl />} />
             <Route path="sshConsole" element={<SshConsole />} />
+            <Route path="sigScope" element={<SigScope />} />
             <Route
               path="console"
               element={
