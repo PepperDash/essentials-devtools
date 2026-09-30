@@ -1,5 +1,5 @@
 import { fireEvent, render, screen, within } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import Help from './Help';
 
@@ -72,5 +72,32 @@ describe('Help', () => {
     expect(
       screen.getByRole('link', { name: /back to help/i })
     ).toBeInTheDocument();
+  });
+
+  describe('heading fragments', () => {
+    const original = Element.prototype.scrollIntoView;
+    afterEach(() => {
+      Element.prototype.scrollIntoView = original;
+    });
+
+    it('gives headings GitHub-style ids and scrolls to the one a fragment link names', async () => {
+      const scrolled: string[] = [];
+      Element.prototype.scrollIntoView = vi.fn(function (this: Element) {
+        scrolled.push(this.id);
+      });
+
+      renderHelp('/help/how-to/trace-signal-routes');
+      fireEvent.click(
+        screen.getByRole('link', {
+          name: 'UI Components Reference — Routing Diagram',
+        })
+      );
+
+      const heading = await screen.findByRole('heading', {
+        name: 'Routing Diagram',
+      });
+      expect(heading).toHaveAttribute('id', 'routing-diagram');
+      expect(scrolled).toContain('routing-diagram');
+    });
   });
 });

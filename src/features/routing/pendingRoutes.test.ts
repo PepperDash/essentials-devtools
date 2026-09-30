@@ -35,6 +35,7 @@ describe('pendingFromCommand', () => {
       kind: 'sinkInput',
       expectedSourceDeviceKey: 'laptop-1',
       expectedInputPortKey: null,
+      signalType: 'AudioVideo',
       startedAt: NOW,
     });
   });
@@ -51,6 +52,7 @@ describe('pendingFromCommand', () => {
       kind: 'midpointOutput',
       expectedSourceDeviceKey: null,
       expectedInputPortKey: 'inputCard3',
+      signalType: 'Video',
       startedAt: NOW,
     });
   });
@@ -312,5 +314,110 @@ describe('agePendingRoutes', () => {
     );
     expect(result.fresh.timedOut).toBeUndefined();
     expect(result.stale.timedOut).toBe(true);
+  });
+});
+
+describe('isExpectationMet - signal types', () => {
+  it('does not confirm a Video sink route from an existing Audio route from the same source', () => {
+    const pending = pendingFromCommand(
+      sinkRouteCommand('display-1', 'hdmiIn1', 'laptop-1', 'Video'),
+      NOW
+    )!;
+    const audioOnly = sinks({
+      'display-1': [
+        {
+          inputPortKey: 'hdmiIn1',
+          sourceDeviceKey: 'laptop-1',
+          signalType: 'Audio',
+        },
+      ],
+    });
+    const video = sinks({
+      'display-1': [
+        {
+          inputPortKey: 'hdmiIn1',
+          sourceDeviceKey: 'laptop-1',
+          signalType: 'Video',
+        },
+      ],
+    });
+    expect(isExpectationMet(audioOnly, midpoints({}), pending)).toBe(false);
+    expect(isExpectationMet(video, midpoints({}), pending)).toBe(true);
+  });
+
+  it('does not confirm a Video midpoint switch from an existing Audio route on that input', () => {
+    const pending = pendingFromCommand(
+      midpointSwitchCommand('dm-1', 'inputCard3', 'outputCard5', 'Video'),
+      NOW
+    )!;
+    const state = midpoints({
+      'dm-1': [
+        {
+          inputPortKey: 'inputCard3',
+          outputPortKey: 'outputCard5',
+          signalType: 'Audio',
+        },
+      ],
+    });
+    expect(isExpectationMet(sinks({}), state, pending)).toBe(false);
+  });
+
+  it('confirms an AudioVideo midpoint switch only once both signals report the input', () => {
+    const pending = pendingFromCommand(
+      midpointSwitchCommand('dm-1', 'inputCard3', 'outputCard5', 'AudioVideo'),
+      NOW
+    )!;
+    const videoOnly = midpoints({
+      'dm-1': [
+        {
+          inputPortKey: 'inputCard3',
+          outputPortKey: 'outputCard5',
+          signalType: 'Video',
+        },
+      ],
+    });
+    const both = midpoints({
+      'dm-1': [
+        {
+          inputPortKey: 'inputCard3',
+          outputPortKey: 'outputCard5',
+          signalType: 'Video',
+        },
+        {
+          inputPortKey: 'inputCard3',
+          outputPortKey: 'outputCard5',
+          signalType: 'Audio',
+        },
+      ],
+    });
+    expect(isExpectationMet(sinks({}), videoOnly, pending)).toBe(false);
+    expect(isExpectationMet(sinks({}), both, pending)).toBe(true);
+  });
+
+  it('confirms clearing Video on a midpoint output while an Audio route remains', () => {
+    const pending = pendingFromCommand(
+      clearMidpointOutputCommand('dm-1', 'outputCard5', 'Video'),
+      NOW
+    )!;
+    const audioRemains = midpoints({
+      'dm-1': [
+        {
+          inputPortKey: 'inputCard2',
+          outputPortKey: 'outputCard5',
+          signalType: 'Audio',
+        },
+      ],
+    });
+    const videoRemains = midpoints({
+      'dm-1': [
+        {
+          inputPortKey: 'inputCard2',
+          outputPortKey: 'outputCard5',
+          signalType: 'Video',
+        },
+      ],
+    });
+    expect(isExpectationMet(sinks({}), audioRemains, pending)).toBe(true);
+    expect(isExpectationMet(sinks({}), videoRemains, pending)).toBe(false);
   });
 });

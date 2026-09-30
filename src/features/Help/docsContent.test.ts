@@ -40,6 +40,16 @@ describe('docsContent', () => {
     ).toBe('/help/tutorials/getting-started');
   });
 
+  it('resolves links on a category index page against that category folder', () => {
+    // docs/tutorials/README.md is indexed under the slug "tutorials", but lives in tutorials/
+    expect(resolveRelativeLink('tutorials', './getting-started.md')).toBe(
+      '/help/tutorials/getting-started'
+    );
+    expect(
+      resolveRelativeLink('how-to', '../tutorials/getting-started.md')
+    ).toBe('/help/tutorials/getting-started');
+  });
+
   it('resolves a parent-directory folder link to a category index', () => {
     expect(
       resolveRelativeLink('tutorials/debug-console-basics', '../how-to/')

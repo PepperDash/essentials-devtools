@@ -1,6 +1,8 @@
-import { Link } from 'react-router-dom';
+import { useEffect } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
 import type { Components } from 'react-markdown';
+import rehypeSlug from 'rehype-slug';
 import remarkGfm from 'remark-gfm';
 import { DocEntry, resolveRelativeLink } from './docsContent';
 
@@ -32,6 +34,17 @@ const DocLink = ({
 };
 
 const HelpArticle = ({ doc }: { doc: DocEntry }) => {
+  const { hash } = useLocation();
+
+  // React Router changes the URL for "page.md#section" links but never scrolls, so jump to the
+  // heading ourselves once the article has rendered. rehype-slug gives headings the same ids
+  // GitHub does, which is what the docs' fragment links are written against.
+  useEffect(() => {
+    if (!hash) return;
+    const target = document.getElementById(decodeURIComponent(hash.slice(1)));
+    target?.scrollIntoView?.();
+  }, [hash, doc.slug]);
+
   const components: Components = {
     a: ({ href, children }) => (
       <DocLink currentSlug={doc.slug} href={href}>
@@ -44,7 +57,11 @@ const HelpArticle = ({ doc }: { doc: DocEntry }) => {
   };
 
   return (
-    <ReactMarkdown remarkPlugins={[remarkGfm]} components={components}>
+    <ReactMarkdown
+      remarkPlugins={[remarkGfm]}
+      rehypePlugins={[rehypeSlug]}
+      components={components}
+    >
       {doc.content}
     </ReactMarkdown>
   );

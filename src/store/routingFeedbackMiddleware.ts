@@ -23,6 +23,9 @@ export const routingFeedbackMiddleware: Middleware = (store) => {
   let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
   let reconnectAttempts = 0;
   let currentUrl: string | null = null;
+  // The URL the session asked for first. Reconnects start from here, not from whichever URL was
+  // last in use, so every retry still gets to fall back.
+  let primaryUrl: string | null = null;
   let fallbackUrl: string | null = null;
   let attemptedUrls: string[] = [];
 
@@ -41,6 +44,7 @@ export const routingFeedbackMiddleware: Middleware = (store) => {
     }
     reconnectAttempts = 0;
     currentUrl = null;
+    primaryUrl = null;
     fallbackUrl = null;
     attemptedUrls = [];
   }
@@ -57,7 +61,22 @@ export const routingFeedbackMiddleware: Middleware = (store) => {
 
     currentUrl = url;
     if (!attemptedUrls.includes(url)) attemptedUrls.push(url);
-    const ws = new WebSocket(url);
+
+    let ws: WebSocket;
+    try {
+      ws = new WebSocket(url);
+    } catch (err) {
+      // An unparseable URL throws synchronously instead of firing onerror. Retrying the same URL
+      // would throw again, so try the fallback if there is one, and otherwise report the failure.
+      console.error('[routing-ws] Invalid WebSocket URL', url, err);
+      if (fallback) {
+        connectToUrl(fallback);
+      } else {
+        store.dispatch(routingWsDisconnected());
+        store.dispatch(routingWsConnectionFailed([...attemptedUrls]));
+      }
+      return;
+    }
     socket = ws;
 
     // Every handler checks it still owns `socket`, so a callback already queued
@@ -126,7 +145,14 @@ export const routingFeedbackMiddleware: Middleware = (store) => {
       clearTimeout(reconnectTimer);
     }
     reconnectTimer = setTimeout(() => {
-      if (currentUrl) connectToUrl(currentUrl);
+      // Restart from the primary with its fallback, so an endpoint that went away since the last
+      // connection doesn't use up every retry while the other one is reachable.
+      const url = primaryUrl ?? currentUrl;
+      if (!url) return;
+      connectToUrl(
+        url,
+        fallbackUrl && fallbackUrl !== url ? fallbackUrl : undefined
+      );
     }, RECONNECT_DELAY_MS);
   }
 
@@ -138,6 +164,7 @@ export const routingFeedbackMiddleware: Middleware = (store) => {
       const { url, fallbackUrl: fb } = (action as RoutingWsConnectAction)
         .payload;
       cleanup();
+      primaryUrl = url;
       fallbackUrl = fb ?? null;
       connectToUrl(url, fallbackUrl ?? undefined);
       return;

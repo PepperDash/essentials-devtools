@@ -48,6 +48,11 @@ import MultiviewLayoutPanel, {
 import styles from './Routing.module.scss';
 import { resolveCurrentSource } from './routing/currentSource';
 import {
+  atomsOf,
+  flagsContainAll,
+  parseSignalFlags,
+} from './routing/signalTypes';
+import {
   agePendingRoutes,
   isExpectationMet,
   pendingFromCommand,
@@ -901,40 +906,63 @@ const Routing = () => {
     return map;
   }, [pendingByPort]);
 
-  // What is routed to the port the popover is open on, for its check mark.
-  const routeEditCurrent = useMemo(() => {
-    if (!routeEdit) return null;
-    const { target } = routeEdit;
+  // What is routed to the port the popover is open on, for its check mark - per signal type, so a
+  // breakaway output (Audio and Video from different inputs) marks the source that signal uses.
+  const getRouteEditCurrent = useCallback(
+    (signalType: string) => {
+      if (!routeEdit) return null;
+      const { target } = routeEdit;
 
-    if (target.kind === 'midpointOutput') {
-      const route = midpointRoutes[target.deviceKey]?.find(
-        (r: MidpointRoute) => r.outputPortKey === target.port.key
+      if (target.kind === 'midpointOutput') {
+        // Every atom of the selected type must come from the same input for it to be "current".
+        const inputs = atomsOf(signalType).map(
+          (atom) =>
+            midpointRoutes[target.deviceKey]?.find(
+              (r: MidpointRoute) =>
+                r.outputPortKey === target.port.key &&
+                (!r.signalType ||
+                  flagsContainAll(
+                    parseSignalFlags(r.signalType),
+                    new Set([atom])
+                  ))
+            )?.inputPortKey ?? null
+        );
+        const agreed = inputs.every((key) => key === inputs[0]);
+        return { inputPortKey: agreed ? (inputs[0] ?? null) : null };
+      }
+
+      // Trace the live midpoint state rather than trusting the sink's own current-source
+      // bookkeeping, which the processor only updates on a graph-level route - switching a midpoint
+      // directly leaves it stale. Fall back to that bookkeeping only when the trace cannot answer,
+      // which is the dynamically-routed case where it is the sole source of truth.
+      const traced = routeIndex
+        ? resolveCurrentSource(
+            routeIndex,
+            midpointRoutes,
+            target.deviceKey,
+            target.port.key,
+            signalType
+          )
+        : ({ status: 'unknown' } as const);
+
+      if (traced.status === 'resolved')
+        return { sourceDeviceKey: traced.sourceDeviceKey };
+      if (traced.status === 'cleared' || traced.status === 'split')
+        return { sourceDeviceKey: null };
+
+      const route = sinkRoutes[target.deviceKey]?.find(
+        (r: SinkRoute) =>
+          r.inputPortKey === target.port.key &&
+          (!r.signalType ||
+            flagsContainAll(
+              parseSignalFlags(r.signalType),
+              parseSignalFlags(signalType)
+            ))
       );
-      return { inputPortKey: route?.inputPortKey ?? null };
-    }
-
-    // Trace the live midpoint state rather than trusting the sink's own current-source
-    // bookkeeping, which the processor only updates on a graph-level route - switching a midpoint
-    // directly leaves it stale. Fall back to that bookkeeping only when the trace cannot answer,
-    // which is the dynamically-routed case where it is the sole source of truth.
-    const traced = routeIndex
-      ? resolveCurrentSource(
-          routeIndex,
-          midpointRoutes,
-          target.deviceKey,
-          target.port.key
-        )
-      : ({ status: 'unknown' } as const);
-
-    if (traced.status === 'resolved')
-      return { sourceDeviceKey: traced.sourceDeviceKey };
-    if (traced.status === 'cleared') return { sourceDeviceKey: null };
-
-    const route = sinkRoutes[target.deviceKey]?.find(
-      (r: SinkRoute) => r.inputPortKey === target.port.key
-    );
-    return { sourceDeviceKey: route?.sourceDeviceKey ?? null };
-  }, [routeEdit, sinkRoutes, midpointRoutes, routeIndex]);
+      return { sourceDeviceKey: route?.sourceDeviceKey ?? null };
+    },
+    [routeEdit, sinkRoutes, midpointRoutes, routeIndex]
+  );
 
   const getCandidatesForOpenPopover = useCallback(
     (signalType: string) =>
@@ -1571,7 +1599,7 @@ const Routing = () => {
             target={routeEdit.target}
             anchorRect={routeEdit.anchorRect}
             darkMode={darkMode}
-            current={routeEditCurrent}
+            getCurrent={getRouteEditCurrent}
             getCandidateSources={getCandidatesForOpenPopover}
             describeEmptySources={describeEmptySources}
             isSubmitting={isSendingCommand}

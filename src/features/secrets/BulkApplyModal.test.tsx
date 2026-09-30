@@ -125,3 +125,33 @@ describe('unmanaged targets', () => {
     );
   });
 });
+
+describe('invalid entries in the file', () => {
+  it('refuses to apply the valid entries while the file checker rejected another', async () => {
+    const onRun = vi.fn(fakeProcessor([]));
+    renderModal(onRun);
+
+    // A blank value is rejected by the file checker, so only "b" reaches the processor preview.
+    await chooseFile({ secrets: { a: '', b: '2' } });
+
+    const apply = await screen.findByRole('button', {
+      name: /^Apply 1 secret$/,
+    });
+    expect(apply).toBeDisabled();
+    expect(
+      screen.getByText(/Nothing will be written while any entry is invalid/)
+    ).toBeInTheDocument();
+    expect(onRun).toHaveBeenCalledTimes(1);
+    expect(onRun.mock.calls[0][1].mode).toBe('preview');
+  });
+
+  it('allows applying a file whose entries are all valid', async () => {
+    renderModal(vi.fn(fakeProcessor([])));
+
+    await chooseFile({ secrets: { a: '1', b: '2' } });
+
+    expect(
+      await screen.findByRole('button', { name: /^Apply 2 secrets$/ })
+    ).toBeEnabled();
+  });
+});

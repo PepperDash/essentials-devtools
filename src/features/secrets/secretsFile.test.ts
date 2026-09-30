@@ -415,3 +415,22 @@ describe('summarizeSecretsFile', () => {
     });
   });
 });
+
+describe('rejected count', () => {
+  it('counts every entry left out of the batch, so the caller can refuse a partial apply', () => {
+    const result = parse(
+      json([
+        { key: 'a', value: '1' },
+        { key: 'b', value: '' },
+        { key: 'a', value: '2' },
+      ])
+    );
+    expect(result.ok && result.entries.map((e) => e.key)).toEqual(['a']);
+    expect(result.ok && result.rejected).toBe(2);
+  });
+
+  it('is zero for a file whose entries are all valid', () => {
+    const result = parse(json({ secrets: { a: '1', b: '2' } }));
+    expect(result.ok && result.rejected).toBe(0);
+  });
+});

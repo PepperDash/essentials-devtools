@@ -21,6 +21,7 @@
 
 import { MidpointRoute } from '../../store/apiSlice';
 import { portId, RouteIndex } from './routeGraph';
+import { atomsOf, flagsContainAll, parseSignalFlags } from './signalTypes';
 
 export type CurrentSourceResolution =
   /** Traced all the way to an originating device. */
@@ -28,17 +29,68 @@ export type CurrentSourceResolution =
   /** Traced to a midpoint that has no active route on the feeding output - nothing is getting through. */
   | { status: 'cleared' }
   /** The walk ran out of information; the caller should fall back to the sink's own bookkeeping. */
-  | { status: 'unknown' };
+  | { status: 'unknown' }
+  /**
+   * A composite signal type (e.g. AudioVideo) whose atoms trace to different places - a breakaway,
+   * such as Audio and Video switched from different inputs. No single source is "current".
+   */
+  | { status: 'split' };
+
+/** True when a wire or route reporting `have` carries `atom`. An unreported type is not a veto. */
+function carries(have: string | null | undefined, atom: string): boolean {
+  if (!have) return true;
+  return flagsContainAll(parseSignalFlags(have), new Set([atom]));
+}
 
 /**
  * Traces backwards from a destination port to whatever is feeding it, following live midpoint
  * routes.
+ *
+ * With a `signalType`, only tie lines and midpoint routes carrying that signal are followed, so a
+ * breakaway output (Audio and Video switched from different inputs) resolves per signal. A
+ * composite type is resolved atom by atom: if every atom agrees the answer is theirs, otherwise it
+ * is `split`. Without one, the first route on each output is followed regardless of type.
  */
 export function resolveCurrentSource(
   index: RouteIndex,
   midpointRoutes: Record<string, MidpointRoute[]>,
   destDeviceKey: string,
-  destPortKey: string
+  destPortKey: string,
+  signalType?: string
+): CurrentSourceResolution {
+  const atoms = signalType ? atomsOf(signalType) : [];
+  if (atoms.length <= 1) {
+    return traceAtom(
+      index,
+      midpointRoutes,
+      destDeviceKey,
+      destPortKey,
+      atoms[0]
+    );
+  }
+
+  const results = atoms.map((atom) =>
+    traceAtom(index, midpointRoutes, destDeviceKey, destPortKey, atom)
+  );
+  // Any atom the walk could not answer makes the whole answer unknowable.
+  if (results.some((r) => r.status === 'unknown')) return { status: 'unknown' };
+
+  const [first, ...rest] = results;
+  const agrees = rest.every((r) =>
+    r.status === 'resolved' && first.status === 'resolved'
+      ? r.sourceDeviceKey === first.sourceDeviceKey
+      : r.status === first.status
+  );
+  return agrees ? first : { status: 'split' };
+}
+
+/** Walks one signal atom back to its origin. `atom` undefined means "any signal". */
+function traceAtom(
+  index: RouteIndex,
+  midpointRoutes: Record<string, MidpointRoute[]>,
+  destDeviceKey: string,
+  destPortKey: string,
+  atom: string | undefined
 ): CurrentSourceResolution {
   const visited = new Set<string>();
   let deviceKey = destDeviceKey;
@@ -50,9 +102,12 @@ export function resolveCurrentSource(
     if (visited.has(id)) return { status: 'unknown' };
     visited.add(id);
 
-    const incoming = index.byDestPort.get(id);
-    // No tie line to follow - e.g. a dynamically routed system with no static wiring.
-    if (!incoming || incoming.length === 0) return { status: 'unknown' };
+    const incoming = (index.byDestPort.get(id) ?? []).filter(
+      (edge) => atom === undefined || carries(edge.tieLine.signalType, atom)
+    );
+    // No tie line to follow - e.g. a dynamically routed system with no static wiring, or no wire
+    // into this port carries the requested signal.
+    if (incoming.length === 0) return { status: 'unknown' };
 
     // A physical input port is fed by one wire; if a config models more, the first is as good a
     // guess as any and the alternative is inventing a tie-break the hardware does not have.
@@ -68,7 +123,11 @@ export function resolveCurrentSource(
     // The device publishes no route feedback at all, so its crossbar state is unknowable.
     if (!routes) return { status: 'unknown' };
 
-    const active = routes.find((r) => r.outputPortKey === sourcePortKey);
+    const active = routes.find(
+      (r) =>
+        r.outputPortKey === sourcePortKey &&
+        (atom === undefined || carries(r.signalType, atom))
+    );
     // It does publish feedback, and reports nothing on this output - a real "nothing is routed".
     if (!active) return { status: 'cleared' };
 

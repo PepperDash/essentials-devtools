@@ -240,3 +240,62 @@ describe('resolveCurrentSource', () => {
     ).toEqual({ status: 'resolved', sourceDeviceKey: 'cam-1' });
   });
 });
+
+describe('resolveCurrentSource - breakaway', () => {
+  const split: MidpointRoute[] = [
+    { inputPortKey: 'in1', outputPortKey: 'out1', signalType: 'Video' },
+    { inputPortKey: 'in2', outputPortKey: 'out1', signalType: 'Audio' },
+  ];
+
+  it('follows only the route carrying the requested signal', () => {
+    expect(
+      resolveCurrentSource(SIMPLE, { mtx: split }, 'display', 'hdmi1', 'Video')
+    ).toEqual({ status: 'resolved', sourceDeviceKey: 'laptop' });
+    expect(
+      resolveCurrentSource(SIMPLE, { mtx: split }, 'display', 'hdmi1', 'Audio')
+    ).toEqual({ status: 'resolved', sourceDeviceKey: 'bluray' });
+  });
+
+  it('reports split for a composite type whose signals come from different sources', () => {
+    expect(
+      resolveCurrentSource(
+        SIMPLE,
+        { mtx: split },
+        'display',
+        'hdmi1',
+        'AudioVideo'
+      )
+    ).toEqual({ status: 'split' });
+  });
+
+  it('resolves a composite type when every signal agrees', () => {
+    const together: MidpointRoute[] = [
+      { inputPortKey: 'in1', outputPortKey: 'out1', signalType: 'Video' },
+      { inputPortKey: 'in1', outputPortKey: 'out1', signalType: 'Audio' },
+    ];
+    expect(
+      resolveCurrentSource(
+        SIMPLE,
+        { mtx: together },
+        'display',
+        'hdmi1',
+        'AudioVideo'
+      )
+    ).toEqual({ status: 'resolved', sourceDeviceKey: 'laptop' });
+  });
+
+  it('reports cleared for a signal with no route on the output', () => {
+    const videoOnly: MidpointRoute[] = [
+      { inputPortKey: 'in1', outputPortKey: 'out1', signalType: 'Video' },
+    ];
+    expect(
+      resolveCurrentSource(
+        SIMPLE,
+        { mtx: videoOnly },
+        'display',
+        'hdmi1',
+        'Audio'
+      )
+    ).toEqual({ status: 'cleared' });
+  });
+});

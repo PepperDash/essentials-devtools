@@ -11,7 +11,7 @@ Route editing requires a processor whose Essentials version exposes the routing 
 - **If editing is available**, port names become clickable buttons that highlight blue on hover.
 - **If it isn't**, the diagram looks and behaves exactly as it always has — read-only, no clickable ports. There's no error and nothing to turn on; the processor simply doesn't support it.
 
-Check the **Live** badge in the toolbar before making changes. If it shows "Offline", commands may still execute, but the diagram can't confirm them and every change will show a timeout warning. See [Trace Signal Routes](./trace-signal-routes.md#troubleshooting-live-feedback) for fixing the feedback connection.
+Check the **Live** badge in the toolbar before making changes. If it shows "Offline", commands may still execute, but the diagram can't confirm them and every change will show a timeout warning. See [Trace Signal Routes](./trace-signal-routes.md#troubleshooting-the-live-feedback-connection) for fixing the feedback connection.
 
 ## Quick Actions
 

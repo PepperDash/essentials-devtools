@@ -112,7 +112,7 @@ A plain array also works, if you want per-entry descriptions or providers:
 
 **Existing secrets are skipped by default.** Turn on _Replace secrets that already exist_ to overwrite them — the preview updates immediately so you can see exactly what changes.
 
-**If any entry is invalid, nothing is written at all.** Fix the file and try again rather than applying a partial batch.
+**If any entry is invalid, nothing is written at all.** That includes entries the file checker rejects before the preview, such as a blank value or a key that appears twice: **Apply** stays disabled until the file has no invalid entries. Fix the file and try again.
 
 **Bulk never deletes.** A key that exists on the processor but is absent from your file is left alone. Applying a file is not a sync.
 

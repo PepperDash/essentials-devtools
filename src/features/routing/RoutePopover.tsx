@@ -49,6 +49,11 @@ export interface RoutePopoverProps {
   darkMode?: boolean;
   /** What is routed to this port right now, for the check mark and the Clear affordance. */
   current?: RoutePopoverCurrent | null;
+  /**
+   * What is routed to this port right now for the selected signal type. Takes precedence over
+   * `current`, so a breakaway output (Audio and Video from different inputs) marks the right row.
+   */
+  getCurrent?: (signalType: string) => RoutePopoverCurrent | null;
   /** Memoized candidate lookup. Only called for the sinkInput flow. */
   getCandidateSources: (signalType: string) => CandidateSource[];
   /** Explains an empty source list for the sinkInput flow - the two causes need different fixes. */
@@ -78,6 +83,7 @@ const RoutePopover = ({
   anchorRect,
   darkMode,
   current,
+  getCurrent,
   getCandidateSources,
   describeEmptySources,
   isSubmitting = false,
@@ -200,10 +206,11 @@ const RoutePopover = ({
         )
       : rows;
 
+  const currentForSignal = getCurrent ? getCurrent(signalType) : current;
   const currentKey =
     target.kind === 'sinkInput'
-      ? current?.sourceDeviceKey
-      : current?.inputPortKey;
+      ? currentForSignal?.sourceDeviceKey
+      : currentForSignal?.inputPortKey;
 
   function handlePick(key: string | null): void {
     if (key === null) {

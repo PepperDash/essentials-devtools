@@ -49,6 +49,9 @@ const BulkApplyModal = ({ provider, onRun, onClose }: BulkApplyModalProps) => {
   const [fileName, setFileName] = useState<string | null>(null);
   const [entries, setEntries] = useState<BulkSecretEntry[]>([]);
   const [warnings, setWarnings] = useState<SecretsFileIssue[]>([]);
+  // Entries the file checker dropped as invalid. The processor never sees them, so its preview
+  // can't report them - this is what keeps a partly-invalid file from being partly written.
+  const [rejectedCount, setRejectedCount] = useState(0);
   const [issues, setIssues] = useState<SecretsFileIssue[]>([]);
   const [response, setResponse] = useState<BulkSecretsResponse | null>(null);
   const [overwrite, setOverwrite] = useState(false);
@@ -77,6 +80,7 @@ const BulkApplyModal = ({ provider, onRun, onClose }: BulkApplyModalProps) => {
   const resetFile = () => {
     setEntries([]);
     setWarnings([]);
+    setRejectedCount(0);
     setIssues([]);
     setResponse(null);
     setFileName(null);
@@ -145,6 +149,7 @@ const BulkApplyModal = ({ provider, onRun, onClose }: BulkApplyModalProps) => {
     setFileName(file.name);
     setEntries(parsed.entries);
     setWarnings(parsed.warnings);
+    setRejectedCount(parsed.rejected);
     await run(parsed.entries, 'preview', overwrite, false);
   };
 
@@ -210,8 +215,8 @@ const BulkApplyModal = ({ provider, onRun, onClose }: BulkApplyModalProps) => {
 
   const applicable =
     (response?.summary.create ?? 0) + (response?.summary.overwrite ?? 0);
-  const blocked =
-    busy || applicable === 0 || (response?.summary.invalid ?? 0) > 0;
+  const hasInvalid = (response?.summary.invalid ?? 0) > 0 || rejectedCount > 0;
+  const blocked = busy || applicable === 0 || hasInvalid;
 
   return (
     <Modal
@@ -337,7 +342,7 @@ const BulkApplyModal = ({ provider, onRun, onClose }: BulkApplyModalProps) => {
               readOnly={stage === 'done'}
             />
 
-            {stage === 'review' && (response.summary.invalid ?? 0) > 0 && (
+            {stage === 'review' && hasInvalid && (
               <div
                 className="alert alert-danger py-2 px-3 small mt-3 mb-0"
                 role="alert"

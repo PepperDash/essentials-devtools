@@ -58,7 +58,19 @@ const MultiviewLayoutCanvas = ({
               ? resolveSourceName(tile.sourceDeviceKey)
               : 'Empty';
 
+            const tileContent = (
+              <>
+                <span className={styles.tileNumberBadge}>
+                  {tile.tileNumber}
+                </span>
+                <span className={styles.tileLabel}>{sourceName}</span>
+              </>
+            );
+
             return (
+              // The tile is only a positioned frame. Selecting it and routing it are two sibling
+              // buttons rather than one inside the other: a nested interactive control is
+              // flattened out of the accessibility tree by some screen readers.
               <div
                 key={tile.tileNumber}
                 className={`${styles.tile}${isEmpty ? ` ${styles.tileEmpty}` : ''}${isSelected ? ` ${styles.tileSelected}` : ''}`}
@@ -70,32 +82,25 @@ const MultiviewLayoutCanvas = ({
                   zIndex: tile.zOrder,
                 }}
                 title={`Tile ${tile.tileNumber}: ${sourceName}`}
-                // Not a <button>: it contains the edit <button>, and buttons can't nest.
-                role={onTileClick ? 'button' : undefined}
-                tabIndex={onTileClick ? 0 : undefined}
-                aria-label={
-                  onTileClick
-                    ? `Tile ${tile.tileNumber}: ${sourceName}`
-                    : undefined
-                }
-                aria-pressed={onTileClick ? isSelected : undefined}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onTileClick?.(tile);
-                }}
-                onKeyDown={(e) => {
-                  // Ignore keys bubbling up from the nested edit button.
-                  if (!onTileClick || e.target !== e.currentTarget) return;
-                  if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    onTileClick(tile);
-                  }
-                }}
+                // Keep clicks on the tile from reaching the diagram node underneath.
+                onClick={(e) => e.stopPropagation()}
               >
-                <span className={styles.tileNumberBadge}>
-                  {tile.tileNumber}
-                </span>
+                {onTileClick ? (
+                  <button
+                    type="button"
+                    className={styles.tileSelect}
+                    aria-label={`Tile ${tile.tileNumber}: ${sourceName}`}
+                    aria-pressed={isSelected}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onTileClick(tile);
+                    }}
+                  >
+                    {tileContent}
+                  </button>
+                ) : (
+                  <div className={styles.tileSelect}>{tileContent}</div>
+                )}
                 {onTileEditClick && (
                   <button
                     type="button"
@@ -124,7 +129,6 @@ const MultiviewLayoutCanvas = ({
                     </svg>
                   </button>
                 )}
-                <span className={styles.tileLabel}>{sourceName}</span>
               </div>
             );
           })}

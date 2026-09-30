@@ -76,6 +76,12 @@ export type ParseSecretsFileResult =
       /** Provider named in the file itself. The downloaded template includes one. */
       provider?: string;
       warnings: SecretsFileIssue[];
+      /**
+       * Entries left out of `entries` because they are invalid (blank value, duplicate key, bad
+       * shape). They are never sent, so the processor's preview cannot flag them; the caller must
+       * refuse to apply while this is non-zero, or it would write the rest of the file.
+       */
+      rejected: number;
       summary: SecretsFileSummary;
     }
   | { ok: false; issues: SecretsFileIssue[] };
@@ -403,12 +409,14 @@ export function parseSecretsFile(input: ParseInput): ParseSecretsFileResult {
   const warnings: SecretsFileIssue[] = [];
   const seen = new Set<string>();
   let blankValues = 0;
+  let rejected = 0;
 
   for (const raw of normalized.entries) {
     const result = validateEntry(raw, normalized.provider);
 
     if ('issue' in result) {
       if (result.issue.code === 'emptyValue') blankValues += 1;
+      rejected += 1;
       warnings.push(result.issue);
       continue;
     }
@@ -416,6 +424,7 @@ export function parseSecretsFile(input: ParseInput): ParseSecretsFileResult {
     const identity = `${result.entry.provider ?? ''}\u0000${result.entry.key}`;
     if (seen.has(identity)) {
       // Last-write-wins is too surprising when the payload is a credential.
+      rejected += 1;
       warnings.push(
         issue('duplicate', `"${result.entry.key}" appears more than once.`, {
           index: raw.index,
@@ -451,6 +460,7 @@ export function parseSecretsFile(input: ParseInput): ParseSecretsFileResult {
     entries,
     provider: normalized.provider,
     warnings,
+    rejected,
     summary: summarizeSecretsFile(entries),
   };
 }

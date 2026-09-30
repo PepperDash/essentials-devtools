@@ -162,9 +162,14 @@ export function resolveRelativeLink(
   const path = hashIndex === -1 ? href : href.slice(0, hashIndex);
   const hash = hashIndex === -1 ? '' : href.slice(hashIndex);
 
-  const currentDir = currentSlug.includes('/')
-    ? currentSlug.slice(0, currentSlug.lastIndexOf('/'))
-    : '';
+  // An index page (a folder's README) lives *in* its folder, so its slug is the directory links
+  // resolve against - "tutorials" plus "./getting-started.md" is "tutorials/getting-started".
+  // Any other page lives in the folder its slug's parent names.
+  const currentDir = docsMap.get(currentSlug)?.isIndex
+    ? currentSlug
+    : currentSlug.includes('/')
+      ? currentSlug.slice(0, currentSlug.lastIndexOf('/'))
+      : '';
 
   const joined = joinRelative(currentDir, path)
     .replace(/\.md$/, '')
