@@ -4,6 +4,7 @@ import {
   combineReducers,
   configureStore,
 } from '@reduxjs/toolkit';
+import { setupListeners } from '@reduxjs/toolkit/query';
 import { oneSliceToRuleThemAll } from './apiSlice';
 import { authReducer } from './auth/authSlice';
 import { commonUiReducer } from './commonUi/commonUiSlice';
@@ -38,6 +39,10 @@ export const store = configureStore({
       .concat(websocketMiddleware)
       .concat(routingFeedbackMiddleware),
 });
+
+// Tracks window focus and connectivity for RTK Query, which is what lets polling queries use
+// skipPollingIfUnfocused. No query sets refetchOnFocus/refetchOnReconnect, so this changes nothing else.
+setupListeners(store.dispatch);
 
 export type RootState = ReturnType<typeof store.getState>;
 

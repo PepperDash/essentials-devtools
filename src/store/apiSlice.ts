@@ -91,7 +91,9 @@ const apiSlice = createApi({
         url: `/${appId}/api/deviceProperties/${key}`,
         method: 'GET',
       }),
-      providesTags: ['DeviceProperty'],
+      providesTags: (_result, _error, { key }) => [
+        { type: 'DeviceProperty', id: key },
+      ],
     }),
 
     getDeviceMethods: builder.query<
@@ -102,6 +104,9 @@ const apiSlice = createApi({
         url: `/${appId}/api/deviceMethods/${key}`,
         method: 'GET',
       }),
+      providesTags: (_result, _error, { key }) => [
+        { type: 'DeviceMethod', id: key },
+      ],
     }),
 
     getDeviceFeedbacks: builder.query<
@@ -112,7 +117,9 @@ const apiSlice = createApi({
         url: `/${appId}/api/deviceFeedbacks/${key}`,
         method: 'GET',
       }),
-      providesTags: ['DeviceFeedback'],
+      providesTags: (_result, _error, { key }) => [
+        { type: 'DeviceFeedback', id: key },
+      ],
     }),
 
     setDeviceJsonCommand: builder.mutation<
@@ -129,6 +136,12 @@ const apiSlice = createApi({
         method: 'POST',
         data: { deviceKey, methodName, params },
       }),
+      // A method usually changes the device's state, so show the result without waiting for the
+      // next poll
+      invalidatesTags: (_result, _error, { deviceKey }) => [
+        { type: 'DeviceProperty', id: deviceKey },
+        { type: 'DeviceFeedback', id: deviceKey },
+      ],
     }),
 
     getRoutingDevicesAndTieLines: builder.query<
@@ -262,11 +275,23 @@ const apiSlice = createApi({
       }),
     }),
 
+    // Loads the config into the running program (the processor responds once it has), which also
+    // builds the devices and Mobile Control's rooms, so everything read from them is out of date.
+    // restartProgram deliberately invalidates nothing: the program is still going down when it
+    // responds, so a refetch then would only fail; the pages' polling picks up the new state.
     setLoadConfig: builder.mutation<void, { appId: string }>({
       query: ({ appId }) => ({
         url: `/${appId}/api/loadConfig`,
         method: 'POST',
       }),
+      invalidatesTags: [
+        'Config',
+        'Device',
+        'DeviceProperty',
+        'DeviceMethod',
+        'DeviceFeedback',
+        'MobileControlInfo',
+      ],
     }),
 
     createMobileControlUiClient: builder.mutation<

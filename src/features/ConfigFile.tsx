@@ -4,6 +4,7 @@ import { useEffect, useRef } from 'react';
 import { Button } from 'react-bootstrap';
 import useAppParams from '../shared/hooks/useAppParams';
 import { useGetConfigQuery } from '../store/apiSlice';
+import { livePolling, POLL_INTERVALS_MS } from '../store/polling';
 
 type IConfigViewer = Parameters<OnMount>[0];
 
@@ -26,7 +27,10 @@ const ConfigFile = () => {
     data: config,
     refetch,
     isFetching,
-  } = useGetConfigQuery(appId ? { appId } : skipToken);
+  } = useGetConfigQuery(
+    appId ? { appId } : skipToken,
+    livePolling(POLL_INTERVALS_MS.config)
+  );
 
   if (!config) {
     return <div>Config Data Loading or Not Available</div>;
@@ -54,7 +58,6 @@ const ConfigFile = () => {
 export default ConfigFile;
 
 const ConfigFileRender = ({ config }: { config: unknown }) => {
-  console.log('ConfigFileRender == ', config);
   const monaco = useMonaco();
   const editorRef = useRef<IConfigViewer | null>(null);
 

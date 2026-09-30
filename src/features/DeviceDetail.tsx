@@ -1,6 +1,6 @@
 import { skipToken } from '@reduxjs/toolkit/query';
 import { useState } from 'react';
-import { Button, Form, Modal } from 'react-bootstrap';
+import { Button, Form, Modal, Spinner } from 'react-bootstrap';
 import useAppParams from '../shared/hooks/useAppParams';
 import {
   DeviceFeedbacks,
@@ -12,31 +12,43 @@ import {
   useGetDevicePropertiesQuery,
   useSetDeviceJsonCommandMutation,
 } from '../store/apiSlice';
+import { livePolling, POLL_INTERVALS_MS } from '../store/polling';
 
 const DeviceDetail = ({ item }: DeviceDetailProps) => {
   const { appId } = useAppParams();
-  const { data: properties } = useGetDevicePropertiesQuery(
-    appId && item?.Key ? { appId, key: item.Key } : skipToken
-  );
-  const { data: methods } = useGetDeviceMethodsQuery(
-    appId && item?.Key ? { appId, key: item.Key } : skipToken
-  );
-  const { data: feedbacks } = useGetDeviceFeedbacksQuery(
-    appId && item?.Key ? { appId, key: item.Key } : skipToken
-  );
+  const [liveUpdates, setLiveUpdates] = useState(true);
 
-  console.log('DeviceDetail == ', { item, properties, methods, feedbacks });
+  const args = appId && item?.Key ? { appId, key: item.Key } : skipToken;
+  // Property and feedback values change underneath us (device polling, hardware changed out of
+  // band), so re-read them on an interval. Methods are static. Polling pauses while the browser
+  // tab is in the background, and stops when this component unmounts.
+  const polling = livePolling(liveUpdates ? POLL_INTERVALS_MS.deviceValues : 0);
+  const propertiesQuery = useGetDevicePropertiesQuery(args, polling);
+  const { data: methods } = useGetDeviceMethodsQuery(args);
+  const feedbacksQuery = useGetDeviceFeedbacksQuery(args, polling);
 
+  const properties = propertiesQuery.data;
   if (!properties || !methods) {
     return <div>Loading...</div>;
   }
+
+  const refresh = () => {
+    void propertiesQuery.refetch();
+    void feedbacksQuery.refetch();
+  };
 
   return (
     <DeviceDetailRender
       properties={properties}
       methods={methods}
-      feedbacks={feedbacks}
+      feedbacks={feedbacksQuery.data}
       deviceKey={item.Key}
+      liveUpdates={liveUpdates}
+      onLiveUpdatesChange={setLiveUpdates}
+      onRefresh={refresh}
+      isRefreshing={propertiesQuery.isFetching || feedbacksQuery.isFetching}
+      // Keep showing the last values when a refresh fails, but say so
+      refreshFailed={propertiesQuery.isError || feedbacksQuery.isError}
     />
   );
 };
@@ -52,6 +64,11 @@ const DeviceDetailRender = ({
   methods,
   feedbacks,
   deviceKey,
+  liveUpdates,
+  onLiveUpdatesChange,
+  onRefresh,
+  isRefreshing,
+  refreshFailed,
 }: DeviceDetailRenderProps) => {
   const { appId } = useAppParams();
   const [selectedMethod, setSelectedMethod] = useState<DeviceMethods | null>(
@@ -84,7 +101,34 @@ const DeviceDetailRender = ({
 
   return (
     <>
-      <h2>Device Detail</h2>
+      <div className="d-flex flex-wrap align-items-center gap-3">
+        <h2 className="me-auto">Device Detail</h2>
+        {refreshFailed && (
+          <span className="small text-danger" role="status">
+            Couldn&apos;t refresh; showing the last values read.
+          </span>
+        )}
+        <Form.Check
+          type="switch"
+          id="device-live-updates"
+          className="small mb-0"
+          checked={liveUpdates}
+          onChange={(e) => onLiveUpdatesChange(e.target.checked)}
+          label={`Live updates (every ${POLL_INTERVALS_MS.deviceValues / 1000}s)`}
+        />
+        <Button
+          size="sm"
+          variant="outline-secondary"
+          onClick={onRefresh}
+          disabled={isRefreshing}
+        >
+          {isRefreshing && !liveUpdates ? (
+            <Spinner as="span" size="sm" aria-hidden="true" />
+          ) : (
+            'Refresh'
+          )}
+        </Button>
+      </div>
       <div className="h-100 d-flex flex-column overflow-auto">
         <h3>Properties</h3>
         <table className="table table-sm table-striped">
@@ -272,4 +316,9 @@ interface DeviceDetailRenderProps {
   methods: DeviceMethods[];
   feedbacks?: DeviceFeedbacks;
   deviceKey: string;
+  liveUpdates: boolean;
+  onLiveUpdatesChange: (next: boolean) => void;
+  onRefresh: () => void;
+  isRefreshing: boolean;
+  refreshFailed: boolean;
 }

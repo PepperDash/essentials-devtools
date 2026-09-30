@@ -25,8 +25,8 @@
 
 2. **Open your web browser**
    - Use Chrome, Firefox, Safari, or Edge
-   - Navigate to: `https://[processor-ip]/debug/`
-   - Example: `https://192.168.1.100/debug/`
+   - Navigate to: `https://[processor-ip]/cws/debug/`
+   - Example: `https://192.168.1.100/cws/debug/`
 
 3. **Handle security warnings**
    - You may see a security warning about the certificate

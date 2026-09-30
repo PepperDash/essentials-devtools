@@ -82,21 +82,22 @@ Or try the base URL in your browser: `https://[processor-ip]`
 **Correct URL format:**
 
 ```
-https://[processor-ip]/debug/
+https://[processor-ip]/cws/debug/
 ```
 
 **Common mistakes:**
 
 - ❌ `http://` instead of `https://`
-- ❌ Missing `/debug/` path
+- ❌ Missing `/cws/debug/` path
+- ❌ `/debug/` without the `/cws` prefix (returns 404)
 - ❌ Wrong IP address
 - ❌ Extra characters or typos
 
 **Examples of correct URLs:**
 
-- `https://192.168.1.100/debug/`
-- `https://10.0.0.50/debug/`
-- `https://processor.local/debug/` (if DNS is configured)
+- `https://192.168.1.100/cws/debug/`
+- `https://10.0.0.50/cws/debug/`
+- `https://processor.local/cws/debug/` (if DNS is configured)
 
 ### 6. Check Processor Status
 
@@ -141,7 +142,7 @@ https://[processor-ip]/debug/
 ### "404 Not Found"
 
 **Cause**: Wrong URL path
-**Solution**: Ensure URL ends with `/debug/` (include the trailing slash)
+**Solution**: Ensure URL ends with `/cws/debug/` (include the trailing slash)
 
 ### "500 Internal Server Error"
 
@@ -249,7 +250,7 @@ Should return JSON data if the API is working.
 
 ### Connection Checklist
 
-- [ ] Correct URL format: `https://[ip]/debug/`
+- [ ] Correct URL format: `https://[ip]/cws/debug/`
 - [ ] Network connectivity (ping works)
 - [ ] HTTPS port 443 accessible
 - [ ] Browser certificate warnings handled
@@ -258,7 +259,7 @@ Should return JSON data if the API is working.
 
 ### URLs to Test
 
-1. `https://[processor-ip]/debug/` - Main application
+1. `https://[processor-ip]/cws/debug/` - Main application
 2. `https://[processor-ip]/` - Base web service
 3. `https://[processor-ip]/cws/app01/api/versions` - API test
 

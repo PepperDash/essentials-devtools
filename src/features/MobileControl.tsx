@@ -13,12 +13,15 @@ import {
   useGetMobileControlActionPathsQuery,
   useGetMobileControlInfoQuery,
 } from '../store/apiSlice';
+import { livePolling, POLL_INTERVALS_MS } from '../store/polling';
 
 const MobileControl = () => {
   const { appId } = useAppParams();
 
+  // Connection status and the client list change while the page is open
   const { data: info } = useGetMobileControlInfoQuery(
-    appId ? { appId, deviceKey: 'appServer' } : skipToken
+    appId ? { appId, deviceKey: 'appServer' } : skipToken,
+    livePolling(POLL_INTERVALS_MS.mobileControlInfo)
   );
   const { data: actionPaths } = useGetMobileControlActionPathsQuery(
     appId ? { appId, deviceKey: 'appServer' } : skipToken

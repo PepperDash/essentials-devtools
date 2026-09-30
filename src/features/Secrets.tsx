@@ -15,6 +15,7 @@ import {
   useLazyGetSecretsTemplateQuery,
   useSendSecretCommandMutation,
 } from '../store/apiSlice';
+import { livePolling, POLL_INTERVALS_MS } from '../store/polling';
 import {
   BulkSecretEntry,
   BulkSecretsResponse,
@@ -64,8 +65,10 @@ const Secrets = () => {
   const { data: providerData } = useGetSecretProvidersQuery(
     appId && canManageSecrets ? { appId } : skipToken
   );
+  // Other users, and other subsystems such as Mobile Control pairing, write to the store too
   const { data, isLoading, isError, refetch } = useGetSecretsQuery(
-    appId && canManageSecrets ? { appId, provider } : skipToken
+    appId && canManageSecrets ? { appId, provider } : skipToken,
+    livePolling(POLL_INTERVALS_MS.secrets)
   );
 
   const [sendCommand, { isLoading: isSending, reset: resetCommand }] =
