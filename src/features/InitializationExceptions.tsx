@@ -1,15 +1,15 @@
-import { skipToken } from "@reduxjs/toolkit/query";
-import { Fragment, useState } from "react";
-import useAppParams from "../shared/hooks/useAppParams";
+import { skipToken } from '@reduxjs/toolkit/query';
+import { Fragment, useState } from 'react';
+import useAppParams from '../shared/hooks/useAppParams';
 import {
   EssentialsException,
   useGetInitializationExceptionsQuery,
-} from "../store/apiSlice";
+} from '../store/apiSlice';
 
 const InitializationExceptions = () => {
   const { appId } = useAppParams();
   const { data, isLoading, isError } = useGetInitializationExceptionsQuery(
-    appId ? { appId } : skipToken,
+    appId ? { appId } : skipToken
   );
 
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
@@ -37,9 +37,9 @@ const InitializationExceptions = () => {
         <table className="table table-striped table-hover align-middle mb-0">
           <thead className="table-light sticky-top">
             <tr>
-              <th style={{ width: "2rem" }}>#</th>
+              <th style={{ width: '2rem' }}>#</th>
               <th>Message</th>
-              <th style={{ width: "8rem" }}>Stack trace</th>
+              <th style={{ width: '8rem' }}>Stack trace</th>
             </tr>
           </thead>
           <tbody>
@@ -62,7 +62,7 @@ const InitializationExceptions = () => {
                             setExpandedIndex(isExpanded ? null : idx)
                           }
                         >
-                          {isExpanded ? "Hide" : "Show"}
+                          {isExpanded ? 'Hide' : 'Show'}
                         </button>
                       )}
                     </td>
@@ -72,7 +72,10 @@ const InitializationExceptions = () => {
                       <td colSpan={3} className="p-0">
                         <pre
                           className="m-0 p-3 bg-light text-muted"
-                          style={{ fontSize: "0.75rem", whiteSpace: "pre-wrap" }}
+                          style={{
+                            fontSize: '0.75rem',
+                            whiteSpace: 'pre-wrap',
+                          }}
                         >
                           {ex.StackTrace}
                         </pre>

@@ -1,6 +1,6 @@
 import { skipToken } from '@reduxjs/toolkit/query';
-import { useState } from "react";
-import { Button, Form, Modal } from "react-bootstrap";
+import { useState } from 'react';
+import { Button, Form, Modal, Spinner } from 'react-bootstrap';
 import useAppParams from '../shared/hooks/useAppParams';
 import {
   DeviceFeedbacks,
@@ -11,27 +11,44 @@ import {
   useGetDeviceMethodsQuery,
   useGetDevicePropertiesQuery,
   useSetDeviceJsonCommandMutation,
-} from "../store/apiSlice";
+} from '../store/apiSlice';
+import { livePolling, POLL_INTERVALS_MS } from '../store/polling';
 
 const DeviceDetail = ({ item }: DeviceDetailProps) => {
   const { appId } = useAppParams();
-  const { data: properties } = useGetDevicePropertiesQuery(appId && item?.Key ? { appId, key: item.Key } : skipToken
-  );
-  const { data: methods } = useGetDeviceMethodsQuery(appId && item?.Key ? { appId, key: item.Key } : skipToken);
-  const { data: feedbacks } = useGetDeviceFeedbacksQuery(appId && item?.Key ? { appId, key: item.Key } : skipToken);
+  const [liveUpdates, setLiveUpdates] = useState(true);
 
-  console.log("DeviceDetail == ", { item, properties, methods, feedbacks });
+  const args = appId && item?.Key ? { appId, key: item.Key } : skipToken;
+  // Property and feedback values change underneath us (device polling, hardware changed out of
+  // band), so re-read them on an interval. Methods are static. Polling pauses while the browser
+  // tab is in the background, and stops when this component unmounts.
+  const polling = livePolling(liveUpdates ? POLL_INTERVALS_MS.deviceValues : 0);
+  const propertiesQuery = useGetDevicePropertiesQuery(args, polling);
+  const { data: methods } = useGetDeviceMethodsQuery(args);
+  const feedbacksQuery = useGetDeviceFeedbacksQuery(args, polling);
 
+  const properties = propertiesQuery.data;
   if (!properties || !methods) {
     return <div>Loading...</div>;
   }
+
+  const refresh = () => {
+    void propertiesQuery.refetch();
+    void feedbacksQuery.refetch();
+  };
 
   return (
     <DeviceDetailRender
       properties={properties}
       methods={methods}
-      feedbacks={feedbacks}
+      feedbacks={feedbacksQuery.data}
       deviceKey={item.Key}
+      liveUpdates={liveUpdates}
+      onLiveUpdatesChange={setLiveUpdates}
+      onRefresh={refresh}
+      isRefreshing={propertiesQuery.isFetching || feedbacksQuery.isFetching}
+      // Keep showing the last values when a refresh fails, but say so
+      refreshFailed={propertiesQuery.isError || feedbacksQuery.isError}
     />
   );
 };
@@ -47,15 +64,23 @@ const DeviceDetailRender = ({
   methods,
   feedbacks,
   deviceKey,
+  liveUpdates,
+  onLiveUpdatesChange,
+  onRefresh,
+  isRefreshing,
+  refreshFailed,
 }: DeviceDetailRenderProps) => {
   const { appId } = useAppParams();
-  const [selectedMethod, setSelectedMethod] = useState<DeviceMethods | null>(null);
+  const [selectedMethod, setSelectedMethod] = useState<DeviceMethods | null>(
+    null
+  );
   const [paramValues, setParamValues] = useState<Record<string, string>>({});
-  const [executeMethod, { isLoading: isExecuting }] = useSetDeviceJsonCommandMutation();
+  const [executeMethod, { isLoading: isExecuting }] =
+    useSetDeviceJsonCommandMutation();
 
   const handleOpen = (method: DeviceMethods) => {
     setSelectedMethod(method);
-    setParamValues(Object.fromEntries(method.Params.map((p) => [p.Name, ""])));
+    setParamValues(Object.fromEntries(method.Params.map((p) => [p.Name, ''])));
   };
 
   const handleClose = () => {
@@ -65,13 +90,45 @@ const DeviceDetailRender = ({
 
   const handleExecute = async () => {
     if (!selectedMethod || !appId) return;
-    await executeMethod({ appId, deviceKey, methodName: selectedMethod.Name, params: Object.values(paramValues) });
+    await executeMethod({
+      appId,
+      deviceKey,
+      methodName: selectedMethod.Name,
+      params: Object.values(paramValues),
+    });
     handleClose();
   };
 
   return (
     <>
-      <h2>Device Detail</h2>
+      <div className="d-flex flex-wrap align-items-center gap-3">
+        <h2 className="me-auto">Device Detail</h2>
+        {refreshFailed && (
+          <span className="small text-danger" role="status">
+            Couldn&apos;t refresh; showing the last values read.
+          </span>
+        )}
+        <Form.Check
+          type="switch"
+          id="device-live-updates"
+          className="small mb-0"
+          checked={liveUpdates}
+          onChange={(e) => onLiveUpdatesChange(e.target.checked)}
+          label={`Live updates (every ${POLL_INTERVALS_MS.deviceValues / 1000}s)`}
+        />
+        <Button
+          size="sm"
+          variant="outline-secondary"
+          onClick={onRefresh}
+          disabled={isRefreshing}
+        >
+          {isRefreshing && !liveUpdates ? (
+            <Spinner as="span" size="sm" aria-hidden="true" />
+          ) : (
+            'Refresh'
+          )}
+        </Button>
+      </div>
       <div className="h-100 d-flex flex-column overflow-auto">
         <h3>Properties</h3>
         <table className="table table-sm table-striped">
@@ -90,8 +147,8 @@ const DeviceDetailRender = ({
                 <td>{p.Name}</td>
                 <td>{p.Type}</td>
                 <td>{p.Value}</td>
-                <td>{p.CanRead ? "Yes" : "No"}</td>
-                <td>{p.canWrite ? "Yes" : "No"}</td>
+                <td>{p.CanRead ? 'Yes' : 'No'}</td>
+                <td>{p.canWrite ? 'Yes' : 'No'}</td>
               </tr>
             ))}
           </tbody>
@@ -111,10 +168,17 @@ const DeviceDetailRender = ({
               <tr key={m.Name}>
                 <td>{m.Name}</td>
                 <td>
-                  {m.Params.map((param) => `${param.Name}: ${param.Type}`).join(", ")}
+                  {m.Params.map((param) => `${param.Name}: ${param.Type}`).join(
+                    ', '
+                  )}
                 </td>
                 <td>
-                  <button className="btn btn-sm btn-primary" onClick={() => handleOpen(m)}>Execute</button>
+                  <button
+                    className="btn btn-sm btn-primary"
+                    onClick={() => handleOpen(m)}
+                  >
+                    Execute
+                  </button>
                 </td>
               </tr>
             ))}
@@ -133,14 +197,18 @@ const DeviceDetailRender = ({
                 {selectedMethod?.Params.map((param) => (
                   <Form.Group key={param.Name} className="mb-3">
                     <Form.Label>
-                      {param.Name} <small className="text-muted">({param.Type})</small>
+                      {param.Name}{' '}
+                      <small className="text-muted">({param.Type})</small>
                     </Form.Label>
                     <Form.Control
                       type="text"
                       placeholder={param.Type}
-                      value={paramValues[param.Name] ?? ""}
+                      value={paramValues[param.Name] ?? ''}
                       onChange={(e) =>
-                        setParamValues((prev) => ({ ...prev, [param.Name]: e.target.value }))
+                        setParamValues((prev) => ({
+                          ...prev,
+                          [param.Name]: e.target.value,
+                        }))
                       }
                     />
                   </Form.Group>
@@ -149,9 +217,15 @@ const DeviceDetailRender = ({
             )}
           </Modal.Body>
           <Modal.Footer>
-            <Button variant="secondary" onClick={handleClose}>Cancel</Button>
-            <Button variant="primary" onClick={handleExecute} disabled={isExecuting}>
-              {isExecuting ? "Executing…" : "Execute"}
+            <Button variant="secondary" onClick={handleClose}>
+              Cancel
+            </Button>
+            <Button
+              variant="primary"
+              onClick={() => void handleExecute()}
+              disabled={isExecuting}
+            >
+              {isExecuting ? 'Executing…' : 'Execute'}
             </Button>
           </Modal.Footer>
         </Modal>
@@ -176,7 +250,9 @@ const DeviceDetailRender = ({
                     </tr>
                   ))
                 ) : (
-                  <tr><td colSpan={2}>None</td></tr>
+                  <tr>
+                    <td colSpan={2}>None</td>
+                  </tr>
                 )}
               </tbody>
             </table>
@@ -198,7 +274,9 @@ const DeviceDetailRender = ({
                     </tr>
                   ))
                 ) : (
-                  <tr><td colSpan={2}>None</td></tr>
+                  <tr>
+                    <td colSpan={2}>None</td>
+                  </tr>
                 )}
               </tbody>
             </table>
@@ -220,7 +298,9 @@ const DeviceDetailRender = ({
                     </tr>
                   ))
                 ) : (
-                  <tr><td colSpan={2}>None</td></tr>
+                  <tr>
+                    <td colSpan={2}>None</td>
+                  </tr>
                 )}
               </tbody>
             </table>
@@ -236,4 +316,9 @@ interface DeviceDetailRenderProps {
   methods: DeviceMethods[];
   feedbacks?: DeviceFeedbacks;
   deviceKey: string;
+  liveUpdates: boolean;
+  onLiveUpdatesChange: (next: boolean) => void;
+  onRefresh: () => void;
+  isRefreshing: boolean;
+  refreshFailed: boolean;
 }

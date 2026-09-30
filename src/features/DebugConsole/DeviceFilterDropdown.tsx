@@ -20,7 +20,9 @@ export const DeviceFilterDropdown = ({ items }: DeviceFilterDropdownProps) => {
   const dispatch = useAppDispatch();
   const checkedDevices = useAppSelector(selectCheckedDevices);
   const deviceLevels = useAppSelector(selectDeviceLevels);
-  const [openLevelDropdowns, setOpenLevelDropdowns] = useState<Record<string, boolean>>({});
+  const [openLevelDropdowns, setOpenLevelDropdowns] = useState<
+    Record<string, boolean>
+  >({});
 
   function handleCheckChange(
     event: ChangeEvent<HTMLInputElement>,
@@ -40,7 +42,11 @@ export const DeviceFilterDropdown = ({ items }: DeviceFilterDropdownProps) => {
 
   return (
     <Dropdown className="d-inline-block">
-      <Dropdown.Toggle variant="outline" className="py-1" id="device-filter-dropdown">
+      <Dropdown.Toggle
+        variant="outline"
+        className="py-1"
+        id="device-filter-dropdown"
+      >
         Devices
         {checkedDevices.length > 0 && (
           <Badge pill bg="primary" className="ms-1">
@@ -75,7 +81,10 @@ export const DeviceFilterDropdown = ({ items }: DeviceFilterDropdownProps) => {
                 <Dropdown
                   show={openLevelDropdowns[stringId] ?? false}
                   onToggle={(isOpen) =>
-                    setOpenLevelDropdowns((prev) => ({ ...prev, [stringId]: isOpen }))
+                    setOpenLevelDropdowns((prev) => ({
+                      ...prev,
+                      [stringId]: isOpen,
+                    }))
                   }
                   className="ms-auto"
                 >
@@ -99,7 +108,8 @@ export const DeviceFilterDropdown = ({ items }: DeviceFilterDropdownProps) => {
                       >
                         {opt.label}
                       </Dropdown.Item>
-                    ))}                  </Dropdown.Menu>
+                    ))}{' '}
+                  </Dropdown.Menu>
                 </Dropdown>
               )}
             </Dropdown.Item>

@@ -4,10 +4,11 @@ import useAppParams from '../shared/hooks/useAppParams';
 import { Route, useGetPathsQuery } from '../store/apiSlice';
 import ApiPathDetailDrawer from './ApiPathDetailDrawer';
 
-
 export const ApiPaths = () => {
   const { appId } = useAppParams();
-  const { data: apiPathData, isLoading } = useGetPathsQuery(appId ? { appId } : skipToken);
+  const { data: apiPathData, isLoading } = useGetPathsQuery(
+    appId ? { appId } : skipToken
+  );
   const [showDrawer, setShowDrawer] = useState(false);
   const [selectedRoute, setSelectedRoute] = useState<Route>();
 
@@ -15,7 +16,9 @@ export const ApiPaths = () => {
 
   if (!apiPathData?.routes) return <div>No paths available</div>;
 
-  const sorted = [...apiPathData.routes].sort((a, b) => a.Name.localeCompare(b.Name));
+  const sorted = [...apiPathData.routes].sort((a, b) =>
+    a.Name.localeCompare(b.Name)
+  );
 
   function clickRow(route: Route) {
     setSelectedRoute(route);
@@ -29,7 +32,7 @@ export const ApiPaths = () => {
 
   return (
     <div className="d-flex flex-column overflow-hidden h-100">
-      <h2 className='mb-2'>Available API Paths</h2>
+      <h2 className="mb-2">Available API Paths</h2>
       <table className="table table-striped">
         <thead>
           <tr>
@@ -42,7 +45,10 @@ export const ApiPaths = () => {
             <tr
               key={path.Name}
               onClick={() => clickRow(path)}
-              className={'cursor-pointer hover' + (selectedRoute === path ? ' table-primary' : '')}
+              className={
+                'cursor-pointer hover' +
+                (selectedRoute === path ? ' table-primary' : '')
+              }
             >
               <td>{path.Name}</td>
               <td>{path.Url}</td>
@@ -59,4 +65,4 @@ export const ApiPaths = () => {
       />
     </div>
   );
-}
+};

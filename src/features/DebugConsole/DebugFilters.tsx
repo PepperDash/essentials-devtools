@@ -1,4 +1,3 @@
-
 import { skipToken } from '@reduxjs/toolkit/query';
 import { useMemo } from 'react';
 import { Button } from 'react-bootstrap';
@@ -9,7 +8,6 @@ import { debugConsoleActions } from '../../store/debugConsole/debugConsoleSlice'
 import { useAppDispatch } from '../../store/hooks';
 import { debugConsts } from './debugConsts';
 import { DeviceFilterDropdown } from './DeviceFilterDropdown';
-
 
 export const DebugFilters = () => {
   const { appId } = useAppParams();

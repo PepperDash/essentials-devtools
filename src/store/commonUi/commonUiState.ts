@@ -6,6 +6,5 @@ export interface CommonUiState {
 }
 
 export const initialCommonUiState: CommonUiState = {
-  roomId: ''
+  roomId: '',
 };
-

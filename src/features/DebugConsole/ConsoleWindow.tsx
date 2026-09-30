@@ -1,8 +1,8 @@
-import { useState } from "react";
-import { Col, Container, Row } from "react-bootstrap";
-import ScrollToBottom from "react-scroll-to-bottom";
-import { LogMessage } from "../../shared/types/LogMessage";
-import LogMessageDetailDrawer from "./LogMessageDetailDrawer";
+import { useState } from 'react';
+import { Col, Container, Row } from 'react-bootstrap';
+import ScrollToBottom from 'react-scroll-to-bottom';
+import { LogMessage } from '../../shared/types/LogMessage';
+import LogMessageDetailDrawer from './LogMessageDetailDrawer';
 
 const Content = ({ filteredItems }: ConsoleWindowProps) => {
   const [showDrawer, setShowDrawer] = useState(false);
@@ -20,15 +20,22 @@ const Content = ({ filteredItems }: ConsoleWindowProps) => {
 
   return (
     <>
-      <Container fluid className='table-striped'>
+      <Container fluid className="table-striped">
         {filteredItems.map((message, index) => (
           <Row
             key={index}
             onClick={() => clickItem(message)}
-            className={"cursor-pointer hover " + (selectedItem === message ? "bg-primary text-white" : (index % 2 === 0 ? "bg-light" : "bg-white"))}
+            className={
+              'cursor-pointer hover ' +
+              (selectedItem === message
+                ? 'bg-primary text-white'
+                : index % 2 === 0
+                  ? 'bg-light'
+                  : 'bg-white')
+            }
           >
             <Col md={6}>{message.Timestamp}</Col>
-            <Col md={3}>{message.Properties?.Key || "global"}</Col>
+            <Col md={3}>{message.Properties?.Key || 'global'}</Col>
             <Col md={2}>{message.Level}</Col>
             <Col md={13} className="text-nowrap text-truncate">
               {message.RenderedMessage}
@@ -62,7 +69,7 @@ const ConsoleWindow = ({ filteredItems }: ConsoleWindowProps) => {
         className="overflow-auto flex-grow-1"
         followButtonClassName="btn btn-sm btn-outline-secondary"
         mode="bottom"
-        initialScrollBehavior='auto'
+        initialScrollBehavior="auto"
       >
         <Content filteredItems={filteredItems} />
       </ScrollToBottom>

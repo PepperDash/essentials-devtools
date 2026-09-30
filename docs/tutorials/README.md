@@ -7,11 +7,13 @@ These tutorials are designed to take you from beginner to competent user through
 ## 🚀 Getting Started
 
 ### [Getting Started Tutorial](./getting-started.md)
+
 **Time**: 15-20 minutes | **Level**: Beginner
 
 Your first steps with the PepperDash Essentials Web Config App. Learn to access the application, navigate the interface, and perform basic operations.
 
 **You'll learn**:
+
 - How to access the web application securely
 - Navigate through all main sections
 - Start your first debug session
@@ -25,11 +27,13 @@ Your first steps with the PepperDash Essentials Web Config App. Learn to access 
 ## 🔍 Core Features
 
 ### [Debug Console Tutorial](./debug-console-basics.md)
+
 **Time**: 25-30 minutes | **Level**: Intermediate
 
 Master the Debug Console - the most powerful feature for system monitoring and troubleshooting. Learn advanced filtering, message interpretation, and systematic troubleshooting approaches.
 
 **You'll learn**:
+
 - Advanced filtering and search techniques
 - How to interpret different log levels and message types
 - Managing debug sessions effectively
@@ -39,11 +43,13 @@ Master the Debug Console - the most powerful feature for system monitoring and t
 **Prerequisites**: Completed Getting Started Tutorial
 
 ### [Device Management Tutorial](./device-management-basics.md)
+
 **Time**: 20-25 minutes | **Level**: Intermediate
 
 Learn to effectively browse, understand, and work with devices in your PepperDash Essentials system. Understand device types, relationships, and how to use device information for troubleshooting.
 
 **You'll learn**:
+
 - How to browse and identify devices
 - Understanding device properties and capabilities
 - Interpreting device types and their purposes
@@ -62,7 +68,7 @@ We recommend following this sequence for the best learning experience:
 1. Getting Started Tutorial (Required)
    ↓
 2. Debug Console Tutorial (Recommended)
-   ↓  
+   ↓
 3. Device Management Tutorial (Recommended)
 ```
 
@@ -104,12 +110,15 @@ Our tutorials follow these principles:
 Once you've completed the tutorials:
 
 ### For Specific Problems
+
 Head to **[How-to Guides](../how-to/)** for step-by-step solutions to common issues
 
 ### For Technical Details
+
 Consult the **[Reference](../reference/)** documentation for complete technical information
 
 ### For Deeper Understanding
+
 Read **[Explanation](../explanation/)** articles to understand system design and concepts
 
 ---
@@ -117,18 +126,21 @@ Read **[Explanation](../explanation/)** articles to understand system design and
 ## 📞 Getting Help
 
 **Stuck on a tutorial?**
+
 - Re-read the prerequisites to ensure you have everything needed
 - Check that your system is running and accessible
 - Try the troubleshooting section at the end of each tutorial
 
 **Want to suggest improvements?**
+
 - These tutorials are designed to be practical and helpful
 - Your feedback helps us improve the learning experience
 
 **Need more advanced training?**
+
 - The tutorials cover essential skills for most users
 - For specialized or advanced use cases, consult the reference documentation
 
 ---
 
-*Remember: Tutorials are for learning, not quick problem-solving. Take your time to understand each concept before moving on. The investment in foundational knowledge will pay off in your daily work!*
+_Remember: Tutorials are for learning, not quick problem-solving. Take your time to understand each concept before moving on. The investment in foundational knowledge will pay off in your daily work!_

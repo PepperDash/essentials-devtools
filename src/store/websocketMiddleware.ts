@@ -1,4 +1,4 @@
-import { Middleware } from "@reduxjs/toolkit";
+import { Middleware } from '@reduxjs/toolkit';
 import {
   connected,
   connectionAttemptStarted,
@@ -9,10 +9,23 @@ import {
   WS_DISCONNECT,
   WsConnectAction,
   WsDisconnectAction,
-} from "./websocketSlice";
+} from './websocketSlice';
 
 export const websocketMiddleware: Middleware = (store) => {
   let socket: WebSocket | null = null;
+
+  // Detach handlers before closing so a stale socket can't clobber the
+  // current one, trigger a fallback connection, or keep dispatching messages
+  const closeSocket = () => {
+    if (socket) {
+      socket.onopen = null;
+      socket.onclose = null;
+      socket.onerror = null;
+      socket.onmessage = null;
+      socket.close();
+      socket = null;
+    }
+  };
 
   return (next) => (action) => {
     const { type } = action as WsConnectAction | WsDisconnectAction;
@@ -20,40 +33,69 @@ export const websocketMiddleware: Middleware = (store) => {
     if (type === WS_CONNECT) {
       const { url, fallbackUrl } = (action as WsConnectAction).payload;
 
-      console.log("[ws] Connecting to", url);
+      console.log('[ws] Connecting to', url);
 
+      // Close any existing connection before opening a new one. Its handlers
+      // are detached, so report the disconnect here before the new attempt
+      closeSocket();
+      store.dispatch(disconnected());
       store.dispatch(connectionAttemptStarted());
 
-      // Close any existing connection before opening a new one
-      if (socket) {
-        socket.close();
-      }
-
       const connectToUrl = (targetUrl: string, fallback?: string) => {
-        socket = new WebSocket(targetUrl);
-        socket.onopen = () => store.dispatch(connected());
-        socket.onclose = () => {
+        let ws: WebSocket;
+        try {
+          ws = new WebSocket(targetUrl);
+        } catch (err) {
+          // An unparseable URL throws synchronously instead of firing onerror
+          console.error('[ws] Invalid WebSocket URL', targetUrl, err);
+          if (fallback) {
+            connectToUrl(fallback);
+          } else {
+            store.dispatch(
+              connectionFailed(
+                fallbackUrl && targetUrl === fallbackUrl
+                  ? [url, fallbackUrl]
+                  : [targetUrl]
+              )
+            );
+          }
+          return;
+        }
+        socket = ws;
+        ws.onopen = () => {
+          if (socket !== ws) return;
+          store.dispatch(connected());
+        };
+        ws.onclose = () => {
+          if (socket !== ws) return;
           store.dispatch(disconnected());
           socket = null;
         };
-        socket.onerror = (err) => {
-          console.error("WebSocket error", err);
+        ws.onerror = (err) => {
+          if (socket !== ws) return;
+          console.error('WebSocket error', err);
           if (fallback) {
-            console.log("[ws] Primary connection failed, falling back to", fallback);
+            console.log(
+              '[ws] Primary connection failed, falling back to',
+              fallback
+            );
+            closeSocket();
             connectToUrl(fallback);
           } else {
             // Report all attempted URLs (primary + fallback that was tried)
-            const attemptedUrls = fallbackUrl && targetUrl === fallbackUrl
-              ? [url, fallbackUrl]
-              : [targetUrl];
+            const attemptedUrls =
+              fallbackUrl && targetUrl === fallbackUrl
+                ? [url, fallbackUrl]
+                : [targetUrl];
             store.dispatch(connectionFailed(attemptedUrls));
           }
         };
-        socket.onmessage = (event: MessageEvent<string>) => {
+        ws.onmessage = (event: MessageEvent<string>) => {
+          if (socket !== ws) return;
           try {
             store.dispatch(messageReceived(JSON.parse(event.data)));
           } catch (e) {
-            console.error("Failed to parse WebSocket message", e);
+            console.error('Failed to parse WebSocket message', e);
           }
         };
       };
@@ -64,10 +106,8 @@ export const websocketMiddleware: Middleware = (store) => {
     }
 
     if (type === WS_DISCONNECT) {
-      if (socket) {
-        socket.close();
-        socket = null;
-      }
+      closeSocket();
+      store.dispatch(disconnected());
       return;
     }
 

@@ -1,6 +1,6 @@
 import { skipToken } from '@reduxjs/toolkit/query';
 import useAppParams from '../shared/hooks/useAppParams';
-import { Version, useGetVersionsQuery } from "../store/apiSlice";
+import { Version, useGetVersionsQuery } from '../store/apiSlice';
 
 const Versions = () => {
   const { appId } = useAppParams();
@@ -11,7 +11,7 @@ const Versions = () => {
   }
 
   const unsorted: Version[] = [];
-  Object.assign(unsorted, versions)
+  Object.assign(unsorted, versions);
 
   const sorted = unsorted.sort((a, b) => {
     if (a.Name < b.Name) {
@@ -24,24 +24,26 @@ const Versions = () => {
   });
 
   return (
-    <div className="d-flex flex-column overflow-hidden h-100">
-      <h2 className='mb-2'>Loaded Assemblies and Versions</h2>
-      <table className="table table-striped">
-        <thead>
-          <tr>
-            <th>Name</th>
-            <th>Version</th>
-          </tr>
-        </thead>
-        <tbody>
-          {sorted?.map((i) => (
-            <tr key={i.Name}>
-              <td>{i.Name}</td>
-              <td>{i.Version}</td>
+    <div className="d-flex flex-column h-100" style={{ minHeight: 0 }}>
+      <h2 className="mb-2 flex-shrink-0">Loaded Assemblies and Versions</h2>
+      <div className="flex-grow-1 overflow-auto" style={{ minHeight: 0 }}>
+        <table className="table table-striped">
+          <thead className="sticky-top bg-body">
+            <tr>
+              <th>Name</th>
+              <th>Version</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {sorted?.map((i) => (
+              <tr key={i.Name}>
+                <td>{i.Name}</td>
+                <td>{i.Version}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 };

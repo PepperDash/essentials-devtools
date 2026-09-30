@@ -1,8 +1,8 @@
 import { skipToken } from '@reduxjs/toolkit/query';
-import { useState } from "react";
+import { useState } from 'react';
 import useAppParams from '../shared/hooks/useAppParams';
-import { IKeyed, useGetDevicesQuery } from "../store/apiSlice";
-import DeviceDetail from "./DeviceDetail";
+import { IKeyed, useGetDevicesQuery } from '../store/apiSlice';
+import DeviceDetail from './DeviceDetail';
 
 const DeviceList = () => {
   const [selectedDevice, setSelectedDevice] = useState<IKeyed>();
@@ -29,7 +29,7 @@ const DeviceList = () => {
               {devices.map((i) => (
                 <tr
                   key={i.Key}
-                  className={`cursor-pointer${selectedDevice?.Key === i.Key ? " table-active" : ""}`}
+                  className={`cursor-pointer${selectedDevice?.Key === i.Key ? ' table-active' : ''}`}
                   onClick={() => setSelectedDevice(i)}
                 >
                   <td>{i.Key}</td>

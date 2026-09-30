@@ -1,7 +1,7 @@
 export interface LogMessage {
   Timestamp: string;
   MessageTemplate: string;
-  RenderedMessage: String;
+  RenderedMessage: string;
   Level: string;
   Properties?: {
     Key: string;

@@ -7,6 +7,7 @@
 ## Quick Performance Check
 
 **For immediate system health assessment:**
+
 1. Start a debug session in the **Debug Console**
 2. Set log level to **"Warning"** and **"Error"** only
 3. Monitor for 2-3 minutes to see error frequency
@@ -18,16 +19,19 @@
 ### 1. Message Rate Analysis
 
 **Normal message rates** (varies by system size):
+
 - **Small systems** (5-10 devices): 5-20 messages per minute
-- **Medium systems** (10-50 devices): 20-100 messages per minute  
+- **Medium systems** (10-50 devices): 20-100 messages per minute
 - **Large systems** (50+ devices): 100+ messages per minute
 
 **Performance warning signs:**
+
 - **Very high rates** (>200 messages/minute): May indicate device errors or loops
 - **Message bursts**: Sudden spikes in message volume
 - **Continuous error streams**: Same error repeating rapidly
 
 **How to check:**
+
 1. Start debug session and note starting message count
 2. Wait exactly 1 minute
 3. Note ending message count
@@ -37,12 +41,14 @@
 ### 2. Error Pattern Recognition
 
 **Healthy system indicators:**
+
 - Occasional informational messages
 - Infrequent warnings (less than 1 per minute)
 - Very rare errors (less than 1 per 10 minutes)
 - Clean startup sequences
 
 **Performance problem indicators:**
+
 - Repeated timeout errors
 - Connection retry loops
 - Resource allocation failures
@@ -53,6 +59,7 @@
 ### 3. Establish Baseline Performance
 
 **Initial baseline creation:**
+
 1. **Choose monitoring period**: 15-30 minutes during normal operation
 2. **Record message statistics**:
    - Total message count
@@ -66,6 +73,7 @@
 4. **Save baseline data** for future comparison
 
 **Baseline documentation template:**
+
 ```
 System: [System Name]
 Date: [Date]
@@ -81,6 +89,7 @@ User Load: [Description]
 ### 4. Regular Health Checks
 
 **Daily monitoring routine:**
+
 1. **Quick status check** (2-3 minutes):
    - Start debug session
    - Set to "Warning" and "Error" levels
@@ -102,6 +111,7 @@ User Load: [Description]
 ### 5. Device-Specific Performance Monitoring
 
 **Individual device health:**
+
 1. **Filter to single device** in debug console
 2. **Monitor for 5-10 minutes**
 3. **Look for patterns**:
@@ -111,6 +121,7 @@ User Load: [Description]
    - Retry attempts (concerning)
 
 **Device performance checklist:**
+
 - [ ] Device responds to commands consistently
 - [ ] No timeout errors in normal operation
 - [ ] Status updates occur regularly
@@ -118,6 +129,7 @@ User Load: [Description]
 - [ ] Connection remains stable
 
 **Red flags for individual devices:**
+
 - Multiple timeout errors per minute
 - Connection retry loops
 - Commands not acknowledged
@@ -172,13 +184,16 @@ User Load: [Description]
 **Network-related performance issues:**
 
 **Symptoms to monitor**:
+
 - Frequent "connection timeout" messages
 - "Device unreachable" errors
 - Long delays between commands and responses
 - Intermittent device connectivity
 
 **Network performance checks**:
+
 1. **Search for network-related terms**:
+
    ```
    timeout
    connection
@@ -203,12 +218,14 @@ User Load: [Description]
 ### 9. Memory and Processing Indicators
 
 **Signs of resource constraints:**
+
 - Increasing response times over time
 - "Out of memory" or resource allocation errors
 - System becoming unresponsive
 - Debug sessions failing to start
 
 **Monitoring approach**:
+
 1. **Track response times**:
    - Note delays between commands and responses
    - Monitor how long operations take
@@ -222,12 +239,14 @@ User Load: [Description]
 ### 10. Database and Storage Performance
 
 **Storage-related performance indicators:**
+
 - Slow configuration loading
 - Delays in log message display
 - "Disk full" or storage errors
 - Database connection issues
 
 **Monitoring steps**:
+
 1. **Time configuration loading**:
    - Note how long Config File section takes to load
    - Compare loading times over time
@@ -243,6 +262,7 @@ User Load: [Description]
 ### 11. Reducing Debug Session Impact
 
 **Minimize monitoring overhead:**
+
 1. **Use appropriate log levels**:
    - "Information" for normal monitoring
    - "Warning"+"Error" for problem identification
@@ -261,6 +281,7 @@ User Load: [Description]
 ### 12. System Configuration for Performance
 
 **Configuration best practices:**
+
 1. **Device polling intervals**:
    - Don't poll devices more frequently than necessary
    - Increase intervals for stable devices
@@ -281,6 +302,7 @@ User Load: [Description]
 ### 13. Performance Documentation
 
 **Regular performance reports should include:**
+
 - Message rate trends over time
 - Error frequency and types
 - Device response time measurements
@@ -288,6 +310,7 @@ User Load: [Description]
 - System resource utilization
 
 **Report template:**
+
 ```
 Performance Report - [Date Range]
 ================================
@@ -314,12 +337,14 @@ Recommendations:
 ### 14. Alerting and Escalation
 
 **When to escalate performance issues:**
+
 - Error rates exceed 50% above baseline
 - System becomes unresponsive
 - Critical devices fail repeatedly
 - Performance degrades significantly over time
 
 **Escalation information to provide:**
+
 - Current vs. baseline performance metrics
 - Specific error messages and frequencies
 - Affected devices and functionality
@@ -329,6 +354,7 @@ Recommendations:
 ## Quick Reference
 
 ### Performance Monitoring Checklist
+
 - [ ] Establish baseline performance metrics
 - [ ] Monitor message rates regularly
 - [ ] Track error frequencies and types
@@ -340,6 +366,7 @@ Recommendations:
 ### Normal vs. Concerning Indicators
 
 **Normal (Healthy System):**
+
 - Steady, predictable message rates
 - Infrequent errors (< 1 per 10 minutes)
 - Consistent device response times
@@ -347,6 +374,7 @@ Recommendations:
 - Stable network connectivity
 
 **Concerning (Performance Issues):**
+
 - Message rates >200% of baseline
 - Frequent errors (> 1 per minute)
 - Increasing response times
@@ -354,6 +382,7 @@ Recommendations:
 - System unresponsiveness
 
 ### Key Search Terms for Performance Monitoring
+
 ```
 Performance Issues: timeout, delay, slow, performance
 Network Issues: connection, unreachable, network, ping
@@ -362,6 +391,7 @@ Error Patterns: error, failed, exception, retry
 ```
 
 ### Quick Performance Assessment (5 minutes)
+
 1. Start debug session with "Warning" + "Error" filters
 2. Monitor for 2-3 minutes
 3. Note message count and rate

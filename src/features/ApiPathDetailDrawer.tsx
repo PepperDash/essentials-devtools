@@ -1,5 +1,5 @@
-import { Offcanvas } from "react-bootstrap";
-import { Route } from "../store/apiSlice";
+import { Offcanvas } from 'react-bootstrap';
+import { Route } from '../store/apiSlice';
 
 const ApiPathDetailDrawer = ({
   show,
@@ -28,7 +28,11 @@ const ApiPathDetailDrawer = ({
           </div>
           <div>
             <h5>URL</h5>
-            <a href={`${url}/${route.Url}`} target="_blank" rel="noopener noreferrer">
+            <a
+              href={`${url}/${route.Url}`}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
               {`${url}/${route.Url}`}
             </a>
           </div>
