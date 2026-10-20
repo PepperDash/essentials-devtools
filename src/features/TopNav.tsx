@@ -1,6 +1,6 @@
 import { skipToken } from '@reduxjs/toolkit/query';
 import { useMemo } from 'react';
-import { Dropdown, Nav, Navbar } from 'react-bootstrap';
+import { Badge, Dropdown, Nav, Navbar } from 'react-bootstrap';
 import { NavLink, useLocation } from 'react-router-dom';
 import { meetsMinVersion } from '../shared/functions/meetsMinimumVersion';
 import useAppParams from '../shared/hooks/useAppParams';
@@ -9,9 +9,14 @@ import {
   IconDarkEllipse,
   IconDarkHelp,
 } from '../shared/icons';
-import { useGetPathsQuery, useGetVersionsQuery } from '../store/apiSlice';
+import {
+  useGetPathsQuery,
+  useGetPluginLoadIssuesQuery,
+  useGetVersionsQuery,
+} from '../store/apiSlice';
 import { selectAvailableApps } from '../store/auth/authSelectors';
 import { useAppSelector } from '../store/hooks';
+import { supportsPluginLoadIssuesApi } from '../store/pluginLoadIssuesContract';
 import { supportsSecretsApi } from '../store/secretsContract';
 
 const AppNavLink = ({
@@ -78,6 +83,15 @@ const TopNav = ({ isConnected }: { isConnected: boolean }) => {
     () => supportsSecretsApi(apiPaths?.routes),
     [apiPaths]
   );
+  const showPluginLoadIssues = useMemo(
+    () => supportsPluginLoadIssuesApi(apiPaths?.routes),
+    [apiPaths]
+  );
+
+  // Drives the count badge. Shared with the Plugin Load Issues page through RTK Query's cache.
+  const { data: pluginLoadIssues } = useGetPluginLoadIssuesQuery(
+    params.appId && showPluginLoadIssues ? { appId: params.appId } : skipToken
+  );
 
   const showInitializationExceptions = useMemo(() => {
     const essentialsVersion = currentVersions?.find(
@@ -130,6 +144,22 @@ const TopNav = ({ isConnected }: { isConnected: boolean }) => {
           {showInitializationExceptions && (
             <AppNavLink appId={params.appId} path="initializationExceptions">
               Initialization Exceptions
+            </AppNavLink>
+          )}
+          {showPluginLoadIssues && (
+            <AppNavLink appId={params.appId} path="pluginLoadIssues">
+              Plugin Issues
+              {pluginLoadIssues && pluginLoadIssues.IssueCount > 0 && (
+                <Badge
+                  pill
+                  bg={pluginLoadIssues.ErrorCount > 0 ? 'danger' : 'warning'}
+                  text={pluginLoadIssues.ErrorCount > 0 ? undefined : 'dark'}
+                  className="ms-1"
+                  title={`${pluginLoadIssues.IssueCount} plugin load issue(s)`}
+                >
+                  {pluginLoadIssues.IssueCount}
+                </Badge>
+              )}
             </AppNavLink>
           )}
           <AppNavLink appId={params.appId} path="console">

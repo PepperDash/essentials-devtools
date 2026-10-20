@@ -67,6 +67,17 @@ const apiSlice = createApi({
       }),
     }),
 
+    // Recorded once at startup, so it isn't polled or invalidated
+    getPluginLoadIssues: builder.query<
+      PluginLoadIssuesReturn,
+      { appId: string }
+    >({
+      query: ({ appId }) => ({
+        url: `/${appId}/api/pluginLoadIssues`,
+        method: 'GET',
+      }),
+    }),
+
     getDevices: builder.query<IKeyed[], { appId: string }>({
       query: ({ appId }) => ({
         url: `/${appId}/api/devices`,
@@ -405,6 +416,7 @@ export const {
   useGetPathsQuery,
   useGetVersionsQuery,
   useGetInitializationExceptionsQuery,
+  useGetPluginLoadIssuesQuery,
   useGetDevicesQuery,
   useGetTypesQuery,
   useGetDevicePropertiesQuery,
@@ -467,6 +479,50 @@ export interface EssentialsExceptionBase {
   Message: string;
   StackTrace: string;
   Type: string;
+}
+
+/** Response of GET /pluginLoadIssues: plugin files that recorded problems while loading. */
+export interface PluginLoadIssuesReturn {
+  EssentialsVersion: string;
+  IssueCount: number;
+  ErrorCount: number;
+  Plugins: PluginLoadReport[];
+}
+
+export type PluginLoadStatus =
+  'Pending' | 'Loaded' | 'LoadedAsLibrary' | 'Skipped' | 'Failed';
+
+export type PluginLoadIssueSeverity = 'Warning' | 'Error';
+
+export type PluginLoadIssueCategory =
+  | 'BuiltAgainstNewerEssentials'
+  | 'NewerDependencyReference'
+  | 'IncompatibleApi'
+  | 'MinimumVersionNotMet'
+  | 'MissingDependency'
+  | 'LoadFailure'
+  | 'TypeLoadFailure'
+  | 'FactoryFailure'
+  | 'PackageExtractFailure';
+
+export interface PluginLoadReport {
+  FileName: string;
+  AssemblyName: string | null;
+  Version: string | null;
+  /** Essentials package versions the plugin was built against, by package ID. Empty for older plugins. */
+  BuiltAgainst: Record<string, string>;
+  Status: PluginLoadStatus;
+  Issues: PluginLoadIssue[];
+}
+
+export interface PluginLoadIssue {
+  Severity: PluginLoadIssueSeverity;
+  Category: PluginLoadIssueCategory;
+  Message: string;
+  Detail: string | null;
+  /** The plugin whose load caused this issue, or "Direct load". */
+  TriggeredBy: string;
+  TimestampUtc: string;
 }
 
 export interface Type {

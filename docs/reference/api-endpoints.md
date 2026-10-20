@@ -119,6 +119,82 @@ GET /apiPaths
 
 ---
 
+### Get Plugin Load Issues
+
+**Purpose**: Retrieve the plugin files that recorded problems while Essentials loaded them: plugins built against a newer Essentials or a newer Crestron SDK, plugins that failed to load, missing dependencies, and factories skipped by a minimum version check
+
+**Requires**: Essentials 3.0 or later. The Plugin Issues link appears only when the processor lists this route in `apiPaths`.
+
+```http
+GET /pluginLoadIssues
+GET /pluginLoadIssues?all=true
+```
+
+By default only plugin files with at least one issue are returned. `?all=true` includes plugins that loaded cleanly.
+
+**Response**:
+
+```json
+{
+  "EssentialsVersion": "3.0.0-rc.11",
+  "IssueCount": 2,
+  "ErrorCount": 0,
+  "Plugins": [
+    {
+      "FileName": "KpmgRoom.dll",
+      "AssemblyName": "KpmgRoom",
+      "Version": "1.0.0",
+      "BuiltAgainst": { "PepperDashEssentials": "3.0.0-rc.16" },
+      "Status": "Loaded",
+      "Issues": [
+        {
+          "Severity": "Warning",
+          "Category": "BuiltAgainstNewerEssentials",
+          "Message": "Built against PepperDashEssentials 3.0.0-rc.16, but Essentials 3.0.0-rc.11 is running.",
+          "Detail": "Plugins built against a newer Essentials can call APIs, or depend on Crestron SDK versions, that this Essentials does not have...",
+          "TriggeredBy": "Direct load",
+          "TimestampUtc": "2026-10-20T14:02:11Z"
+        },
+        {
+          "Severity": "Warning",
+          "Category": "NewerDependencyReference",
+          "Message": "References Crestron.SimplSharpPro.UI 2.21.274.0, but 2.21.128.0 is loaded.",
+          "Detail": "...",
+          "TriggeredBy": "Direct load",
+          "TimestampUtc": "2026-10-20T14:02:11Z"
+        }
+      ]
+    }
+  ]
+}
+```
+
+**Response Fields**:
+
+- `EssentialsVersion` (string): The running Essentials version
+- `IssueCount` (number), `ErrorCount` (number): Totals across the returned plugins
+- `Plugins` (array): One entry per plugin file, plugins with errors first
+  - `FileName` (string): The plugin file, e.g. `MyPlugin.dll`
+  - `AssemblyName`, `Version` (string or null): Read from the plugin's metadata when possible
+  - `BuiltAgainst` (object): Essentials package versions the plugin was built against, by package ID. Empty for plugins built before Essentials recorded this
+  - `Status` (string): `Loaded` (plugin factories registered), `LoadedAsLibrary` (loaded, no factories), `Skipped` (loaded, no factories registered), or `Failed` (not loaded)
+  - `Issues` (array):
+    - `Severity` (string): `Warning` (the plugin still loaded) or `Error`
+    - `Category` (string): `BuiltAgainstNewerEssentials`, `NewerDependencyReference`, `IncompatibleApi`, `MinimumVersionNotMet`, `MissingDependency`, `LoadFailure`, `TypeLoadFailure`, `FactoryFailure` or `PackageExtractFailure`
+    - `Message` (string): One-line description
+    - `Detail` (string or null): Exception or remediation detail
+    - `TriggeredBy` (string): The plugin that caused this load, or `Direct load`
+    - `TimestampUtc` (string): When the issue was recorded
+
+**Usage**: Displayed on the Plugin Issues page. The nav link shows the issue count, red when any issue is an error. The same information is available at the processor console with `pluginissues` or `pluginissues verbose`.
+
+**Error Conditions**:
+
+- `404`: Essentials earlier than 3.0 does not have this route
+- `500`: Server error if the report cannot be built
+
+---
+
 ### Get Device Types
 
 **Purpose**: Retrieve all available device types supported by current plugins
