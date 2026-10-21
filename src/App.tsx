@@ -11,6 +11,7 @@ import InitializationExceptions from './features/InitializationExceptions';
 import LoginForm from './features/LoginForm';
 import MainLayout from './features/MainLayout';
 import MobileControl from './features/MobileControl';
+import PluginLoadIssues from './features/PluginLoadIssues';
 import RequireAuth from './features/RequireAuth';
 import Routing from './features/Routing';
 import Secrets from './features/Secrets';
@@ -155,6 +156,7 @@ function App() {
                 path="initializationExceptions"
                 element={<InitializationExceptions />}
               />
+              <Route path="pluginLoadIssues" element={<PluginLoadIssues />} />
               <Route path="config" element={<ConfigFile />} />
               <Route path="devices" element={<DeviceList />} />
               <Route path="types" element={<Types />} />
