@@ -56,6 +56,8 @@ function App() {
   const routeAppIdRef = useRef(currentAppId);
   const previousAppIdRef = useRef(currentAppId);
   const joinRequestIdRef = useRef(0);
+  // The app whose server-side debug session this browser started and hasn't stopped yet
+  const activeSessionAppIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     routeAppIdRef.current = currentAppId;
@@ -71,7 +73,14 @@ function App() {
 
     joinRequestIdRef.current += 1;
     dispatch({ type: WS_DISCONNECT });
-  }, [currentAppId, dispatch]);
+
+    // Closing the socket only ends this browser's side. End the previous app's
+    // server-side session too, as Stop does
+    if (activeSessionAppIdRef.current === previousAppId) {
+      activeSessionAppIdRef.current = null;
+      void stopSession({ appId: previousAppId });
+    }
+  }, [currentAppId, dispatch, stopSession]);
 
   //* FUNCTIONS *******************************************************/
   const join = async (appId: string) => {
@@ -87,8 +96,11 @@ function App() {
         joinRequestIdRef.current !== requestId ||
         routeAppIdRef.current !== appId
       ) {
+        // The server created a session nobody will connect to; end it
+        void stopSession({ appId });
         return;
       }
+      activeSessionAppIdRef.current = appId;
       // The server already picks the URL on the browser's side of the network
       const { url, fallbackUrl } = res;
       console.log(
@@ -111,6 +123,9 @@ function App() {
 
   const stop = (appId: string) => {
     console.log('Stopping debug session');
+    // Invalidate any join still in flight so its response can't reopen the session
+    joinRequestIdRef.current += 1;
+    activeSessionAppIdRef.current = null;
     dispatch({ type: WS_DISCONNECT });
     if (!appId) return;
     void stopSession({ appId });

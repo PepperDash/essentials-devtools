@@ -159,9 +159,35 @@ it('ignores stale debug-session responses after navigating to another app', asyn
   });
 
   expect(FakeWebSocket.instances).toHaveLength(0);
+  // The server still created that session, so it is ended rather than left running
+  expect(mockStopSession).toHaveBeenCalledWith({ appId: 'app01' });
   expect(store.getState().websocket.isConnected).toBe(false);
   expect(store.getState().websocket.isConnecting).toBe(false);
   expect(
     screen.getByRole('button', { name: /Start Debug Session/i })
   ).toBeInTheDocument();
+});
+
+it("ends the previous app's server-side debug session when the app route changes", async () => {
+  store.dispatch(authActions.loginSuccess(['app01', 'app02']));
+  mockStartSession.mockImplementation(() => ({
+    unwrap: () => Promise.resolve({ url: 'ws://app01' }),
+  }));
+
+  const router = renderAtRoute('/app01/console');
+
+  await act(async () => {
+    fireEvent.click(
+      await screen.findByRole('button', { name: /Start Debug Session/i })
+    );
+  });
+  expect(FakeWebSocket.instances).toHaveLength(1);
+  expect(mockStopSession).not.toHaveBeenCalled();
+
+  await act(async () => {
+    await router.navigate('/app02/console');
+  });
+
+  expect(mockStopSession).toHaveBeenCalledTimes(1);
+  expect(mockStopSession).toHaveBeenCalledWith({ appId: 'app01' });
 });
