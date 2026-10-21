@@ -11,6 +11,7 @@ import {
   PluginLoadIssuesReturn,
 } from '../store/apiSlice';
 import {
+  badgeText,
   categoryLabel,
   supportsPluginLoadIssuesApi,
 } from '../store/pluginLoadIssuesContract';
@@ -34,14 +35,15 @@ const adapter: AxiosAdapter = (config) => {
   return Promise.reject(new Error(`Unexpected request ${url}`));
 };
 
-const renderPage = () =>
+const makeStore = () =>
+  configureStore({
+    reducer: { [api.reducerPath]: api.reducer },
+    middleware: (getDefault) => getDefault().concat(api.middleware),
+  });
+
+const renderPage = (store = makeStore()) =>
   render(
-    <Provider
-      store={configureStore({
-        reducer: { [api.reducerPath]: api.reducer },
-        middleware: (getDefault) => getDefault().concat(api.middleware),
-      })}
-    >
+    <Provider store={store}>
       <MemoryRouter initialEntries={['/app01']}>
         <Routes>
           <Route path="/:appId" element={<PluginLoadIssues />} />
@@ -196,5 +198,56 @@ describe('categoryLabel', () => {
         'SomethingNew' as unknown as Parameters<typeof categoryLabel>[0]
       )
     ).toBe('SomethingNew');
+  });
+});
+
+describe('after a program restart', () => {
+  it('shows the new run on the next visit, even while the nav badge keeps the query subscribed', async () => {
+    const store = makeStore();
+    // TopNav holds this subscription for its badge for as long as the app is open
+    const navBadge = store.dispatch(
+      api.endpoints.getPluginLoadIssues.initiate({ appId: 'app01' })
+    );
+    await navBadge;
+
+    const first = renderPage(store);
+    await screen.findByText('KpmgRoom.dll');
+    first.unmount();
+
+    // The program restarts with the plugins fixed
+    response = {
+      EssentialsVersion: '3.0.0-rc.16',
+      IssueCount: 0,
+      ErrorCount: 0,
+      Plugins: [],
+    };
+
+    renderPage(store);
+
+    expect(
+      await screen.findByText('No plugin load issues reported.')
+    ).toBeTruthy();
+    expect(screen.getByText('Running Essentials 3.0.0-rc.16')).toBeTruthy();
+    navBadge.unsubscribe();
+  });
+});
+
+describe('badge contrast', () => {
+  it('uses dark text everywhere except on red', () => {
+    expect(badgeText('success')).toBe('dark');
+    expect(badgeText('secondary')).toBe('dark');
+    expect(badgeText('warning')).toBe('dark');
+    expect(badgeText('danger')).toBeUndefined();
+  });
+
+  it('renders status badges with readable text', async () => {
+    renderPage();
+    await screen.findByText('Plugin Load Issues');
+
+    expect(screen.getByText('Loaded').className).toContain('text-dark');
+    expect(screen.getByText('Skipped').className).toContain('text-dark');
+    expect(screen.getAllByText('Error')[0].className).not.toContain(
+      'text-dark'
+    );
   });
 });

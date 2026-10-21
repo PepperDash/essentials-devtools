@@ -16,7 +16,10 @@ import {
 } from '../store/apiSlice';
 import { selectAvailableApps } from '../store/auth/authSelectors';
 import { useAppSelector } from '../store/hooks';
-import { supportsPluginLoadIssuesApi } from '../store/pluginLoadIssuesContract';
+import {
+  badgeText,
+  supportsPluginLoadIssuesApi,
+} from '../store/pluginLoadIssuesContract';
 import { supportsSecretsApi } from '../store/secretsContract';
 
 const AppNavLink = ({
@@ -153,7 +156,9 @@ const TopNav = ({ isConnected }: { isConnected: boolean }) => {
                 <Badge
                   pill
                   bg={pluginLoadIssues.ErrorCount > 0 ? 'danger' : 'warning'}
-                  text={pluginLoadIssues.ErrorCount > 0 ? undefined : 'dark'}
+                  text={badgeText(
+                    pluginLoadIssues.ErrorCount > 0 ? 'danger' : 'warning'
+                  )}
                   className="ms-1"
                   title={`${pluginLoadIssues.IssueCount} plugin load issue(s)`}
                 >

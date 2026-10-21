@@ -7,6 +7,7 @@ import {
   useGetPluginLoadIssuesQuery,
 } from '../store/apiSlice';
 import {
+  badgeText,
   categoryLabel,
   severityVariant,
   statusLabel,
@@ -24,7 +25,11 @@ const builtAgainstText = (report: PluginLoadReport) => {
 const PluginLoadIssues = () => {
   const { appId } = useAppParams();
   const { data, isLoading, isError } = useGetPluginLoadIssuesQuery(
-    appId ? { appId } : skipToken
+    appId ? { appId } : skipToken,
+    // The report is fixed for one program run, so it isn't polled. TopNav keeps the query
+    // subscribed for its badge, though, so without this a visit after a program restart would
+    // show the previous run's issues. Refetching on mount also refreshes that badge.
+    { refetchOnMountOrArgChange: true }
   );
 
   const [expandedKey, setExpandedKey] = useState<string | null>(null);
@@ -91,7 +96,11 @@ const PluginLoadIssues = () => {
                           v{report.Version}
                         </span>
                       )}
-                      <Badge bg={statusVariant(report.Status)} className="me-2">
+                      <Badge
+                        bg={statusVariant(report.Status)}
+                        text={badgeText(statusVariant(report.Status))}
+                        className="me-2"
+                      >
                         {statusLabel(report.Status)}
                       </Badge>
                       {builtAgainst && (
@@ -110,9 +119,7 @@ const PluginLoadIssues = () => {
                           <td>
                             <Badge
                               bg={severityVariant(issue.Severity)}
-                              text={
-                                issue.Severity === 'Error' ? undefined : 'dark'
-                              }
+                              text={badgeText(severityVariant(issue.Severity))}
                             >
                               {issue.Severity}
                             </Badge>

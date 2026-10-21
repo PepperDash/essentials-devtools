@@ -26,6 +26,15 @@ export function severityVariant(severity: PluginLoadIssueSeverity): string {
   return severity === 'Error' ? 'danger' : 'warning';
 }
 
+/**
+ * Text colour for a badge on the given Bootstrap variant. With this app's theme colours, white text
+ * fails the 4.5:1 contrast minimum on success (2.56:1), secondary (4.00:1) and warning (2.21:1), so
+ * those get dark text. Danger keeps white text, which passes at 5.05:1 where dark would not (4.16:1).
+ */
+export function badgeText(variant: string): 'dark' | undefined {
+  return variant === 'danger' ? undefined : 'dark';
+}
+
 /** Bootstrap colour for a status badge. */
 export function statusVariant(status: PluginLoadStatus): string {
   switch (status) {
