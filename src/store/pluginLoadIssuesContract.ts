@@ -71,6 +71,8 @@ const CATEGORY_LABELS: Record<PluginLoadIssueCategory, string> = {
   TypeLoadFailure: 'Type load failure',
   FactoryFailure: 'Factory failure',
   PackageExtractFailure: 'Package extract failure',
+  DuplicateAssembly: 'Duplicate assembly',
+  DevelopmentBuildNotListed: 'Development build not listed',
 };
 
 /** Readable label for a category; unknown categories from a newer Essentials show as sent. */

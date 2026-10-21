@@ -177,10 +177,10 @@ By default only plugin files with at least one issue are returned. `?all=true` i
   - `FileName` (string): The plugin file, e.g. `MyPlugin.dll`
   - `AssemblyName`, `Version` (string or null): Read from the plugin's metadata when possible
   - `BuiltAgainst` (object): Essentials package versions the plugin was built against, by package ID. Empty for plugins built before Essentials recorded this
-  - `Status` (string): `Loaded` (plugin factories registered), `LoadedAsLibrary` (loaded, no factories), `Skipped` (loaded, no factories registered), or `Failed` (not loaded)
+  - `Status` (string): `Loaded` (plugin factories registered), `LoadedAsLibrary` (loaded, no factories), `Skipped` (not used: no factories registered, or a duplicate of an assembly the program already provides), or `Failed` (not loaded)
   - `Issues` (array):
     - `Severity` (string): `Warning` (the plugin still loaded) or `Error`
-    - `Category` (string): `BuiltAgainstNewerEssentials`, `NewerDependencyReference`, `IncompatibleApi`, `MinimumVersionNotMet`, `MissingDependency`, `LoadFailure`, `TypeLoadFailure`, `FactoryFailure` or `PackageExtractFailure`
+    - `Category` (string): `BuiltAgainstNewerEssentials`, `NewerDependencyReference`, `IncompatibleApi`, `MinimumVersionNotMet`, `MissingDependency`, `LoadFailure`, `TypeLoadFailure`, `FactoryFailure`, `PackageExtractFailure`, `DuplicateAssembly` or `DevelopmentBuildNotListed`
     - `Message` (string): One-line description
     - `Detail` (string or null): Exception or remediation detail
     - `TriggeredBy` (string): The plugin that caused this load, or `Direct load`

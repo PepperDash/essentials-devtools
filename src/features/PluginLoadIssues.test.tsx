@@ -193,6 +193,10 @@ describe('supportsPluginLoadIssuesApi', () => {
 describe('categoryLabel', () => {
   it('falls back to the raw value for a category this app does not know', () => {
     expect(categoryLabel('LoadFailure')).toBe('Load failure');
+    expect(categoryLabel('DuplicateAssembly')).toBe('Duplicate assembly');
+    expect(categoryLabel('DevelopmentBuildNotListed')).toBe(
+      'Development build not listed'
+    );
     expect(
       categoryLabel(
         'SomethingNew' as unknown as Parameters<typeof categoryLabel>[0]

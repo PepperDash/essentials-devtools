@@ -503,7 +503,9 @@ export type PluginLoadIssueCategory =
   | 'LoadFailure'
   | 'TypeLoadFailure'
   | 'FactoryFailure'
-  | 'PackageExtractFailure';
+  | 'PackageExtractFailure'
+  | 'DuplicateAssembly'
+  | 'DevelopmentBuildNotListed';
 
 export interface PluginLoadReport {
   FileName: string;
