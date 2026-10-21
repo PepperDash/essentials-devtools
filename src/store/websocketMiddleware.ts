@@ -62,6 +62,10 @@ export const websocketMiddleware: Middleware = (store) => {
               fallback
             );
             closeSocket();
+            // An already-open primary can error too. Report a fresh attempt rather than
+            // leaving the UI showing a live connection while the fallback handshakes
+            store.dispatch(disconnected());
+            store.dispatch(connectionAttemptStarted());
             connectToUrl(fallback);
           } else {
             // Report all attempted URLs (primary + fallback that was tried)
