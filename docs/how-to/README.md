@@ -37,7 +37,7 @@ These guides provide step-by-step solutions to specific problems you might encou
 **You'll learn to:**
 
 - Open Dev Tools for a VC-4 room and sign in
-- Open the firewall ports the Debug Console, routing and Mobile Control need
+- Open the firewall port the Mobile Control UI needs
 - Accept the WebSocket certificate
 
 ---

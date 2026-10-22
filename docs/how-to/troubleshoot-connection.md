@@ -212,7 +212,7 @@ Should return JSON data if the API is working.
 - Corporate firewalls may block HTTPS to internal devices
 - Some networks block self-signed certificates
 - Guest networks may restrict device-to-device communication
-- On a VC-4 server, the host firewall blocks the Debug Console and routing WebSocket ports (65335–65534/tcp) and the Mobile Control direct server port until they're opened; see [Open the Firewall Ports](./use-dev-tools-on-vc4.md#open-the-firewall-ports)
+- On a VC-4 server, the host firewall blocks the Mobile Control direct server port until it's opened; see [Open the Mobile Control Port](./use-dev-tools-on-vc4.md#open-the-mobile-control-port). The Debug Console and routing use HTTPS polling there, so they need no extra ports
 
 ### DNS Resolution
 
