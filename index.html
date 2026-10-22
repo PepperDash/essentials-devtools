@@ -2,6 +2,20 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
+    <script>
+      // Dev Tools is served at /cws/debug/ on an appliance and under /VirtualControl/Rooms/<RoomId>/
+      // on VC-4. Set <base> from the page's own path so the relative asset URLs resolve from the app
+      // root, including on deep links such as .../cws/debug/app01/versions. Must stay above every
+      // link and script tag.
+      (function () {
+        var path = window.location.pathname;
+        var i = path.toLowerCase().indexOf('/cws/');
+        if (i < 0) return;
+        var base = document.createElement('base');
+        base.href = path.slice(0, i) + '/cws/debug/';
+        document.head.appendChild(base);
+      })();
+    </script>
     <link rel="icon" href="/favicon.ico" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#000000" />

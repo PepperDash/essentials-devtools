@@ -75,6 +75,7 @@ import RoutingDeviceNode, {
   RoutingDeviceNodeData,
 } from './RoutingDeviceNode';
 import TieLineEdge from './TieLineEdge';
+import { apiUrl } from '../shared/functions/hostPaths';
 
 // ─── Constants ──────────────────────────────────────────────────────────────
 
@@ -604,7 +605,7 @@ const Routing = () => {
   const connectRoutingWebSocket = useCallback(
     (onCancelledRef?: { current: boolean }) => {
       if (!appId || !isV3) return;
-      const baseUrl = `/cws/${appId}/api/routingFeedbackSession`;
+      const baseUrl = apiUrl(appId, 'routingFeedbackSession');
 
       fetch(baseUrl)
         .then((res) => {

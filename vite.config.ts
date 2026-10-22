@@ -2,7 +2,7 @@ import react from '@vitejs/plugin-react';
 import { defineConfig, loadEnv } from 'vite';
 import svgr from 'vite-plugin-svgr';
 
-export default defineConfig(({ mode }) => {
+export default defineConfig(({ mode, command }) => {
   const env = loadEnv(mode, process.cwd(), '');
 
   const programHost = env.PROGRAM_HOST;
@@ -13,7 +13,10 @@ export default defineConfig(({ mode }) => {
   }
 
   return {
-    base: '/cws/debug/',
+    // Built with relative asset paths so the same build works under /cws/debug/ on an appliance and
+    // /VirtualControl/Rooms/<RoomId>/cws/debug/ on VC-4; index.html sets <base> at runtime. The dev
+    // server keeps the absolute base it has always used.
+    base: command === 'build' ? './' : '/cws/debug/',
     plugins: [
       react(),
       svgr({ include: '**/*.svg', svgrOptions: { exportType: 'named' } }),

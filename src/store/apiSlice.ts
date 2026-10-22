@@ -20,13 +20,19 @@ import {
   SecretsProvidersResponse,
   SecretsTemplateResponse,
 } from './secretsContract';
+import { getCwsRoot, toCwsPath } from '../shared/functions/hostPaths';
 
+// Relative to wherever the app is served: `/cws` on an appliance,
+// `/VirtualControl/Rooms/<RoomId>/cws` on VC-4. See shared/functions/hostPaths.
 function getBaseApiPath(): string {
-  return `/cws`;
+  return getCwsRoot();
 }
 
 const apiSlice = createApi({
-  baseQuery: axiosBaseQuery({ baseUrl: getBaseApiPath() }),
+  baseQuery: axiosBaseQuery({
+    baseUrl: getBaseApiPath(),
+    mapUrl: (url) => toCwsPath(url),
+  }),
   tagTypes: [
     'Version',
     'Device',
