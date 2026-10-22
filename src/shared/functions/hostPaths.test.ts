@@ -39,6 +39,20 @@ describe('getHostLayout', () => {
     });
   });
 
+  it('reads a VC-4 room named CWS from the /cws/debug mount, not its first /cws/', () => {
+    for (const path of [
+      '/VirtualControl/Rooms/CWS/cws/debug/',
+      '/VirtualControl/Rooms/cws/cws/debug/cws/versions',
+    ]) {
+      const layout = getHostLayout(path);
+      expect(layout.isVirtualControl).toBe(true);
+      expect(layout.roomId?.toLowerCase()).toBe('cws');
+      expect(getCwsRoot(layout)).toMatch(
+        /^\/VirtualControl\/Rooms\/cws\/cws$/i
+      );
+    }
+  });
+
   it('treats a page outside /cws (tests, local tools) as an appliance', () => {
     expect(getHostLayout('/')).toEqual({
       prefix: '',

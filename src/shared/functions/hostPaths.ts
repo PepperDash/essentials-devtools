@@ -25,12 +25,16 @@ const APPLIANCE_APP_IDS = Array.from(
 
 const VIRTUAL_CONTROL_PREFIX = /^\/VirtualControl\/Rooms\/([^/]+)$/i;
 
+// Where the app is mounted. Matched as a whole rather than at the first `/cws/`, since a VC-4 room
+// can itself be named CWS (`/VirtualControl/Rooms/CWS/cws/debug/`). index.html sets <base> the same way.
+const APP_MOUNT = /\/cws\/debug(?:\/|$)/i;
+
 /** Works out the host layout from a page path, by default the current page's. */
 export function getHostLayout(
   pathname: string = window.location.pathname
 ): HostLayout {
-  const cwsIndex = pathname.toLowerCase().indexOf('/cws/');
-  const prefix = cwsIndex > 0 ? pathname.slice(0, cwsIndex) : '';
+  const mount = APP_MOUNT.exec(pathname);
+  const prefix = mount && mount.index > 0 ? pathname.slice(0, mount.index) : '';
   const match = VIRTUAL_CONTROL_PREFIX.exec(prefix);
 
   return {
