@@ -71,7 +71,11 @@ export const WS_DISCONNECT = 'websocket/disconnect';
 
 export interface WsConnectAction {
   type: typeof WS_CONNECT;
-  payload: { url: string; fallbackUrl?: string };
+  /**
+   * Either the WebSocket URL(s) from the debug session, or `pollUrl` to read the log over HTTP
+   * where the WebSocket port can't be reached (see messagePoller).
+   */
+  payload: { url: string; fallbackUrl?: string } | { pollUrl: string };
 }
 
 export interface WsDisconnectAction {

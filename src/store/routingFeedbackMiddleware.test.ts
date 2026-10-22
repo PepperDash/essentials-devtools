@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { routingFeedbackMiddleware } from './routingFeedbackMiddleware';
 import routingFeedbackReducer, {
   ROUTING_WS_CONNECT,
+  ROUTING_WS_DISCONNECT,
 } from './routingFeedbackSlice';
 
 // Minimal stand-in for the browser WebSocket; tests drive its events directly
@@ -161,5 +162,59 @@ describe('routingFeedbackMiddleware', () => {
     expect(FakeWebSocket.instances[2].url).toBe('ws://fallback');
     FakeWebSocket.instances[2].onopen?.();
     expect(store.getState().routingFeedback.connected).toBe(true);
+  });
+
+  // A fetch stand-in for the polling transport: the first request starts the session, later ones
+  // stay pending until aborted, like a long poll with nothing new
+  const stubPollingFetch = (first: object) => {
+    const requests: { url: string; signal?: AbortSignal | null }[] = [];
+    vi.stubGlobal(
+      'fetch',
+      vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
+        requests.push({ url: String(input), signal: init?.signal });
+        if (requests.length === 1) {
+          return Promise.resolve(
+            new Response(JSON.stringify(first), { status: 200 })
+          );
+        }
+        return new Promise<Response>((_, reject) => {
+          init?.signal?.addEventListener('abort', () =>
+            reject(new DOMException('Aborted', 'AbortError'))
+          );
+        });
+      })
+    );
+    return requests;
+  };
+
+  it('reads routing feedback over HTTP when given a poll URL', async () => {
+    vi.useRealTimers();
+    const snapshot = {
+      type: 'snapshot',
+      midpointRoutes: { 'switcher-1': [] },
+      sinkRoutes: {},
+      layouts: {},
+    };
+    const requests = stubPollingFetch({
+      next: 9,
+      messages: [JSON.stringify(snapshot)],
+    });
+    const store = makeStore();
+
+    store.dispatch({
+      type: ROUTING_WS_CONNECT,
+      payload: { pollUrl: '/cws/api/routingFeedbackSession/messages' },
+    });
+
+    await vi.waitFor(() => expect(requests).toHaveLength(2));
+    expect(store.getState().routingFeedback.connected).toBe(true);
+    expect(store.getState().routingFeedback.midpointRoutes).toEqual({
+      'switcher-1': [],
+    });
+    expect(requests[1].url).toContain('since=9');
+    expect(FakeWebSocket.instances).toHaveLength(0);
+
+    store.dispatch({ type: ROUTING_WS_DISCONNECT });
+    expect(requests[1].signal?.aborted).toBe(true);
   });
 });

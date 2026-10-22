@@ -1,5 +1,6 @@
 import { Middleware } from '@reduxjs/toolkit';
 import { RoutingFeedbackMessage } from './apiSlice';
+import { MessagePoller, startMessagePoller } from './messagePoller';
 import {
   layoutChanged,
   midpointRouteChanged,
@@ -20,6 +21,7 @@ const MAX_RECONNECT_ATTEMPTS = 5;
 
 export const routingFeedbackMiddleware: Middleware = (store) => {
   let socket: WebSocket | null = null;
+  let poller: MessagePoller | null = null;
   let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
   let reconnectAttempts = 0;
   let currentUrl: string | null = null;
@@ -29,7 +31,60 @@ export const routingFeedbackMiddleware: Middleware = (store) => {
   let fallbackUrl: string | null = null;
   let attemptedUrls: string[] = [];
 
+  function handleMessage(data: string) {
+    try {
+      const msg = JSON.parse(data) as RoutingFeedbackMessage;
+      switch (msg.type) {
+        case 'snapshot':
+          store.dispatch(routingSnapshotReceived(msg));
+          break;
+        case 'midpointRouteChanged':
+          store.dispatch(midpointRouteChanged(msg));
+          break;
+        case 'sinkInputChanged':
+          store.dispatch(sinkInputChanged(msg));
+          break;
+        case 'layoutChanged':
+          store.dispatch(layoutChanged(msg));
+          break;
+      }
+    } catch (e) {
+      console.error('[routing-ws] Failed to parse message', e);
+    }
+  }
+
+  function startPolling(pollUrl: string) {
+    console.log('[routing-ws] Polling', pollUrl);
+
+    // Every callback checks it still owns `poller`, as the socket handlers do. The first
+    // response of each session carries the snapshot, and a gap restarts the session.
+    const current: MessagePoller = startMessagePoller({
+      url: pollUrl,
+      restartOnMissed: true,
+      onConnected: () => {
+        if (poller === current) store.dispatch(routingWsConnected());
+      },
+      onDisconnected: () => {
+        if (poller === current) store.dispatch(routingWsDisconnected());
+      },
+      onFailed: (err) => {
+        if (poller !== current) return;
+        console.error('[routing-ws] Polling routing feedback failed', err);
+        poller = null;
+        store.dispatch(routingWsDisconnected());
+      },
+      onMessages: (messages) => {
+        if (poller === current) messages.forEach(handleMessage);
+      },
+    });
+    poller = current;
+  }
+
   function cleanup() {
+    if (poller) {
+      poller.stop();
+      poller = null;
+    }
     if (reconnectTimer) {
       clearTimeout(reconnectTimer);
       reconnectTimer = null;
@@ -112,25 +167,7 @@ export const routingFeedbackMiddleware: Middleware = (store) => {
 
     ws.onmessage = (event: MessageEvent<string>) => {
       if (socket !== ws) return;
-      try {
-        const msg = JSON.parse(event.data) as RoutingFeedbackMessage;
-        switch (msg.type) {
-          case 'snapshot':
-            store.dispatch(routingSnapshotReceived(msg));
-            break;
-          case 'midpointRouteChanged':
-            store.dispatch(midpointRouteChanged(msg));
-            break;
-          case 'sinkInputChanged':
-            store.dispatch(sinkInputChanged(msg));
-            break;
-          case 'layoutChanged':
-            store.dispatch(layoutChanged(msg));
-            break;
-        }
-      } catch (e) {
-        console.error('[routing-ws] Failed to parse message', e);
-      }
+      handleMessage(event.data);
     };
   }
 
@@ -161,9 +198,13 @@ export const routingFeedbackMiddleware: Middleware = (store) => {
       RoutingWsConnectAction | RoutingWsDisconnectAction;
 
     if (type === ROUTING_WS_CONNECT) {
-      const { url, fallbackUrl: fb } = (action as RoutingWsConnectAction)
-        .payload;
+      const payload = (action as RoutingWsConnectAction).payload;
       cleanup();
+      if ('pollUrl' in payload) {
+        startPolling(payload.pollUrl);
+        return;
+      }
+      const { url, fallbackUrl: fb } = payload;
       primaryUrl = url;
       fallbackUrl = fb ?? null;
       connectToUrl(url, fallbackUrl ?? undefined);

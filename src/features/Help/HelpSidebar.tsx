@@ -1,9 +1,12 @@
 import { NavLink } from 'react-router-dom';
 import { docsNavTree } from './docsContent';
 
-const HelpSidebar = () => {
+const HelpSidebar = ({ open = false }: { open?: boolean }) => {
   return (
-    <nav className="left-nav-width flex-shrink-0 overflow-auto pe-2 border-end">
+    <nav
+      id="help-contents"
+      className={`help-sidebar flex-shrink-0 overflow-auto pe-2 ${open ? '' : 'd-none d-md-block'}`}
+    >
       <NavLink
         to="/help"
         end

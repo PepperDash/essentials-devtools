@@ -12,10 +12,10 @@ const ListFiltersHeader = ({
   rightContent,
 }: ListFiltersHeaderProps) => {
   return (
-    <div className="ps-2 d-flex justify-content-between mb-2 user-select-none align-items-center flex-nowrap">
-      <div className="row row-cols-sm-auto g-3 user-select-none flex-nowrap">
+    <div className="ps-md-2 d-flex flex-wrap flex-md-nowrap justify-content-between mb-2 gap-2 user-select-none align-items-center">
+      <div className="row row-cols-sm-auto g-2 g-md-3 user-select-none flex-wrap flex-md-nowrap flex-grow-1 flex-md-grow-0">
         {showSearch && (
-          <div className="col-8">
+          <div className="col-24">
             {onSearchChange !== undefined ? (
               <FilterSearchText
                 value={searchValue ?? ''}
@@ -26,7 +26,7 @@ const ListFiltersHeader = ({
             )}
           </div>
         )}
-        <div className="col-16 d-none d-lg-block">{filters}</div>
+        <div className="col-24">{filters}</div>
       </div>
 
       <div className="d-flex">

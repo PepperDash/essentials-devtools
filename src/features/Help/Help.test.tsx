@@ -1,13 +1,26 @@
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { MemoryRouter, Route, Routes, useNavigate } from 'react-router-dom';
 import Help from './Help';
+
+const BackButton = () => {
+  const navigate = useNavigate();
+  return <button onClick={() => void navigate(-1)}>Go back</button>;
+};
 
 const renderHelp = (initialPath: string) =>
   render(
     <MemoryRouter initialEntries={[initialPath]}>
       <Routes>
-        <Route path="help/*" element={<Help />} />
+        <Route
+          path="help/*"
+          element={
+            <>
+              <Help />
+              <BackButton />
+            </>
+          }
+        />
       </Routes>
     </MemoryRouter>
   );
@@ -111,6 +124,53 @@ describe('Help', () => {
     expect(fragmentLink).toHaveAttribute(
       'href',
       '/help/reference/api-endpoints#get-api-paths'
+    );
+  });
+
+  it('folds the sidebar behind a Contents button on phones, closing it once a page is picked', () => {
+    renderHelp('/help/reference/api-endpoints');
+
+    // Closed: CSS hides the sidebar below md and leaves the article showing
+    const sidebar = () => document.getElementById('help-contents');
+    expect(sidebar()?.className).toContain('d-none d-md-block');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Contents' }));
+    expect(sidebar()?.className).not.toContain('d-none');
+    expect(
+      screen.getByRole('button', { name: 'Close contents' })
+    ).toHaveAttribute('aria-expanded', 'true');
+
+    fireEvent.click(
+      within(getSidebar()).getByRole('link', {
+        name: 'How to Manage Stored Secrets',
+      })
+    );
+    expect(sidebar()?.className).toContain('d-none d-md-block');
+    expect(screen.getByRole('button', { name: 'Contents' })).toHaveAttribute(
+      'aria-expanded',
+      'false'
+    );
+  });
+
+  it('keeps Contents closed after Back to the article it was opened on', () => {
+    renderHelp('/help/reference/api-endpoints');
+    const sidebar = () => document.getElementById('help-contents');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Contents' }));
+    fireEvent.click(
+      within(getSidebar()).getByRole('link', {
+        name: 'How to Manage Stored Secrets',
+      })
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Go back' }));
+
+    expect(
+      screen.getByRole('heading', { name: /API Endpoints Reference/i })
+    ).toBeInTheDocument();
+    expect(sidebar()?.className).toContain('d-none d-md-block');
+    expect(screen.getByRole('button', { name: 'Contents' })).toHaveAttribute(
+      'aria-expanded',
+      'false'
     );
   });
 });

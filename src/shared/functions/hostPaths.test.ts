@@ -5,6 +5,7 @@ import {
   getCwsRoot,
   getHostLayout,
   getRouterBasename,
+  streamsUseHttpPolling,
   toCwsPath,
 } from './hostPaths';
 
@@ -117,5 +118,15 @@ describe('apiUrl', () => {
     expect(apiUrl('DEMOV3', '/routingFeedbackSession', vc4)).toBe(
       '/VirtualControl/Rooms/DEMOV3/cws/api/routingFeedbackSession'
     );
+  });
+});
+
+describe('streamsUseHttpPolling', () => {
+  it('polls on Virtual Control, where the WebSocket ports are firewalled', () => {
+    expect(streamsUseHttpPolling(vc4)).toBe(true);
+  });
+
+  it('keeps the WebSockets on an appliance', () => {
+    expect(streamsUseHttpPolling(appliance)).toBe(false);
   });
 });
