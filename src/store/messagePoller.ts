@@ -104,6 +104,9 @@ export function startMessagePoller(
         const response = await get(cursor);
         if (stopped) return;
 
+        // Any successful response ends a run of failures, including a gap that restarts the session
+        failures = 0;
+
         if (cursor !== null && response.missed && restartOnMissed) {
           // Start over to get fresh full state
           cursor = null;
@@ -111,7 +114,6 @@ export function startMessagePoller(
         }
 
         cursor = response.next;
-        failures = 0;
 
         if (!connected) {
           connected = true;

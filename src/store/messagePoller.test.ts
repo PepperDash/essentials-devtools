@@ -138,6 +138,32 @@ describe('startMessagePoller', () => {
     expect(calls.failed).toBe(0);
   });
 
+  it('counts only consecutive failures when a gap restarts the session', async () => {
+    // Four failures, a successful gap response, then one more failure on the new snapshot request:
+    // never five in a row, so polling must carry on
+    const { fetchImpl, urls } = scriptedFetch([
+      { next: 3, messages: ['snapshot-1'] },
+      500,
+      500,
+      500,
+      500,
+      { next: 9, missed: true, messages: [] },
+      500,
+      { next: 9, messages: ['snapshot-2'] },
+    ]);
+
+    const { poller, calls } = start(fetchImpl, {
+      restartOnMissed: true,
+      maxFailures: 5,
+    });
+
+    await vi.waitFor(() => expect(calls.messages).toContain('snapshot-2'));
+    poller.stop();
+
+    expect(calls.failed).toBe(0);
+    expect(urls[6]).toBe('/cws/api/debugSession/messages');
+  });
+
   it('gives up after too many failures in a row', async () => {
     const { fetchImpl, urls } = scriptedFetch([500, 500, 500]);
 
