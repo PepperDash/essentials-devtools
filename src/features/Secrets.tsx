@@ -226,10 +226,10 @@ const Secrets = () => {
       <tr key={entry.key}>
         <td className="text-break">{entry.key}</td>
         <td className="small text-muted">{entry.description}</td>
-        <td className="small text-muted">
+        <td className="small text-muted d-none d-md-table-cell">
           {entry.updatedUtc ?? entry.lastModifiedUtc ?? ''}
         </td>
-        <td className="d-flex justify-content-end gap-1">
+        <td className="d-flex flex-wrap justify-content-end gap-1">
           {showActions && (
             <Button
               size="sm"
@@ -254,7 +254,7 @@ const Secrets = () => {
     ));
 
   return (
-    <div className="d-flex flex-column overflow-hidden h-100 gap-3 p-3">
+    <div className="d-flex flex-column overflow-hidden h-100 gap-3 p-1 p-md-3 page-scroll-sm">
       <div>
         <h2 className="mb-1">Secrets</h2>
         <p className="text-muted small mb-0">
@@ -339,14 +339,14 @@ const Secrets = () => {
         </div>
       )}
 
-      <div className="overflow-auto flex-grow-1">
+      <div className="overflow-auto flex-grow-1 pane-scroll-sm">
         <h5 className="mb-2">Managed secrets</h5>
         <table className="table table-striped table-bordered">
           <thead className="table-light sticky-top">
             <tr>
               <th>Key</th>
               <th>Description</th>
-              <th>Updated</th>
+              <th className="d-none d-md-table-cell">Updated</th>
               <th className="text-end">
                 <Button
                   size="sm"
@@ -390,7 +390,7 @@ const Secrets = () => {
                 <tr>
                   <th>Key</th>
                   <th>Owner</th>
-                  <th>Modified</th>
+                  <th className="d-none d-md-table-cell">Modified</th>
                   <th className="text-end">&nbsp;</th>
                 </tr>
               </thead>
@@ -404,7 +404,7 @@ const Secrets = () => {
                       </span>
                     </td>
                     <td className="small text-muted">{entry.owner}</td>
-                    <td className="small text-muted">
+                    <td className="small text-muted d-none d-md-table-cell">
                       {entry.lastModifiedUtc}
                     </td>
                     <td className="d-flex justify-content-end">

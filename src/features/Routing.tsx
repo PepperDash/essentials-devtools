@@ -1461,7 +1461,7 @@ const Routing = () => {
             </Dropdown.Menu>
           </Dropdown>
         </div>
-        <div className="d-flex ms-auto gap-3 align-items-center">
+        <div className="d-flex flex-wrap ms-md-auto gap-2 gap-md-3 align-items-center">
           <div
             className={`form-check form-switch mb-0 d-flex align-items-center gap-1 ${styles.hideUnconnectedSwitch}`}
           >
@@ -1473,7 +1473,10 @@ const Routing = () => {
               checked={hideUnconnected}
               onChange={(e) => setHideUnconnected(e.target.checked)}
             />
-            <label className="form-check-label" htmlFor="hideUnconnectedSwitch">
+            <label
+              className="form-check-label text-nowrap"
+              htmlFor="hideUnconnectedSwitch"
+            >
               Hide unconnected devices
             </label>
           </div>
@@ -1489,7 +1492,7 @@ const Routing = () => {
               onChange={(e) => setHideUnconnectedPorts(e.target.checked)}
             />
             <label
-              className="form-check-label"
+              className="form-check-label text-nowrap"
               htmlFor="hideUnconnectedPortsSwitch"
             >
               Hide unconnected ports
@@ -1506,7 +1509,10 @@ const Routing = () => {
               checked={darkMode}
               onChange={(e) => setDarkMode(e.target.checked)}
             />
-            <label className="form-check-label" htmlFor="darkModeSwitch">
+            <label
+              className="form-check-label text-nowrap"
+              htmlFor="darkModeSwitch"
+            >
               Dark mode
             </label>
           </div>

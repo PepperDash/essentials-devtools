@@ -269,6 +269,10 @@ body,
 #root {
   height: 100vh;
   max-height: 100vh;
+  // On phones 100vh includes the area behind the browser's toolbars, which hides the bottom of
+  // every page; the dynamic viewport height doesn't
+  height: 100dvh;
+  max-height: 100dvh;
   margin: 0;
   padding: 0;
   font-family: Roboto, 'Helvetica Neue', sans-serif;
@@ -353,9 +357,14 @@ a:hover {
   color: $white !important;
 }
 
-.flex-basis-33 {
+// The device list beside the detail pane; the whole width on its own on a phone
+.device-list-pane {
   flex: 0 0 33%;
   min-width: 0;
+
+  @include media-breakpoint-down(md) {
+    flex: 1 1 auto;
+  }
 }
 
 .list-selected-primary {
@@ -429,6 +438,11 @@ a:hover {
   top: 3.6rem !important;
   // bottom: 0rem;
   // right: 0.5rem;
+
+  // Half the screen is too narrow to read on a phone
+  @include media-breakpoint-down(md) {
+    width: 100% !important;
+  }
 }
 
 .icon {
@@ -456,6 +470,19 @@ a:hover {
 .left-nav-width {
   width: 10rem;
   min-width: 10rem;
+}
+
+// The Help sidebar: a column beside the article, or the whole width when opened on a phone
+.help-sidebar {
+  width: 10rem;
+  min-width: 10rem;
+  border-right: $border-width solid $border-color;
+
+  @include media-breakpoint-down(md) {
+    width: auto;
+    flex: 1 1 auto !important;
+    border-right: 0;
+  }
 }
 
 .min-dropdown-width {
@@ -891,4 +918,42 @@ textarea:hover {
 
 .nav-link-disabled {
   cursor: default;
+}
+
+//* Phones and small tablets
+
+@include media-breakpoint-down(md) {
+  // Let a page scroll as a whole instead of squeezing its content into a fixed-height pane under
+  // its header. Put .page-scroll-sm on the page's outer flex column and .pane-scroll-sm on the
+  // pane that normally scrolls.
+  .page-scroll-sm {
+    overflow-y: auto !important;
+  }
+
+  .page-scroll-sm > .pane-scroll-sm {
+    flex: 0 0 auto !important;
+    overflow: visible !important;
+  }
+
+  h2 {
+    font-size: 1.4rem;
+  }
+
+  .small-sm {
+    font-size: 0.75rem;
+  }
+
+  // The routing diagram's minimap covers much of a phone-sized canvas; pinch and drag instead
+  .react-flow__minimap {
+    display: none;
+  }
+}
+
+// Collapsed top nav: give each link a finger-sized row
+@include media-breakpoint-down(xl) {
+  .top-nav-links > a,
+  .top-nav-links > span {
+    padding: 0.5rem 0;
+    border-bottom: 1px solid $light;
+  }
 }

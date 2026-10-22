@@ -54,7 +54,7 @@ const PluginLoadIssues = () => {
   }
 
   return (
-    <div className="d-flex flex-column overflow-hidden h-100">
+    <div className="d-flex flex-column overflow-hidden h-100 page-scroll-sm">
       <h2 className="mb-1">Plugin Load Issues</h2>
       <div className="text-muted mb-2">
         Running Essentials {data.EssentialsVersion}. {data.IssueCount}{' '}
@@ -71,12 +71,14 @@ const PluginLoadIssues = () => {
         {data.Plugins.length === 1 ? 'file' : 'files'}. Warnings do not stop a
         plugin loading.
       </div>
-      <div className="overflow-auto flex-grow-1">
+      <div className="overflow-auto flex-grow-1 pane-scroll-sm">
         <table className="table table-hover align-middle mb-0">
           <thead className="table-light sticky-top">
             <tr>
               <th style={{ width: '6rem' }}>Severity</th>
-              <th style={{ width: '14rem' }}>Category</th>
+              <th className="d-none d-md-table-cell" style={{ width: '14rem' }}>
+                Category
+              </th>
               <th>Message</th>
               <th style={{ width: '7rem' }}>Detail</th>
             </tr>
@@ -124,8 +126,13 @@ const PluginLoadIssues = () => {
                               {issue.Severity}
                             </Badge>
                           </td>
-                          <td>{categoryLabel(issue.Category)}</td>
-                          <td>
+                          <td className="d-none d-md-table-cell">
+                            {categoryLabel(issue.Category)}
+                          </td>
+                          <td className="text-break">
+                            <div className="d-md-none small fw-semibold">
+                              {categoryLabel(issue.Category)}
+                            </div>
                             {issue.Message}
                             {issue.TriggeredBy !== 'Direct load' && (
                               <span className="text-muted small ms-1">

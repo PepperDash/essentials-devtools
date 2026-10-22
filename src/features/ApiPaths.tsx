@@ -33,29 +33,31 @@ export const ApiPaths = () => {
   return (
     <div className="d-flex flex-column overflow-hidden h-100">
       <h2 className="mb-2">Available API Paths</h2>
-      <table className="table table-striped">
-        <thead>
-          <tr>
-            <th>Name</th>
-            <th>URL</th>
-          </tr>
-        </thead>
-        <tbody>
-          {sorted.map((path) => (
-            <tr
-              key={path.Name}
-              onClick={() => clickRow(path)}
-              className={
-                'cursor-pointer hover' +
-                (selectedRoute === path ? ' table-primary' : '')
-              }
-            >
-              <td>{path.Name}</td>
-              <td>{path.Url}</td>
+      <div className="overflow-auto flex-grow-1">
+        <table className="table table-striped">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>URL</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {sorted.map((path) => (
+              <tr
+                key={path.Name}
+                onClick={() => clickRow(path)}
+                className={
+                  'cursor-pointer hover' +
+                  (selectedRoute === path ? ' table-primary' : '')
+                }
+              >
+                <td className="text-break">{path.Name}</td>
+                <td className="text-break">{path.Url}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
 
       <ApiPathDetailDrawer
         show={showDrawer}

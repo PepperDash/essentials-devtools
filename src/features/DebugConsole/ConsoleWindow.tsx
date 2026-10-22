@@ -34,10 +34,17 @@ const Content = ({ filteredItems }: ConsoleWindowProps) => {
                   : 'bg-white')
             }
           >
-            <Col md={6}>{message.Timestamp}</Col>
-            <Col md={3}>{message.Properties?.Key || 'global'}</Col>
-            <Col md={2}>{message.Level}</Col>
-            <Col md={13} className="text-nowrap text-truncate">
+            {/* On a phone: timestamp, key and level on one line, the message on the next */}
+            <Col xs={11} md={6} className="text-truncate small-sm">
+              {message.Timestamp}
+            </Col>
+            <Col xs={8} md={3} className="text-truncate small-sm">
+              {message.Properties?.Key || 'global'}
+            </Col>
+            <Col xs={5} md={2} className="text-truncate small-sm">
+              {message.Level}
+            </Col>
+            <Col xs={24} md={13} className="text-nowrap text-truncate">
               {message.RenderedMessage}
             </Col>
           </Row>
@@ -57,7 +64,7 @@ const ConsoleWindow = ({ filteredItems }: ConsoleWindowProps) => {
   return (
     <>
       <Container fluid>
-        <Row className="fw-bold">
+        <Row className="fw-bold d-none d-md-flex">
           <Col md={6}>Timestamp</Col>
           <Col md={3}>Key</Col>
           <Col md={2}>Level</Col>

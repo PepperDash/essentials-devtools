@@ -86,10 +86,9 @@ const DebugConsole = ({
         <div className="d-flex align-items-center justify-content-start mb-2">
           <h2>Debug Console</h2>
         </div>
-        <div className="d-flex align-items-center justify-content-start mb-2">
+        <div className="d-flex flex-wrap align-items-center justify-content-start gap-2 mb-2">
           {!isConnected ? (
             <Button
-              className="mx-1"
               variant="success"
               size="sm"
               disabled={isConnecting}
@@ -98,19 +97,13 @@ const DebugConsole = ({
               {isConnecting ? 'Connecting...' : 'Start Debug Session'}
             </Button>
           ) : (
-            <Button
-              className="mx-1"
-              variant="danger"
-              size="sm"
-              onClick={() => stop(appId)}
-            >
+            <Button variant="danger" size="sm" onClick={() => stop(appId)}>
               Stop Debug Session
             </Button>
           )}
           <MinimumLogLevelDropdown />
           <Form.Check
             type="checkbox"
-            className="mx-1"
             label="Do Not Load Config on Next Boot"
             name="doNotLoadConfig"
             id="doNotLoadConfig"
@@ -126,7 +119,6 @@ const DebugConsole = ({
           />
           {doNotLoadConfigOnNextBoot?.doNotLoadConfigOnNextBoot && (
             <Button
-              className="mx-1"
               variant="primary"
               size="sm"
               onClick={clickLoadConfig}
@@ -135,11 +127,10 @@ const DebugConsole = ({
               Load Config
             </Button>
           )}
-          <Button className="mx-1" variant="primary" size="sm" onClick={clear}>
+          <Button variant="primary" size="sm" onClick={clear}>
             Clear Console Trace
           </Button>
           <Button
-            className="mx-1"
             variant="primary"
             size="sm"
             onClick={exportFilteredItems}
@@ -147,15 +138,10 @@ const DebugConsole = ({
           >
             Export Log
           </Button>
-          <Button
-            className="mx-1"
-            variant="primary"
-            size="sm"
-            onClick={clickRestart}
-          >
+          <Button variant="primary" size="sm" onClick={clickRestart}>
             Restart Program
           </Button>
-          <span className="ps-2">Message Count: {messages.length}</span>
+          <span className="small">Message Count: {messages.length}</span>
         </div>
         {certUrls && certUrls.length > 0 && (
           <Alert

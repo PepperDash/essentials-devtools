@@ -113,4 +113,29 @@ describe('Help', () => {
       '/help/reference/api-endpoints#get-api-paths'
     );
   });
+
+  it('folds the sidebar behind a Contents button on phones, closing it once a page is picked', () => {
+    renderHelp('/help/reference/api-endpoints');
+
+    // Closed: CSS hides the sidebar below md and leaves the article showing
+    const sidebar = () => document.getElementById('help-contents');
+    expect(sidebar()?.className).toContain('d-none d-md-block');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Contents' }));
+    expect(sidebar()?.className).not.toContain('d-none');
+    expect(
+      screen.getByRole('button', { name: 'Close contents' })
+    ).toHaveAttribute('aria-expanded', 'true');
+
+    fireEvent.click(
+      within(getSidebar()).getByRole('link', {
+        name: 'How to Manage Stored Secrets',
+      })
+    );
+    expect(sidebar()?.className).toContain('d-none d-md-block');
+    expect(screen.getByRole('button', { name: 'Contents' })).toHaveAttribute(
+      'aria-expanded',
+      'false'
+    );
+  });
 });

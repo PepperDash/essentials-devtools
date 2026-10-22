@@ -28,11 +28,11 @@ export const DebugFilters = () => {
 
   return (
     <div className="row row-cols-sm-auto g-3 user-select-none">
-      <div className="col-12 d-none d-lg-block">
+      <div className="col-24 d-flex flex-wrap gap-1">
         <DeviceFilterDropdown items={items} />
         <Button
           variant="outline-secondary"
-          className="py-1 ms-1"
+          className="py-1"
           onClick={() => dispatch(debugConsoleActions.clearAllFilters())}
         >
           Clear Filters

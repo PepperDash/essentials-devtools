@@ -137,18 +137,22 @@ const DeviceDetailRender = ({
               <th>Name</th>
               <th>Type</th>
               <th>Value</th>
-              <th>Can Read</th>
-              <th>Can Write</th>
+              <th className="d-none d-md-table-cell">Can Read</th>
+              <th className="d-none d-md-table-cell">Can Write</th>
             </tr>
           </thead>
           <tbody>
             {properties.map((p) => (
               <tr key={p.Name}>
-                <td>{p.Name}</td>
-                <td>{p.Type}</td>
-                <td>{p.Value}</td>
-                <td>{p.CanRead ? 'Yes' : 'No'}</td>
-                <td>{p.canWrite ? 'Yes' : 'No'}</td>
+                <td className="text-break">{p.Name}</td>
+                <td className="text-break">{p.Type}</td>
+                <td className="text-break">{p.Value}</td>
+                <td className="d-none d-md-table-cell">
+                  {p.CanRead ? 'Yes' : 'No'}
+                </td>
+                <td className="d-none d-md-table-cell">
+                  {p.canWrite ? 'Yes' : 'No'}
+                </td>
               </tr>
             ))}
           </tbody>
@@ -166,7 +170,7 @@ const DeviceDetailRender = ({
           <tbody>
             {methods.map((m) => (
               <tr key={m.Name}>
-                <td>{m.Name}</td>
+                <td className="text-break">{m.Name}</td>
                 <td>
                   {m.Params.map((param) => `${param.Name}: ${param.Type}`).join(
                     ', '
@@ -245,8 +249,8 @@ const DeviceDetailRender = ({
                 {feedbacks.BoolValues.length > 0 ? (
                   feedbacks.BoolValues.map((f) => (
                     <tr key={f.FeedbackKey}>
-                      <td>{f.FeedbackKey}</td>
-                      <td>{String(f.Value)}</td>
+                      <td className="text-break">{f.FeedbackKey}</td>
+                      <td className="text-break">{String(f.Value)}</td>
                     </tr>
                   ))
                 ) : (

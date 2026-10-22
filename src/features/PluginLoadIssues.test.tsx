@@ -132,7 +132,9 @@ describe('Plugin Load Issues page', () => {
 
     expect(screen.getByText('OldPlugin.dll')).toBeTruthy();
     expect(screen.getByText('Skipped')).toBeTruthy();
-    expect(screen.getByText('Minimum version not met')).toBeTruthy();
+    // Once in the Category column and once under the message, where phones show it; CSS hides
+    // one of the two at each screen size
+    expect(screen.getAllByText('Minimum version not met')).toHaveLength(2);
     expect(screen.getAllByText('Warning')).toHaveLength(2);
     expect(screen.getAllByText('Error')).toHaveLength(1);
   });
