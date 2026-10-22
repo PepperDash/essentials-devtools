@@ -9,7 +9,7 @@
 Try these quick checks first:
 
 1. **Can you ping the processor?** `ping [processor-ip]`
-2. **Is the URL correct?** Should be `https://[processor-ip]/cws/debug/`
+2. **Is the URL correct?** Should be `https://[processor-ip]/cws/debug/`, or `https://[vc4-server]/VirtualControl/Rooms/[RoomId]/cws/debug/` on VC-4
 3. **Does the processor respond on any port?** Try `https://[processor-ip]` (may show different content)
 
 ## Step-by-Step Troubleshooting
@@ -98,6 +98,7 @@ https://[processor-ip]/cws/debug/
 - `https://192.168.1.100/cws/debug/`
 - `https://10.0.0.50/cws/debug/`
 - `https://processor.local/cws/debug/` (if DNS is configured)
+- `https://vc4-server.example.com/VirtualControl/Rooms/DEMOV3/cws/debug/` (a VC-4 room; see [Use Dev Tools on Virtual Control (VC-4)](./use-dev-tools-on-vc4.md))
 
 ### 6. Check Processor Status
 
@@ -211,6 +212,7 @@ Should return JSON data if the API is working.
 - Corporate firewalls may block HTTPS to internal devices
 - Some networks block self-signed certificates
 - Guest networks may restrict device-to-device communication
+- On a VC-4 server, the host firewall blocks the Debug Console and routing WebSocket ports (65335–65534/tcp) and the Mobile Control direct server port until they're opened; see [Open the Firewall Ports](./use-dev-tools-on-vc4.md#open-the-firewall-ports)
 
 ### DNS Resolution
 

@@ -21,6 +21,7 @@ import {
   useGetDebugSessionMutation,
   useStopDebugSessionMutation,
 } from './store/apiSlice';
+import { getRouteAppId } from './shared/functions/routeAppId';
 import { AppDispatch, RootState } from './store/store';
 import {
   connectionAttemptStarted,
@@ -29,16 +30,6 @@ import {
   WS_CONNECT,
   WS_DISCONNECT,
 } from './store/websocketSlice';
-
-function getRouteAppId(pathname: string) {
-  const [firstSegment] = pathname.replace(/^\/+/, '').split('/');
-
-  if (!firstSegment || firstSegment === 'help' || firstSegment === 'login') {
-    return null;
-  }
-
-  return firstSegment;
-}
 
 function App() {
   const dispatch = useDispatch<AppDispatch>();

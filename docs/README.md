@@ -80,6 +80,8 @@ The PepperDash Essentials Web Config App provides several key features:
 
 The app supports up to 10 simultaneous PepperDash Essentials program slots (`app01` through `app10`). After logging in, available program slots are automatically discovered and populated in the application selector dropdown in the top navigation bar. Navigating between app slots does not require re-authentication.
 
+On Crestron Virtual Control (VC-4), each room has its own Dev Tools at `https://[vc4-server]/VirtualControl/Rooms/[RoomId]/cws/debug/`, and the selector shows the room ID. The VC-4 server's firewall needs a few ports opened for the Debug Console, live routing and the Mobile Control UI; see [Use Dev Tools on Virtual Control (VC-4)](./how-to/use-dev-tools-on-vc4.md).
+
 ## System Requirements
 
 - Modern web browser (Chrome, Firefox, Safari, Edge)

@@ -12,14 +12,20 @@ export const axiosBaseQuery =
     {
       baseUrl,
       headers,
-    }: { baseUrl: string; headers?: { [key: string]: string } } = {
+      mapUrl,
+    }: {
+      baseUrl: string;
+      headers?: { [key: string]: string };
+      /** Rewrites each request path before it is appended to baseUrl. */
+      mapUrl?: (url: string) => string;
+    } = {
       baseUrl: '',
     }
   ): BaseQueryFn<QueryArgs, unknown, unknown> =>
   async ({ url, method, data, params }: QueryArgs) => {
     try {
       const result = await httpClient({
-        url: baseUrl + url,
+        url: baseUrl + (mapUrl ? mapUrl(url) : url),
         method,
         data,
         params,

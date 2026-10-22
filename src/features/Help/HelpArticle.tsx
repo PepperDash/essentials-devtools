@@ -25,6 +25,13 @@ const DocLink = ({
     );
   }
 
+  // A same-article link. A plain anchor would resolve against the page's <base> (the app root)
+  // and leave the article, so keep the current path and change only the hash; HelpArticle scrolls
+  // to it.
+  if (href.startsWith('#')) {
+    return <Link to={{ hash: href }}>{children}</Link>;
+  }
+
   const resolved = resolveRelativeLink(currentSlug, href);
   if (resolved) {
     return <Link to={resolved}>{children}</Link>;

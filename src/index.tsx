@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client';
 import { Provider } from 'react-redux';
 import { BrowserRouter } from 'react-router-dom';
 import App from './App';
+import { getRouterBasename } from './shared/functions/hostPaths';
 import reportWebVitals from './reportWebVitals';
 import { store } from './store/store';
 import './styles.scss';
@@ -23,7 +24,7 @@ const root = ReactDOM.createRoot(
 root.render(
   <React.StrictMode>
     <Provider store={store}>
-      <BrowserRouter basename="/cws/debug">
+      <BrowserRouter basename={getRouterBasename()}>
         <App />
       </BrowserRouter>
     </Provider>
