@@ -11,10 +11,14 @@ const Help = () => {
   const doc = getDocBySlug(slug);
   const { pathname } = useLocation();
 
-  // Below md the sidebar folds behind a Contents button. Remember the page it was opened on, so it
-  // reads as closed once another page is picked.
-  const [contentsOpenedOn, setContentsOpenedOn] = useState<string | null>(null);
-  const showContents = contentsOpenedOn === pathname;
+  // Below md the sidebar folds behind a Contents button. Close it on every navigation, including
+  // Back to the article it was opened on, by resetting the state during render when the path
+  // changes (React's alternative to an effect for this).
+  const [contents, setContents] = useState({ open: false, path: pathname });
+  if (contents.path !== pathname) {
+    setContents({ open: false, path: pathname });
+  }
+  const showContents = contents.open && contents.path === pathname;
 
   return (
     <div className="d-flex flex-column overflow-hidden h-100 p-2">
@@ -26,7 +30,7 @@ const Help = () => {
           className="d-md-none"
           aria-expanded={showContents}
           aria-controls="help-contents"
-          onClick={() => setContentsOpenedOn(showContents ? null : pathname)}
+          onClick={() => setContents({ open: !showContents, path: pathname })}
         >
           {showContents ? 'Close contents' : 'Contents'}
         </Button>

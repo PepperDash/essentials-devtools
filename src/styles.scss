@@ -952,12 +952,17 @@ textarea:hover {
 // Collapsed top nav: give each link a finger-sized row
 @include media-breakpoint-down(xl) {
   // The open menu can be taller than a short screen, such as a phone in landscape. Let the nav
-  // take the full height and scroll, keeping the header row (which can wrap) pinned above the links.
+  // take the full height and scroll while it's open, keeping the header row (which can wrap)
+  // pinned above the links.
   .top-nav {
     flex-shrink: 0;
+    padding-top: 0;
+  }
+
+  // Only while the menu is open: scrolling the closed nav would clip the app selector's list
+  .top-nav.top-nav-open {
     max-height: 100%;
     overflow-y: auto;
-    padding-top: 0;
   }
 
   .top-nav-header {

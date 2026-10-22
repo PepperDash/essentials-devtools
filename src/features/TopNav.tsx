@@ -59,12 +59,19 @@ const TopNav = ({ isConnected }: { isConnected: boolean }) => {
   const availableApps = useAppSelector(selectAvailableApps);
 
   // Below the xl breakpoint the links fold behind a toggle. The links are router NavLinks rather
-  // than Nav.Links, so collapseOnSelect doesn't close it; instead remember the page it was opened
-  // on, and it reads as closed once the page changes.
-  const [openedOn, setOpenedOn] = useState<string | null>(null);
-  const expanded = openedOn === location.pathname;
+  // than Nav.Links, so collapseOnSelect doesn't close it. Close it on every navigation instead,
+  // including Back to the page it was opened on, by resetting the state during render when the
+  // path changes (React's alternative to an effect for this).
+  const [menu, setMenu] = useState({
+    expanded: false,
+    path: location.pathname,
+  });
+  if (menu.path !== location.pathname) {
+    setMenu({ expanded: false, path: location.pathname });
+  }
+  const expanded = menu.expanded && menu.path === location.pathname;
   const setExpanded = (open: boolean) =>
-    setOpenedOn(open ? location.pathname : null);
+    setMenu({ expanded: open, path: location.pathname });
 
   const reactAppVersion = APP_VERSION;
 
@@ -125,7 +132,7 @@ const TopNav = ({ isConnected }: { isConnected: boolean }) => {
       onToggle={setExpanded}
       variant="light"
       bg="white"
-      className="top-nav user-select-none shadow-sm px-0"
+      className={`top-nav user-select-none shadow-sm px-0${expanded ? ' top-nav-open' : ''}`}
     >
       <div className="w-100 px-2 d-flex flex-wrap flex-xl-nowrap align-items-center gap-2">
         {/* Below xl this row stays put while the open menu scrolls under it */}
@@ -144,7 +151,8 @@ const TopNav = ({ isConnected }: { isConnected: boolean }) => {
                 {params.appId || 'Select Application'}
                 <IconDarkChevronDown />
               </Dropdown.Toggle>
-              <Dropdown.Menu>
+              {/* Fixed positioning keeps the list from being clipped when the nav scrolls */}
+              <Dropdown.Menu popperConfig={{ strategy: 'fixed' }}>
                 {appIdOptions.map((id: string) => (
                   <Dropdown.Item
                     key={id}
@@ -166,7 +174,11 @@ const TopNav = ({ isConnected }: { isConnected: boolean }) => {
           >
             {connectionStatus}
           </span>
-          <Navbar.Toggle aria-controls="top-nav-links" />
+          {/* React-Bootstrap's toggle doesn't report its state to screen readers */}
+          <Navbar.Toggle
+            aria-controls="top-nav-links"
+            aria-expanded={expanded}
+          />
         </div>
         <Navbar.Collapse id="top-nav-links">
           <Nav className="me-auto top-nav-links">
