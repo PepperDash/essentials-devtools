@@ -110,7 +110,11 @@ export const ROUTING_WS_DISCONNECT = 'routingFeedback/wsDisconnect';
 
 export interface RoutingWsConnectAction {
   type: typeof ROUTING_WS_CONNECT;
-  payload: { url: string; fallbackUrl?: string };
+  /**
+   * Either the WebSocket URL(s) from the feedback session, or `pollUrl` to read feedback over HTTP
+   * where the WebSocket port can't be reached (see messagePoller).
+   */
+  payload: { url: string; fallbackUrl?: string } | { pollUrl: string };
 }
 
 export interface RoutingWsDisconnectAction {

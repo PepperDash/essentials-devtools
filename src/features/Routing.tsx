@@ -75,7 +75,7 @@ import RoutingDeviceNode, {
   RoutingDeviceNodeData,
 } from './RoutingDeviceNode';
 import TieLineEdge from './TieLineEdge';
-import { apiUrl } from '../shared/functions/hostPaths';
+import { apiUrl, streamsUseHttpPolling } from '../shared/functions/hostPaths';
 
 // ─── Constants ──────────────────────────────────────────────────────────────
 
@@ -605,6 +605,18 @@ const Routing = () => {
   const connectRoutingWebSocket = useCallback(
     (onCancelledRef?: { current: boolean }) => {
       if (!appId || !isV3) return;
+
+      if (streamsUseHttpPolling()) {
+        // The first poll starts the session and returns the snapshot
+        dispatch({
+          type: ROUTING_WS_CONNECT,
+          payload: {
+            pollUrl: apiUrl(appId, 'routingFeedbackSession/messages'),
+          },
+        });
+        return;
+      }
+
       const baseUrl = apiUrl(appId, 'routingFeedbackSession');
 
       fetch(baseUrl)

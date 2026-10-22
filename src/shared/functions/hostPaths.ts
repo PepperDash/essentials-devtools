@@ -83,6 +83,17 @@ export function toCwsPath(
   return url;
 }
 
+/**
+ * Whether the live streams (debug console, routing feedback) should be read over HTTP polling
+ * instead of their WebSockets. On VC-4 those WebSockets listen on ports the server's firewall blocks
+ * unless someone opens them, while polling goes through the same HTTPS port as every API call.
+ */
+export function streamsUseHttpPolling(
+  layout: HostLayout = getHostLayout()
+): boolean {
+  return layout.isVirtualControl;
+}
+
 /** The full URL for an API path on a program, e.g. `apiUrl('app01', 'routingFeedbackSession')`. */
 export function apiUrl(
   appId: string,
