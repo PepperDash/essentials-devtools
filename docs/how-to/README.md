@@ -24,6 +24,22 @@ These guides provide step-by-step solutions to specific problems you might encou
 - URL formatting issues
 - Service availability problems
 
+### [Use Dev Tools on Virtual Control (VC-4)](./use-dev-tools-on-vc4.md)
+
+**Problem**: Need Dev Tools for an Essentials program running in a VC-4 room
+
+**Common symptoms:**
+
+- Don't know the Dev Tools address for a VC-4 room
+- Debug Console or live routing never connects on VC-4
+- Mobile Control UI link won't open on VC-4
+
+**You'll learn to:**
+
+- Open Dev Tools for a VC-4 room and sign in
+- Open the firewall ports the Debug Console, routing and Mobile Control need
+- Accept the WebSocket certificate
+
 ---
 
 ## 🔍 Debug Console Problems
