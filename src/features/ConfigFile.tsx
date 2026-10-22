@@ -3,6 +3,7 @@ import { skipToken } from '@reduxjs/toolkit/query';
 import { useEffect, useRef } from 'react';
 import { Button } from 'react-bootstrap';
 import useAppParams from '../shared/hooks/useAppParams';
+import useIsNarrowScreen from '../shared/hooks/useIsNarrowScreen';
 import { useGetConfigQuery } from '../store/apiSlice';
 import { livePolling, POLL_INTERVALS_MS } from '../store/polling';
 
@@ -60,6 +61,7 @@ export default ConfigFile;
 const ConfigFileRender = ({ config }: { config: unknown }) => {
   const monaco = useMonaco();
   const editorRef = useRef<IConfigViewer | null>(null);
+  const isNarrow = useIsNarrowScreen();
 
   useEffect(() => {
     if (!monaco) return;
@@ -85,6 +87,10 @@ const ConfigFileRender = ({ config }: { config: unknown }) => {
       language="json"
       options={{
         readOnly: true,
+        // On a phone the minimap takes a fifth of the width, and long lines need wrapping
+        minimap: { enabled: !isNarrow },
+        wordWrap: isNarrow ? 'on' : 'off',
+        lineNumbersMinChars: isNarrow ? 3 : 5,
       }}
       value={JSON.stringify(config, null, 2)}
       onMount={handleEditorDidMount}
