@@ -2,27 +2,19 @@ import { FormEvent, useState } from 'react';
 import { Alert, Button, Form, InputGroup, Spinner } from 'react-bootstrap';
 import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import EyeIcon from '../shared/components/EyeIcon';
+import { getCandidateAppIds } from '../shared/functions/hostPaths';
 import useAppParams from '../shared/hooks/useAppParams';
 import { useSetLoginCredentialsMutation } from '../store/apiSlice';
 import {
   selectAvailableApps,
   selectIsAuthenticated,
 } from '../store/auth/authSelectors';
+import { isAuthenticationDisabledError } from '../store/auth/authErrors';
 import { authActions } from '../store/auth/authSlice';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 
-const ALL_APP_IDS = [
-  'app01',
-  'app02',
-  'app03',
-  'app04',
-  'app05',
-  'app06',
-  'app07',
-  'app08',
-  'app09',
-  'app10',
-];
+// app01..app10 on an appliance; just the room on Virtual Control
+const ALL_APP_IDS = getCandidateAppIds();
 
 const LoginForm = () => {
   const { appId } = useAppParams();
@@ -62,9 +54,15 @@ const LoginForm = () => {
       )
     );
 
-    const availableApps = ALL_APP_IDS.filter(
-      (_, i) => results[i].status === 'fulfilled'
-    );
+    // A program with authentication turned off (e.g. a VC-4 room, whose web server signs users in
+    // itself) refuses the login with a specific error. There's nothing to sign in to, so it counts.
+    const availableApps = ALL_APP_IDS.filter((_, i) => {
+      const result = results[i];
+      return (
+        result.status === 'fulfilled' ||
+        isAuthenticationDisabledError(result.reason)
+      );
+    });
 
     setIsLoading(false);
 

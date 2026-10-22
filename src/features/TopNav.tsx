@@ -79,10 +79,11 @@ const TopNav = ({ isConnected }: { isConnected: boolean }) => {
   // Extract the current sub-route (e.g. "routing", "console") so we can
   // preserve it when switching apps. Falls back to "console" if not on an
   // app-scoped route yet.
+  // App IDs are appNN on an appliance and the room ID on VC-4, so match on the known apps.
   const currentSubRoute = useMemo(() => {
-    const match = location.pathname.match(/^\/app\d+\/(.+)/);
-    return match ? match[1] : 'console';
-  }, [location.pathname]);
+    const match = location.pathname.match(/^\/([^/]+)\/(.+)/);
+    return match && availableApps.includes(match[1]) ? match[2] : 'console';
+  }, [location.pathname, availableApps]);
 
   // Detected from the processor's live route table rather than a version number, so the link
   // appears exactly where the endpoint exists. RTK Query dedupes this with the Routing page's

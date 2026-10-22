@@ -101,6 +101,19 @@ describe('Help', () => {
     });
   });
 
+  it('keeps same-article links on the article, so the <base> tag cannot send them to the app root', () => {
+    renderHelp('/help/reference/api-endpoints');
+
+    const fragmentLink = screen.getAllByRole('link', {
+      name: 'Get API Paths',
+    })[0];
+
+    expect(fragmentLink).toHaveAttribute(
+      'href',
+      '/help/reference/api-endpoints#get-api-paths'
+    );
+  });
+
   it('folds the sidebar behind a Contents button on phones, closing it once a page is picked', () => {
     renderHelp('/help/reference/api-endpoints');
 

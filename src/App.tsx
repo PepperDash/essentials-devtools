@@ -21,6 +21,8 @@ import {
   useGetDebugSessionMutation,
   useStopDebugSessionMutation,
 } from './store/apiSlice';
+import { apiUrl, streamsUseHttpPolling } from './shared/functions/hostPaths';
+import { getRouteAppId } from './shared/functions/routeAppId';
 import { AppDispatch, RootState } from './store/store';
 import {
   connectionAttemptStarted,
@@ -29,16 +31,6 @@ import {
   WS_CONNECT,
   WS_DISCONNECT,
 } from './store/websocketSlice';
-
-function getRouteAppId(pathname: string) {
-  const [firstSegment] = pathname.replace(/^\/+/, '').split('/');
-
-  if (!firstSegment || firstSegment === 'help' || firstSegment === 'login') {
-    return null;
-  }
-
-  return firstSegment;
-}
 
 function App() {
   const dispatch = useDispatch<AppDispatch>();
@@ -90,6 +82,17 @@ function App() {
     const { isConnecting, isConnected } = store.getState().websocket;
     if (!appId || isConnecting || isConnected) return;
     const requestId = ++joinRequestIdRef.current;
+
+    if (streamsUseHttpPolling()) {
+      // The first poll starts the server-side session, so there's no WebSocket session to request
+      activeSessionAppIdRef.current = appId;
+      dispatch({
+        type: WS_CONNECT,
+        payload: { pollUrl: apiUrl(appId, 'debugSession/messages') },
+      });
+      return;
+    }
+
     dispatch(connectionAttemptStarted());
     try {
       const res = await startSession({ appId }).unwrap();

@@ -173,4 +173,56 @@ describe('websocketMiddleware', () => {
 
     expect(store.getState().websocket.isConnecting).toBe(false);
   });
+
+  // A fetch stand-in for the polling transport: the first request starts the session, later ones
+  // stay pending until aborted, like a long poll with nothing new
+  const stubPollingFetch = (first: object) => {
+    const requests: { url: string; signal?: AbortSignal | null }[] = [];
+    vi.stubGlobal(
+      'fetch',
+      vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
+        requests.push({ url: String(input), signal: init?.signal });
+        if (requests.length === 1) {
+          return Promise.resolve(
+            new Response(JSON.stringify(first), { status: 200 })
+          );
+        }
+        return new Promise<Response>((_, reject) => {
+          init?.signal?.addEventListener('abort', () =>
+            reject(new DOMException('Aborted', 'AbortError'))
+          );
+        });
+      })
+    );
+    return requests;
+  };
+
+  it('reads the log over HTTP when given a poll URL, and stops on disconnect', async () => {
+    const message = {
+      Timestamp: '2026-10-22T20:00:00Z',
+      Level: 'Information',
+      RenderedMessage: 'hello',
+    };
+    const requests = stubPollingFetch({
+      next: 4,
+      messages: [JSON.stringify(message)],
+    });
+    const store = makeStore();
+
+    store.dispatch({
+      type: WS_CONNECT,
+      payload: { pollUrl: '/cws/api/debugSession/messages' },
+    });
+
+    await vi.waitFor(() => expect(requests).toHaveLength(2));
+    expect(store.getState().websocket.isConnected).toBe(true);
+    expect(store.getState().websocket.messages).toEqual([message]);
+    expect(requests[1].url).toContain('since=4');
+    expect(FakeWebSocket.instances).toHaveLength(0);
+
+    store.dispatch({ type: WS_DISCONNECT });
+
+    expect(requests[1].signal?.aborted).toBe(true);
+    expect(store.getState().websocket.isConnected).toBe(false);
+  });
 });

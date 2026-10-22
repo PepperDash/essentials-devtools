@@ -472,6 +472,40 @@ GET /debugSession
 
 ---
 
+### Poll Debug Messages
+
+**Purpose**: Read the debug log over HTTP instead of the WebSocket. Dev Tools uses this on Virtual Control (VC-4), where the WebSocket ports are firewalled
+
+```http
+GET /debugSession/messages
+GET /debugSession/messages?since=42&wait=5000
+```
+
+**Query Parameters**:
+
+- `since` (number, optional): The `next` value from the previous response. Leave it out to start a session and get the starting cursor
+- `wait` (number, optional): Milliseconds to hold the request when nothing is new, up to 10000. Default 0
+
+**Response**:
+
+```json
+{
+  "next": 44,
+  "missed": false,
+  "messages": ["{\"Timestamp\":\"...\",\"Level\":\"Information\",...}", "..."]
+}
+```
+
+**Response Fields**:
+
+- `next` (number): Pass as `since` on the next request
+- `missed` (boolean): Some messages after `since` were dropped before they were fetched: the buffer overflowed, the session went idle for over a minute, it was stopped, or the program restarted
+- `messages` (string[]): Each one is the same JSON text the WebSocket sends, in the WebSocket message format above
+
+**Usage**: The server returns as soon as a message arrives, so polling again right after each response gives near-live updates. Messages are only collected while a client has polled in the last minute. `POST /debugSession` ends the session
+
+---
+
 ### Stop Debug Session
 
 **Purpose**: Stop an active debug session and close WebSocket connections
@@ -744,6 +778,19 @@ GET /routingFeedbackSession
 ```
 
 **Usage**: Connect to `url` to receive live route changes. Messages are a discriminated union on `type`: `snapshot`, `midpointRouteChanged`, `sinkInputChanged`, and `layoutChanged`. A `sinkInputChanged` with an empty `sourceDeviceKey` means the route feeding that input was cleared.
+
+---
+
+### Poll Routing Feedback
+
+**Purpose**: Read routing feedback over HTTP instead of the WebSocket. Dev Tools uses this on Virtual Control (VC-4), where the WebSocket ports are firewalled
+
+```http
+GET /routingFeedbackSession/messages
+GET /routingFeedbackSession/messages?since=12&wait=5000
+```
+
+**Usage**: Works like [Poll Debug Messages](#poll-debug-messages). The first request, without `since`, returns the `snapshot` message as its only message. Later responses carry the same `midpointRouteChanged`, `sinkInputChanged` and `layoutChanged` messages the WebSocket sends. When a response has `missed: true`, start again without `since` for a fresh snapshot. `POST /routingFeedbackSession` ends the session
 
 ---
 
