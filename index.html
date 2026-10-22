@@ -5,14 +5,15 @@
     <script>
       // Dev Tools is served at /cws/debug/ on an appliance and under /VirtualControl/Rooms/<RoomId>/
       // on VC-4. Set <base> from the page's own path so the relative asset URLs resolve from the app
-      // root, including on deep links such as .../cws/debug/app01/versions. Must stay above every
-      // link and script tag.
+      // root, including on deep links such as .../cws/debug/app01/versions. Match the /cws/debug
+      // mount itself, not the first /cws/, since a VC-4 room can be named CWS. Keep in step with
+      // getHostLayout in src/shared/functions/hostPaths.ts. Must stay above every link and script tag.
       (function () {
         var path = window.location.pathname;
-        var i = path.toLowerCase().indexOf('/cws/');
-        if (i < 0) return;
+        var mount = /\/cws\/debug(?:\/|$)/i.exec(path);
+        if (!mount) return;
         var base = document.createElement('base');
-        base.href = path.slice(0, i) + '/cws/debug/';
+        base.href = path.slice(0, mount.index) + '/cws/debug/';
         document.head.appendChild(base);
       })();
     </script>
