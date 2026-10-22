@@ -125,46 +125,49 @@ const TopNav = ({ isConnected }: { isConnected: boolean }) => {
       onToggle={setExpanded}
       variant="light"
       bg="white"
-      className="user-select-none shadow-sm px-0"
+      className="top-nav user-select-none shadow-sm px-0"
     >
       <div className="w-100 px-2 d-flex flex-wrap flex-xl-nowrap align-items-center gap-2">
-        <Navbar.Brand className="me-0">
-          <span className="d-none d-sm-inline">Essentials </span>Dev Tools
-        </Navbar.Brand>
-        {/* display a message indicating that there are no loaded applications if the appIdOptions array is empty, otherwise display the dropdown */}
-        {appIdOptions.length === 0 ? (
-          <span>No Loaded Applications</span>
-        ) : (
-          <Dropdown>
-            <Dropdown.Toggle variant="link" id="dropdown-basic">
-              {/* display the currently selected appId or "Select Application" if no appId is selected */}
-              {/* if no appIdOptions are available, display "No Loaded Applications" */}
-              {params.appId || 'Select Application'}
-              <IconDarkChevronDown />
-            </Dropdown.Toggle>
-            <Dropdown.Menu>
-              {appIdOptions.map((id: string) => (
-                <Dropdown.Item
-                  key={id}
-                  as={NavLink}
-                  to={`/${id}/${currentSubRoute}`}
-                >
-                  {id}
-                </Dropdown.Item>
-              ))}
-            </Dropdown.Menu>
-          </Dropdown>
-        )}
-        {/* Collapsed: keep the connection light in view beside the toggle */}
-        <span
-          className="ms-auto d-xl-none"
-          title={connectionText}
-          aria-label={connectionText}
-          role="img"
-        >
-          {connectionStatus}
-        </span>
-        <Navbar.Toggle aria-controls="top-nav-links" />
+        {/* Below xl this row stays put while the open menu scrolls under it */}
+        <div className="top-nav-header d-flex align-items-center gap-2 flex-grow-1 flex-xl-grow-0">
+          <Navbar.Brand className="me-0">
+            <span className="d-none d-sm-inline">Essentials </span>Dev Tools
+          </Navbar.Brand>
+          {/* display a message indicating that there are no loaded applications if the appIdOptions array is empty, otherwise display the dropdown */}
+          {appIdOptions.length === 0 ? (
+            <span>No Loaded Applications</span>
+          ) : (
+            <Dropdown>
+              <Dropdown.Toggle variant="link" id="dropdown-basic">
+                {/* display the currently selected appId or "Select Application" if no appId is selected */}
+                {/* if no appIdOptions are available, display "No Loaded Applications" */}
+                {params.appId || 'Select Application'}
+                <IconDarkChevronDown />
+              </Dropdown.Toggle>
+              <Dropdown.Menu>
+                {appIdOptions.map((id: string) => (
+                  <Dropdown.Item
+                    key={id}
+                    as={NavLink}
+                    to={`/${id}/${currentSubRoute}`}
+                  >
+                    {id}
+                  </Dropdown.Item>
+                ))}
+              </Dropdown.Menu>
+            </Dropdown>
+          )}
+          {/* Collapsed: keep the connection light in view beside the toggle */}
+          <span
+            className="ms-auto d-xl-none"
+            title={connectionText}
+            aria-label={connectionText}
+            role="img"
+          >
+            {connectionStatus}
+          </span>
+          <Navbar.Toggle aria-controls="top-nav-links" />
+        </div>
         <Navbar.Collapse id="top-nav-links">
           <Nav className="me-auto top-nav-links">
             <AppNavLink appId={params.appId} path="versions">
