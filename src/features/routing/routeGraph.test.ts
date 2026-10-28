@@ -532,8 +532,25 @@ describe('describeNoCandidates', () => {
     ).toHaveLength(1);
   });
 
-  // The two cases are exhaustive: a tie line sharing any atom with the request always contributes
-  // at least its own source, so the list could not have been empty.
+  // A tie line can carry the type yet lead back to nothing selectable: its source isn't in the
+  // device list, or the wiring loops back to the destination. The message mustn't then claim the
+  // wire carries no part of the type it plainly carries.
+  it('explains a matching wire with no selectable source without contradicting itself', () => {
+    const ghostIndex = buildRouteIndex(
+      system(
+        [device('display', 'sink', { in: ['hdmi1'] })],
+        [tie('ghost', 'out1', 'display', 'hdmi1', 'AudioVideo')]
+      )
+    );
+    expect(
+      findCandidateSources(ghostIndex, 'display', 'hdmi1', 'AudioVideo')
+    ).toHaveLength(0);
+
+    const message = describeNoCandidates(ghostIndex, 'display', 'hdmi1', 'AudioVideo');
+    expect(message).toMatch(/no device it's wired back to can be selected/);
+    expect(message).not.toMatch(/carries no part/);
+  });
+
   it('only ever explains a genuinely empty list', () => {
     expect(
       findCandidateSources(index, 'display', 'hdmi1', 'Audio')
