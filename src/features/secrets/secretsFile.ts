@@ -90,6 +90,11 @@ interface ParseInput {
   text: string;
   fileName: string;
   fileSize: number;
+  /**
+   * The target provider's value limit (its `maxValueLength`). Defaults to the Data Store's
+   * {@link MAX_SECRET_VALUE_LENGTH}.
+   */
+  maxValueLength?: number;
 }
 
 // Matching control characters is the point, so no-control-regex doesn't apply
@@ -210,7 +215,8 @@ function toRawEntry(raw: unknown, index: number): RawEntry {
  */
 function validateEntry(
   raw: RawEntry,
-  fallbackProvider: string | undefined
+  fallbackProvider: string | undefined,
+  maxValueLength: number
 ):
   | { entry: BulkSecretEntry; warnings: SecretsFileIssue[] }
   | { issue: SecretsFileIssue } {
@@ -271,12 +277,12 @@ function validateEntry(
       ),
     };
   }
-  if (raw.value.length > MAX_SECRET_VALUE_LENGTH) {
+  if (raw.value.length > maxValueLength) {
     // Deliberately reports only the length, never any part of the value.
     return {
       issue: issue(
         'valueTooLong',
-        `The value for "${key}" is ${raw.value.length} characters; the limit is ${MAX_SECRET_VALUE_LENGTH}.`,
+        `The value for "${key}" is ${raw.value.length} characters; the limit is ${maxValueLength}.`,
         named
       ),
     };
@@ -344,6 +350,7 @@ function validateEntry(
  */
 export function parseSecretsFile(input: ParseInput): ParseSecretsFileResult {
   const { text, fileName, fileSize } = input;
+  const maxValueLength = input.maxValueLength ?? MAX_SECRET_VALUE_LENGTH;
 
   // Ordered cheapest-first so a large binary is rejected without ever being parsed. Extension is
   // the assertion rather than MIME type, which is unreliable for a dropped file.
@@ -412,7 +419,7 @@ export function parseSecretsFile(input: ParseInput): ParseSecretsFileResult {
   let rejected = 0;
 
   for (const raw of normalized.entries) {
-    const result = validateEntry(raw, normalized.provider);
+    const result = validateEntry(raw, normalized.provider, maxValueLength);
 
     if ('issue' in result) {
       if (result.issue.code === 'emptyValue') blankValues += 1;

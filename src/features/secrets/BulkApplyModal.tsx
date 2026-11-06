@@ -15,6 +15,8 @@ import styles from './BulkApplyModal.module.scss';
 
 export interface BulkApplyModalProps {
   provider: string;
+  /** The provider's value limit, from its `maxValueLength`. Defaults to the Data Store limit. */
+  maxValueLength?: number;
   /** Runs a preview or a commit and resolves with the processor's verdict. */
   onRun: (
     entries: BulkSecretEntry[],
@@ -42,7 +44,12 @@ type Stage = 'choose' | 'review' | 'done';
  *   3. Nothing is written until the user presses Apply. The only request before that is a preview,
  *      which the processor answers without touching the store.
  */
-const BulkApplyModal = ({ provider, onRun, onClose }: BulkApplyModalProps) => {
+const BulkApplyModal = ({
+  provider,
+  maxValueLength,
+  onRun,
+  onClose,
+}: BulkApplyModalProps) => {
   const inputRef = useRef<HTMLInputElement>(null);
 
   const [stage, setStage] = useState<Stage>('choose');
@@ -111,6 +118,7 @@ const BulkApplyModal = ({ provider, onRun, onClose }: BulkApplyModalProps) => {
       text,
       fileName: file.name,
       fileSize: file.size,
+      maxValueLength,
     });
 
     if (!parsed.ok) {

@@ -22,6 +22,7 @@ import {
   bulkSecretsRequest,
   deleteSecretCommand,
   describeSecretsError,
+  maxValueLengthFor,
   SecretEntry,
   setSecretCommand,
   supportsSecretsApi,
@@ -462,6 +463,7 @@ const Secrets = () => {
       {showBulk && (
         <BulkApplyModal
           provider={provider}
+          maxValueLength={maxValueLengthFor(providers, provider)}
           onRun={handleBulkRun}
           onClose={() => setShowBulk(false)}
         />

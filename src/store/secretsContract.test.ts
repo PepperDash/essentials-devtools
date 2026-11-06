@@ -6,6 +6,7 @@ import {
   describeSecretsError,
   DOCUMENTED_MAX_SECRET_KEY_LENGTH,
   MAX_SECRET_VALUE_LENGTH,
+  maxValueLengthFor,
   pruneIndexCommand,
   rebuildIndexCommand,
   RESERVED_KEY_PREFIX,
@@ -166,6 +167,46 @@ describe('constants match the Crestron Data Store limits', () => {
     expect(SECRETS_BULK_PATH).toBe('secrets/bulk');
     expect(SECRETS_TEMPLATE_PATH).toBe('secrets/template');
     expect(RESERVED_KEY_PREFIX).toBe('__essSecretsIdx');
+  });
+});
+
+describe('maxValueLengthFor', () => {
+  const providers = [
+    {
+      key: 'default',
+      scope: 'local' as const,
+      enumerationSupported: true,
+      maxKeyLength: 32,
+      maxValueLength: 1600,
+    },
+    {
+      key: 'CrestronSecureSecrets',
+      scope: 'local' as const,
+      enumerationSupported: true,
+      maxKeyLength: 32,
+      maxValueLength: 8192,
+    },
+  ];
+
+  it("uses the provider's own limit, matching the key case-insensitively", () => {
+    expect(maxValueLengthFor(providers, 'CrestronSecureSecrets')).toBe(8192);
+    expect(maxValueLengthFor(providers, 'crestronsecuresecrets')).toBe(8192);
+    expect(maxValueLengthFor(providers, 'default')).toBe(1600);
+  });
+
+  it('falls back to the Data Store limit for an unknown provider or a bad figure', () => {
+    expect(maxValueLengthFor(providers, 'missing')).toBe(
+      MAX_SECRET_VALUE_LENGTH
+    );
+    expect(maxValueLengthFor(providers, undefined)).toBe(
+      MAX_SECRET_VALUE_LENGTH
+    );
+    expect(
+      maxValueLengthFor(
+        [{ ...providers[1], maxValueLength: 0 }],
+        'CrestronSecureSecrets'
+      )
+    ).toBe(MAX_SECRET_VALUE_LENGTH);
   });
 });
 

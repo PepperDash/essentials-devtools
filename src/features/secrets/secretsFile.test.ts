@@ -434,3 +434,37 @@ describe('rejected count', () => {
     expect(result.ok && result.rejected).toBe(0);
   });
 });
+
+// ─── Provider value limit ────────────────────────────────────────────────────
+
+describe('value limit follows the target provider', () => {
+  const pemLength = 1679;
+  const text = json([{ key: 'iotKey', value: 'k'.repeat(pemLength) }]);
+
+  it('refuses a value over the Data Store limit by default', () => {
+    expect(codes(parse(text))).toEqual(['valueTooLong']);
+  });
+
+  it("accepts it when the provider's limit is larger", () => {
+    const result = parseSecretsFile({
+      text,
+      fileName: 'secrets.json',
+      fileSize: text.length,
+      maxValueLength: 8192,
+    });
+    expect(result.ok && result.entries.map((e) => e.value.length)).toEqual([
+      pemLength,
+    ]);
+  });
+
+  it("still refuses a value over the provider's limit", () => {
+    const over = json([{ key: 'big', value: 'k'.repeat(8193) }]);
+    const result = parseSecretsFile({
+      text: over,
+      fileName: 'secrets.json',
+      fileSize: over.length,
+      maxValueLength: 8192,
+    });
+    expect(codes(result)).toEqual(['valueTooLong']);
+  });
+});

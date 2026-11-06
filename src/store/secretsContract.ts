@@ -37,7 +37,10 @@ export const SECRETS_TEMPLATE_PATH = 'secrets/template';
  */
 export const DOCUMENTED_MAX_SECRET_KEY_LENGTH = 32;
 
-/** Value length cap from CDS_STRING_TOO_BIG. No counter-evidence, so still enforced client-side. */
+/**
+ * Value length cap from CDS_STRING_TOO_BIG. The fallback for a provider that does not report its
+ * own `maxValueLength`; see {@link maxValueLengthFor}.
+ */
 export const MAX_SECRET_VALUE_LENGTH = 1600;
 
 /** Records the API uses for its own bookkeeping. Never writable, never listed by default. */
@@ -45,7 +48,10 @@ export const RESERVED_KEY_PREFIX = '__essSecretsIdx';
 
 // ─── Providers ───────────────────────────────────────────────────────────────
 
-/** Which Crestron Data Store space a provider writes to. */
+/**
+ * Which storage space a provider writes to: this program's own (`local`, which includes the
+ * encrypted secure-storage provider) or one shared by every program (`global`).
+ */
 export type SecretStoreScope = 'local' | 'global';
 
 export interface SecretProviderInfo {
@@ -60,6 +66,29 @@ export interface SecretProviderInfo {
 
 export interface SecretsProvidersResponse {
   providers: SecretProviderInfo[];
+}
+
+/**
+ * The longest value a provider accepts, from its own `maxValueLength`.
+ *
+ * Providers differ: the Data Store ones take 1600 characters, the encrypted secure-storage one
+ * takes more (a PEM private key). Falls back to the Data Store limit for an unknown provider, or
+ * one that does not report a usable figure. The processor is still the authority and refuses
+ * anything it won't store.
+ */
+export function maxValueLengthFor(
+  providers: readonly SecretProviderInfo[],
+  providerKey: string | undefined
+): number {
+  const match = providers.find(
+    (item) => item.key.toLowerCase() === (providerKey ?? '').toLowerCase()
+  );
+  const reported = match?.maxValueLength;
+  return typeof reported === 'number' &&
+    Number.isFinite(reported) &&
+    reported > 0
+    ? reported
+    : MAX_SECRET_VALUE_LENGTH;
 }
 
 // ─── Listing ─────────────────────────────────────────────────────────────────
