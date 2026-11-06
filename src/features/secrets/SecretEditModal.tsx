@@ -3,6 +3,7 @@ import { Button, Form, InputGroup, Modal } from 'react-bootstrap';
 
 import EyeIcon from '../../shared/components/EyeIcon';
 import {
+  describeProviderStorage,
   DOCUMENTED_MAX_SECRET_KEY_LENGTH,
   maxValueLengthFor,
   SecretEntry,
@@ -34,6 +35,8 @@ export interface SecretEditModalProps {
   target: SecretEditTarget;
   provider: string;
   providers: SecretProviderInfo[];
+  /** The program being managed, e.g. app01, to say which program can read a secret. */
+  appId?: string;
   /** Existing keys in the selected provider, for collision detection. */
   existingKeys: SecretEntry[];
   isSaving?: boolean;
@@ -52,6 +55,7 @@ const SecretEditModal = ({
   target,
   provider,
   providers,
+  appId,
   existingKeys,
   isSaving = false,
   errorMessage,
@@ -196,8 +200,7 @@ const SecretEditModal = ({
             >
               {providers.map((item) => (
                 <option key={item.key} value={item.key}>
-                  {item.key}
-                  {item.scope === 'global' ? ' (shared across programs)' : ''}
+                  {item.key} ({describeProviderStorage(item, appId).option})
                 </option>
               ))}
             </Form.Select>

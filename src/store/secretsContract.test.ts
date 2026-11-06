@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   bulkSecretsRequest,
   deleteSecretCommand,
+  describeProviderStorage,
   describeSecretsError,
   DOCUMENTED_MAX_SECRET_KEY_LENGTH,
   MAX_SECRET_VALUE_LENGTH,
@@ -207,6 +208,41 @@ describe('maxValueLengthFor', () => {
         'CrestronSecureSecrets'
       )
     ).toBe(MAX_SECRET_VALUE_LENGTH);
+  });
+});
+
+describe('describeProviderStorage', () => {
+  it('says the secure provider is encrypted and private to the program', () => {
+    expect(
+      describeProviderStorage(
+        { scope: 'local', encrypted: true, maxValueLength: 8192 },
+        'app01'
+      )
+    ).toEqual({
+      option: 'encrypted, app01 only',
+      summary:
+        'Encrypted. Only program app01 can read these. Values up to 8,192 characters.',
+    });
+  });
+
+  it('says a global provider is shared by every program', () => {
+    expect(
+      describeProviderStorage(
+        { scope: 'global', encrypted: false, maxValueLength: 1600 },
+        'app01'
+      )
+    ).toEqual({
+      option: 'all programs',
+      summary:
+        'Not encrypted. Every program on this processor can read these. Values up to 1,600 characters.',
+    });
+  });
+
+  it('says nothing about encryption when an older processor does not report it', () => {
+    expect(describeProviderStorage({ scope: 'local' }, 'app02')).toEqual({
+      option: 'app02 only',
+      summary: 'Only program app02 can read these.',
+    });
   });
 });
 

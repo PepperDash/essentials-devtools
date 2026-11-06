@@ -62,6 +62,41 @@ export interface SecretProviderInfo {
   enumerationSupported: boolean;
   maxKeyLength: number;
   maxValueLength: number;
+  /** Whether values are encrypted at rest. Absent from Essentials builds older than #1552. */
+  encrypted?: boolean;
+}
+
+/**
+ * Plain-language facts about where a provider keeps its values and which programs can read them.
+ *
+ * `option` is a short suffix for the provider picker; `summary` is the sentence shown under it.
+ * Encryption is stated only when the processor reports it.
+ */
+export function describeProviderStorage(
+  provider: Pick<SecretProviderInfo, 'scope' | 'encrypted'> &
+    Partial<Pick<SecretProviderInfo, 'maxValueLength'>>,
+  appId: string | undefined
+): { option: string; summary: string } {
+  const program = appId ?? 'this program';
+  const shared = provider.scope === 'global';
+  const access = shared ? 'all programs' : `${program} only`;
+  const option = provider.encrypted === true ? `encrypted, ${access}` : access;
+
+  const parts: string[] = [];
+  if (provider.encrypted !== undefined) {
+    parts.push(provider.encrypted ? 'Encrypted.' : 'Not encrypted.');
+  }
+  parts.push(
+    shared
+      ? 'Every program on this processor can read these.'
+      : `Only program ${program} can read these.`
+  );
+  if (provider.maxValueLength) {
+    parts.push(
+      `Values up to ${provider.maxValueLength.toLocaleString('en-US')} characters.`
+    );
+  }
+  return { option, summary: parts.join(' ') };
 }
 
 export interface SecretsProvidersResponse {

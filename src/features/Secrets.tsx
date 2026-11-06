@@ -21,6 +21,7 @@ import {
   BulkSecretsResponse,
   bulkSecretsRequest,
   deleteSecretCommand,
+  describeProviderStorage,
   describeSecretsError,
   maxValueLengthFor,
   SecretEntry,
@@ -79,6 +80,9 @@ const Secrets = () => {
     useLazyGetSecretsTemplateQuery();
 
   const providers = providerData?.providers ?? [];
+  const selectedProvider = providers.find(
+    (item) => item.key.toLowerCase() === provider.toLowerCase()
+  );
   const secrets = useMemo(() => data?.secrets ?? [], [data]);
 
   const { managed, unmanaged } = useMemo(() => {
@@ -280,11 +284,10 @@ const Secrets = () => {
         >
           {(providers.length > 0
             ? providers
-            : [{ key: DEFAULT_PROVIDER, scope: 'local' }]
+            : [{ key: DEFAULT_PROVIDER, scope: 'local' as const }]
           ).map((item) => (
             <option key={item.key} value={item.key}>
-              {item.key}
-              {item.scope === 'global' ? ' (shared across programs)' : ''}
+              {item.key} ({describeProviderStorage(item, appId).option})
             </option>
           ))}
         </Form.Select>
@@ -317,6 +320,12 @@ const Secrets = () => {
           </Button>
         </div>
       </div>
+
+      {selectedProvider && (
+        <div className="small text-muted" data-testid="provider-storage">
+          {describeProviderStorage(selectedProvider, appId).summary}
+        </div>
+      )}
 
       {data.indexStatus && data.indexStatus !== 'ok' && (
         <div className="alert alert-warning py-2 px-3 small mb-0" role="alert">
@@ -435,6 +444,7 @@ const Secrets = () => {
           target={editing}
           provider={provider}
           providers={providers}
+          appId={appId}
           existingKeys={secrets}
           isSaving={isSending}
           errorMessage={commandError}
