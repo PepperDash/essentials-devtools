@@ -141,6 +141,8 @@ export function describeProviderStorage(
  * program's number. Left out:
  *   - `otherApp`: a record carrying another program's number, e.g. `Local_SecureStorage_2:…` or
  *     Mobile Control's `2:…-tokens`, seen from program 1;
+ *   - `internal`: the encrypted provider's bookkeeping (its index and key list), hidden like the
+ *     Secrets API's own `__essSecretsIdx…` records;
  *   - `otherProgram`: owned by a program with a different name, which this program can neither
  *     read nor delete (checked on an RMC4).
  */
@@ -148,7 +150,7 @@ export function hiddenRecordReason(
   entry: Pick<SecretEntry, 'key' | 'owner'>,
   programName: string | undefined,
   programNumber: number | undefined
-): 'otherApp' | 'otherProgram' | null {
+): 'otherApp' | 'internal' | 'otherProgram' | null {
   if (programName && entry.owner && entry.owner !== programName) {
     return 'otherProgram';
   }
@@ -156,13 +158,21 @@ export function hiddenRecordReason(
   const rest = entry.key.startsWith(SECURE_STORAGE_RECORD_PREFIX)
     ? entry.key.slice(SECURE_STORAGE_RECORD_PREFIX.length)
     : entry.key;
-  const numbered = /^(\d+):/.exec(rest);
+  const numbered = /^(\d+):(.*)$/.exec(rest);
   if (
     numbered &&
     programNumber !== undefined &&
     Number(numbered[1]) !== programNumber
   ) {
     return 'otherApp';
+  }
+
+  const tag = numbered ? numbered[2] : rest;
+  if (
+    entry.key.startsWith(SECURE_STORAGE_RECORD_PREFIX) &&
+    tag.startsWith(RESERVED_KEY_PREFIX)
+  ) {
+    return 'internal';
   }
 
   return null;

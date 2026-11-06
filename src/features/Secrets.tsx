@@ -2,6 +2,7 @@ import { skipToken } from '@reduxjs/toolkit/query';
 import { useMemo, useState } from 'react';
 import { Button, Form } from 'react-bootstrap';
 
+import RefreshIcon from '../shared/components/RefreshIcon';
 import useAppParams from '../shared/hooks/useAppParams';
 import {
   downloadJson,
@@ -93,7 +94,11 @@ const Secrets = () => {
       ),
     [apiPaths]
   );
-  const { data: storageData } = useGetSecretsStorageQuery(
+  const {
+    data: storageData,
+    refetch: refetchStorage,
+    isFetching: isFetchingStorage,
+  } = useGetSecretsStorageQuery(
     appId && canManageSecrets && hasStorageRoute ? { appId } : skipToken
   );
 
@@ -388,6 +393,17 @@ const Secrets = () => {
               more.
             </span>
           )}
+          <Button
+            variant="link"
+            size="sm"
+            className="p-0 ms-2 align-baseline"
+            onClick={() => void refetchStorage()}
+            disabled={isFetchingStorage}
+            aria-label="Refresh Data Store use"
+            title="Refresh Data Store use"
+          >
+            <RefreshIcon />
+          </Button>
         </div>
       )}
 

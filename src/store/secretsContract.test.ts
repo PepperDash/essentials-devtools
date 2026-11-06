@@ -287,9 +287,17 @@ describe('hiddenRecordReason', () => {
     expect(reason('Local_SecureStorage_1:iotCert', me, 2)).toBe('otherApp');
   });
 
-  it("keeps this program's encrypted index and key list", () => {
-    expect(reason('Local_SecureStorage_1:__essSecretsIdx00')).toBeNull();
-    expect(reason('Local_SecureStorage_1:__essSecretsIdxKeys')).toBeNull();
+  it("hides the encrypted provider's index and key list", () => {
+    expect(reason('Local_SecureStorage_1:__essSecretsIdx')).toBe('internal');
+    expect(reason('Local_SecureStorage_1:__essSecretsIdx00')).toBe('internal');
+    expect(reason('Local_SecureStorage_1:__essSecretsIdxKeys')).toBe(
+      'internal'
+    );
+  });
+
+  it('keeps Essentials debug records, which carry no program number', () => {
+    expect(reason('ConsoleDebugLevel')).toBeNull();
+    expect(reason('WebsocketDebugLevel')).toBeNull();
   });
 
   it('hides records owned by a program with another name', () => {
