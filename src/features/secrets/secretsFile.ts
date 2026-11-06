@@ -21,6 +21,8 @@ import {
   DOCUMENTED_MAX_SECRET_KEY_LENGTH,
   MAX_SECRET_VALUE_LENGTH,
   RESERVED_KEY_PREFIX,
+  measureValue,
+  SecretLengthUnit,
 } from '../../store/secretsContract';
 
 /** Generous for a credential list, small enough that a stray binary never reaches JSON.parse. */
@@ -90,6 +92,13 @@ interface ParseInput {
   text: string;
   fileName: string;
   fileSize: number;
+  /**
+   * The target provider's value limit (its `maxValueLength`). Defaults to the Data Store's
+   * {@link MAX_SECRET_VALUE_LENGTH}.
+   */
+  maxValueLength?: number;
+  /** How the target provider counts lengths. Defaults to characters. */
+  lengthUnit?: SecretLengthUnit;
 }
 
 // Matching control characters is the point, so no-control-regex doesn't apply
@@ -210,7 +219,9 @@ function toRawEntry(raw: unknown, index: number): RawEntry {
  */
 function validateEntry(
   raw: RawEntry,
-  fallbackProvider: string | undefined
+  fallbackProvider: string | undefined,
+  maxValueLength: number,
+  lengthUnit: SecretLengthUnit
 ):
   | { entry: BulkSecretEntry; warnings: SecretsFileIssue[] }
   | { issue: SecretsFileIssue } {
@@ -271,12 +282,13 @@ function validateEntry(
       ),
     };
   }
-  if (raw.value.length > MAX_SECRET_VALUE_LENGTH) {
+  const length = measureValue(raw.value, lengthUnit);
+  if (length > maxValueLength) {
     // Deliberately reports only the length, never any part of the value.
     return {
       issue: issue(
         'valueTooLong',
-        `The value for "${key}" is ${raw.value.length} characters; the limit is ${MAX_SECRET_VALUE_LENGTH}.`,
+        `The value for "${key}" is ${length} ${lengthUnit}; the limit is ${maxValueLength}.`,
         named
       ),
     };
@@ -344,6 +356,8 @@ function validateEntry(
  */
 export function parseSecretsFile(input: ParseInput): ParseSecretsFileResult {
   const { text, fileName, fileSize } = input;
+  const maxValueLength = input.maxValueLength ?? MAX_SECRET_VALUE_LENGTH;
+  const lengthUnit = input.lengthUnit ?? 'characters';
 
   // Ordered cheapest-first so a large binary is rejected without ever being parsed. Extension is
   // the assertion rather than MIME type, which is unreliable for a dropped file.
@@ -412,7 +426,12 @@ export function parseSecretsFile(input: ParseInput): ParseSecretsFileResult {
   let rejected = 0;
 
   for (const raw of normalized.entries) {
-    const result = validateEntry(raw, normalized.provider);
+    const result = validateEntry(
+      raw,
+      normalized.provider,
+      maxValueLength,
+      lengthUnit
+    );
 
     if ('issue' in result) {
       if (result.issue.code === 'emptyValue') blankValues += 1;

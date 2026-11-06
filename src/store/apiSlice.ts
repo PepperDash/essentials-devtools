@@ -13,11 +13,13 @@ import {
   SECRETS_COMMAND_PATH,
   SECRETS_PATH,
   SECRETS_PROVIDERS_PATH,
+  SECRETS_STORAGE_PATH,
   SECRETS_TEMPLATE_PATH,
   SecretCommandRequest,
   SecretCommandResponse,
   SecretsListResponse,
   SecretsProvidersResponse,
+  SecretsStorageResponse,
   SecretsTemplateResponse,
 } from './secretsContract';
 import { getCwsRoot, toCwsPath } from '../shared/functions/hostPaths';
@@ -403,6 +405,17 @@ const apiSlice = createApi({
         arg.request.mode === 'commit' ? ['Secrets'] : [],
     }),
 
+    // Data Store usage per program name. Re-read after a write, which is what changes it.
+    getSecretsStorage: builder.query<SecretsStorageResponse, { appId: string }>(
+      {
+        query: ({ appId }) => ({
+          url: `/${appId}/api/${SECRETS_STORAGE_PATH}`,
+          method: 'GET',
+        }),
+        providesTags: ['Secrets'],
+      }
+    ),
+
     getSecretsTemplate: builder.query<
       SecretsTemplateResponse,
       { appId: string; provider: string }
@@ -448,6 +461,7 @@ export const {
   useSetLoginCredentialsMutation,
   useGetSecretProvidersQuery,
   useGetSecretsQuery,
+  useGetSecretsStorageQuery,
   useSendSecretCommandMutation,
   useApplyBulkSecretsMutation,
   useLazyGetSecretsTemplateQuery,

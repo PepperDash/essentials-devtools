@@ -3,9 +3,15 @@ import { describe, expect, it } from 'vitest';
 import {
   bulkSecretsRequest,
   deleteSecretCommand,
+  describeProviderStorage,
   describeSecretsError,
+  hiddenRecordReason,
+  lengthUnitFor,
+  measureValue,
+  programNumberFromAppId,
   DOCUMENTED_MAX_SECRET_KEY_LENGTH,
   MAX_SECRET_VALUE_LENGTH,
+  maxValueLengthFor,
   pruneIndexCommand,
   rebuildIndexCommand,
   RESERVED_KEY_PREFIX,
@@ -166,6 +172,189 @@ describe('constants match the Crestron Data Store limits', () => {
     expect(SECRETS_BULK_PATH).toBe('secrets/bulk');
     expect(SECRETS_TEMPLATE_PATH).toBe('secrets/template');
     expect(RESERVED_KEY_PREFIX).toBe('__essSecretsIdx');
+  });
+});
+
+describe('maxValueLengthFor', () => {
+  const providers = [
+    {
+      key: 'default',
+      scope: 'local' as const,
+      enumerationSupported: true,
+      maxKeyLength: 32,
+      maxValueLength: 1600,
+    },
+    {
+      key: 'CrestronSecureSecrets',
+      scope: 'local' as const,
+      enumerationSupported: true,
+      maxKeyLength: 32,
+      maxValueLength: 8192,
+    },
+  ];
+
+  it("uses the provider's own limit, matching the key case-insensitively", () => {
+    expect(maxValueLengthFor(providers, 'CrestronSecureSecrets')).toBe(8192);
+    expect(maxValueLengthFor(providers, 'crestronsecuresecrets')).toBe(8192);
+    expect(maxValueLengthFor(providers, 'default')).toBe(1600);
+  });
+
+  it('falls back to the Data Store limit for an unknown provider or a bad figure', () => {
+    expect(maxValueLengthFor(providers, 'missing')).toBe(
+      MAX_SECRET_VALUE_LENGTH
+    );
+    expect(maxValueLengthFor(providers, undefined)).toBe(
+      MAX_SECRET_VALUE_LENGTH
+    );
+    expect(
+      maxValueLengthFor(
+        [{ ...providers[1], maxValueLength: 0 }],
+        'CrestronSecureSecrets'
+      )
+    ).toBe(MAX_SECRET_VALUE_LENGTH);
+  });
+});
+
+describe('describeProviderStorage', () => {
+  it('says the encrypted provider stores per program, with its limits', () => {
+    expect(
+      describeProviderStorage(
+        {
+          scope: 'local',
+          encrypted: true,
+          maxValueLength: 4096,
+          maxTotalLength: 6144,
+          maxSecrets: 8,
+          lengthUnit: 'bytes',
+        },
+        'app01',
+        'PepperDashEssentials'
+      )
+    ).toEqual({
+      option: 'encrypted, app01',
+      summary:
+        'Encrypted. Stored for app01. Up to 4,096 bytes per secret, 6,144 bytes in total including its index, 8 secrets.',
+    });
+  });
+
+  it('says the plain local provider is shared by programs with the same name', () => {
+    expect(
+      describeProviderStorage(
+        { scope: 'local', encrypted: false, maxValueLength: 1600 },
+        'app02',
+        'PepperDashEssentials'
+      )
+    ).toEqual({
+      option: 'not encrypted',
+      summary:
+        'Not encrypted. Shared with other programs named PepperDashEssentials on this processor. Up to 1,600 characters per secret.',
+    });
+  });
+
+  it('says a global provider can be read by every program', () => {
+    expect(
+      describeProviderStorage(
+        { scope: 'global', encrypted: false, maxValueLength: 1600 },
+        'app01',
+        'PepperDashEssentials'
+      )
+    ).toEqual({
+      option: 'all programs',
+      summary:
+        'Not encrypted. Every program on this processor can read these. Up to 1,600 characters per secret.',
+    });
+  });
+
+  it('states nothing an older processor does not report', () => {
+    expect(describeProviderStorage({ scope: 'local' }, 'app01')).toEqual({
+      option: 'this program',
+      summary: '',
+    });
+  });
+});
+
+describe('measureValue and lengthUnitFor', () => {
+  it('counts UTF-8 bytes for a provider that counts bytes', () => {
+    expect(measureValue('é'.repeat(3000), 'bytes')).toBe(6000);
+    expect(measureValue('é'.repeat(3000), 'characters')).toBe(3000);
+    expect(measureValue('abc', undefined)).toBe(3);
+  });
+
+  it("reads the provider's unit, defaulting to characters", () => {
+    const providers = [
+      {
+        key: 'CrestronSecureSecrets',
+        scope: 'local' as const,
+        enumerationSupported: true,
+        maxKeyLength: 32,
+        maxValueLength: 4096,
+        lengthUnit: 'bytes' as const,
+      },
+      {
+        key: 'default',
+        scope: 'local' as const,
+        enumerationSupported: true,
+        maxKeyLength: 32,
+        maxValueLength: 1600,
+      },
+    ];
+    expect(lengthUnitFor(providers, 'CrestronSecureSecrets')).toBe('bytes');
+    expect(lengthUnitFor(providers, 'default')).toBe('characters');
+    expect(lengthUnitFor(providers, 'missing')).toBe('characters');
+  });
+});
+
+describe('hiddenRecordReason', () => {
+  const me = 'PepperDashEssentials';
+  const reason = (key: string, owner = me, number: number | undefined = 1) =>
+    hiddenRecordReason({ key, owner }, me, number);
+
+  it("keeps this program's own and shared records", () => {
+    expect(reason('Local_SecureStorage_1:iotCert')).toBeNull();
+    expect(reason('DoNotLoadOnNextBoot')).toBeNull();
+    expect(reason('1:mobileControl-directServer-tokens')).toBeNull();
+  });
+
+  it("hides records carrying another program's number", () => {
+    expect(reason('Local_SecureStorage_2:iotCert')).toBe('otherApp');
+    expect(reason('2:mobileControl-directServer-tokens')).toBe('otherApp');
+    expect(reason('Local_SecureStorage_1:iotCert', me, 2)).toBe('otherApp');
+  });
+
+  it("hides the encrypted provider's index and key list", () => {
+    expect(reason('Local_SecureStorage_1:__essSecretsIdx')).toBe('internal');
+    expect(reason('Local_SecureStorage_1:__essSecretsIdx00')).toBe('internal');
+    expect(reason('Local_SecureStorage_1:__essSecretsIdxKeys')).toBe(
+      'internal'
+    );
+  });
+
+  it('keeps Essentials debug records, which carry no program number', () => {
+    expect(reason('ConsoleDebugLevel')).toBeNull();
+    expect(reason('WebsocketDebugLevel')).toBeNull();
+  });
+
+  it('hides records owned by a program with another name', () => {
+    expect(reason('probeFromApp2', 'CdsScopeProbe')).toBe('otherProgram');
+  });
+
+  it('keeps numbered records when the program number is unknown', () => {
+    expect(
+      hiddenRecordReason(
+        { key: 'Local_SecureStorage_2:iotCert', owner: me },
+        me,
+        undefined
+      )
+    ).toBeNull();
+  });
+});
+
+describe('programNumberFromAppId', () => {
+  it('reads the number from an app id', () => {
+    expect(programNumberFromAppId('app01')).toBe(1);
+    expect(programNumberFromAppId('app10')).toBe(10);
+    expect(programNumberFromAppId(undefined)).toBeUndefined();
+    expect(programNumberFromAppId('debug')).toBeUndefined();
   });
 });
 

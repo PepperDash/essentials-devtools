@@ -434,3 +434,59 @@ describe('rejected count', () => {
     expect(result.ok && result.rejected).toBe(0);
   });
 });
+
+// ─── Provider value limit ────────────────────────────────────────────────────
+
+describe('value limit follows the target provider', () => {
+  const pemLength = 1679;
+  const text = json([{ key: 'iotKey', value: 'k'.repeat(pemLength) }]);
+
+  it('refuses a value over the Data Store limit by default', () => {
+    expect(codes(parse(text))).toEqual(['valueTooLong']);
+  });
+
+  it("accepts it when the provider's limit is larger", () => {
+    const result = parseSecretsFile({
+      text,
+      fileName: 'secrets.json',
+      fileSize: text.length,
+      maxValueLength: 8192,
+    });
+    expect(result.ok && result.entries.map((e) => e.value.length)).toEqual([
+      pemLength,
+    ]);
+  });
+
+  it("still refuses a value over the provider's limit", () => {
+    const over = json([{ key: 'big', value: 'k'.repeat(8193) }]);
+    const result = parseSecretsFile({
+      text: over,
+      fileName: 'secrets.json',
+      fileSize: over.length,
+      maxValueLength: 8192,
+    });
+    expect(codes(result)).toEqual(['valueTooLong']);
+  });
+});
+
+describe('value limit in bytes', () => {
+  it('counts UTF-8 bytes when the provider does', () => {
+    // 3,000 characters, 6,000 bytes: under a 4,096 limit only when counting characters.
+    const text = json([{ key: 'accented', value: 'é'.repeat(3000) }]);
+    const asBytes = parseSecretsFile({
+      text,
+      fileName: 'secrets.json',
+      fileSize: text.length,
+      maxValueLength: 4096,
+      lengthUnit: 'bytes',
+    });
+    expect(codes(asBytes)).toEqual(['valueTooLong']);
+    const asCharacters = parseSecretsFile({
+      text,
+      fileName: 'secrets.json',
+      fileSize: text.length,
+      maxValueLength: 4096,
+    });
+    expect(asCharacters.ok && asCharacters.entries).toHaveLength(1);
+  });
+});

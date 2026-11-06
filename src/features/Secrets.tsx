@@ -2,6 +2,7 @@ import { skipToken } from '@reduxjs/toolkit/query';
 import { useMemo, useState } from 'react';
 import { Button, Form } from 'react-bootstrap';
 
+import RefreshIcon from '../shared/components/RefreshIcon';
 import useAppParams from '../shared/hooks/useAppParams';
 import {
   downloadJson,
@@ -12,6 +13,7 @@ import {
   useGetPathsQuery,
   useGetSecretProvidersQuery,
   useGetSecretsQuery,
+  useGetSecretsStorageQuery,
   useLazyGetSecretsTemplateQuery,
   useSendSecretCommandMutation,
 } from '../store/apiSlice';
@@ -21,9 +23,17 @@ import {
   BulkSecretsResponse,
   bulkSecretsRequest,
   deleteSecretCommand,
+  describeProviderStorage,
   describeSecretsError,
+  hiddenRecordReason,
+  isEncryptedRecord,
+  lengthUnitFor,
+  maxValueLengthFor,
+  programNumberFromAppId,
   SecretEntry,
   setSecretCommand,
+  STORAGE_FULL_PERCENT,
+  STORAGE_WARN_PERCENT,
   supportsSecretsApi,
 } from '../store/secretsContract';
 import BulkApplyModal from './secrets/BulkApplyModal';
@@ -77,7 +87,35 @@ const Secrets = () => {
   const [fetchTemplate, { isFetching: isFetchingTemplate }] =
     useLazyGetSecretsTemplateQuery();
 
+  // Older Essentials builds have no storage route; the usage line is then left out.
+  const hasStorageRoute = useMemo(
+    () =>
+      (apiPaths?.routes ?? []).some((route) =>
+        /(^|\/)secrets\/storage$/i.test(route.Url ?? '')
+      ),
+    [apiPaths]
+  );
+  const {
+    data: storageData,
+    refetch: refetchStorage,
+    isFetching: isFetchingStorage,
+  } = useGetSecretsStorageQuery(
+    appId && canManageSecrets && hasStorageRoute ? { appId } : skipToken
+  );
+
   const providers = providerData?.providers ?? [];
+  const programName = providerData?.programName;
+  // This program's own Data Store rows. Usage is kept per program name, so programs that share
+  // the name share these figures.
+  // The storage response names the program itself; the providers response is the fallback.
+  // With neither, no row can be attributed, so none is shown.
+  const usageProgram = storageData?.programName ?? programName;
+  const ownUsage = usageProgram
+    ? (storageData?.usage ?? []).filter((row) => row.owner === usageProgram)
+    : [];
+  const selectedProvider = providers.find(
+    (item) => item.key.toLowerCase() === provider.toLowerCase()
+  );
   const secrets = useMemo(() => data?.secrets ?? [], [data]);
 
   const { managed, unmanaged } = useMemo(() => {
@@ -89,9 +127,16 @@ const Secrets = () => {
     const shown = secrets.filter(matches);
     return {
       managed: shown.filter((s) => s.managed),
-      unmanaged: shown.filter((s) => !s.managed),
+      // The processor lists every program's local records. Leave out the encrypted provider's
+      // records (listed there by key) and other programs' records (unreadable from here).
+      unmanaged: shown.filter(
+        (s) =>
+          !s.managed &&
+          hiddenRecordReason(s, programName, programNumberFromAppId(appId)) ===
+            null
+      ),
     };
-  }, [secrets, filter]);
+  }, [secrets, filter, programName, appId]);
 
   // ── Actions ───────────────────────────────────────────────────────────────
 
@@ -279,11 +324,11 @@ const Secrets = () => {
         >
           {(providers.length > 0
             ? providers
-            : [{ key: DEFAULT_PROVIDER, scope: 'local' }]
+            : [{ key: DEFAULT_PROVIDER, scope: 'local' as const }]
           ).map((item) => (
             <option key={item.key} value={item.key}>
-              {item.key}
-              {item.scope === 'global' ? ' (shared across programs)' : ''}
+              {item.key} (
+              {describeProviderStorage(item, appId, programName).option})
             </option>
           ))}
         </Form.Select>
@@ -316,6 +361,58 @@ const Secrets = () => {
           </Button>
         </div>
       </div>
+
+      {selectedProvider && (
+        <div className="small text-muted" data-testid="provider-storage">
+          {
+            describeProviderStorage(selectedProvider, appId, programName)
+              .summary
+          }
+        </div>
+      )}
+
+      {hasStorageRoute && (
+        <div className="small" data-testid="storage-usage">
+          <span className="text-muted">Data Store use: </span>
+          {ownUsage.length === 0 && (
+            <span className="text-muted">unavailable</span>
+          )}
+          {ownUsage.map((row, index) => (
+            <span key={row.store}>
+              {index > 0 && ', '}
+              <span
+                className={
+                  row.percentUsed >= STORAGE_FULL_PERCENT
+                    ? 'text-danger fw-bold'
+                    : row.percentUsed >= STORAGE_WARN_PERCENT
+                      ? 'text-warning-emphasis fw-bold'
+                      : 'text-muted'
+                }
+              >
+                {row.percentUsed}% ({row.store})
+              </span>
+            </span>
+          ))}
+          {ownUsage.some((row) => row.percentUsed >= STORAGE_FULL_PERCENT) && (
+            <span className="text-danger">
+              {' '}
+              Over the processor&apos;s quota; delete secrets before adding
+              more.
+            </span>
+          )}
+          <Button
+            variant="link"
+            size="sm"
+            className="p-0 ms-2 align-baseline"
+            onClick={() => void refetchStorage()}
+            disabled={isFetchingStorage}
+            aria-label="Refresh Data Store use"
+            title="Refresh Data Store use"
+          >
+            <RefreshIcon />
+          </Button>
+        </div>
+      )}
 
       {data.indexStatus && data.indexStatus !== 'ok' && (
         <div className="alert alert-warning py-2 px-3 small mb-0" role="alert">
@@ -399,25 +496,34 @@ const Secrets = () => {
                   <tr key={entry.key}>
                     <td className="text-break">
                       {entry.key}{' '}
-                      <span className="badge text-bg-secondary">
-                        Not managed here
-                      </span>
+                      {isEncryptedRecord(entry) ? (
+                        <span className="badge text-bg-info">
+                          Encrypted, managed under CrestronSecureSecrets
+                        </span>
+                      ) : (
+                        <span className="badge text-bg-secondary">
+                          Not managed here
+                        </span>
+                      )}
                     </td>
                     <td className="small text-muted">{entry.owner}</td>
                     <td className="small text-muted d-none d-md-table-cell">
                       {entry.lastModifiedUtc}
                     </td>
                     <td className="d-flex justify-content-end">
-                      <Button
-                        size="sm"
-                        variant="outline-danger"
-                        onClick={() => {
-                          setCommandError(null);
-                          setPendingDelete(entry);
-                        }}
-                      >
-                        Delete
-                      </Button>
+                      {/* Deleting an encrypted record here would bypass its provider's key list. */}
+                      {!isEncryptedRecord(entry) && (
+                        <Button
+                          size="sm"
+                          variant="outline-danger"
+                          onClick={() => {
+                            setCommandError(null);
+                            setPendingDelete(entry);
+                          }}
+                        >
+                          Delete
+                        </Button>
+                      )}
                     </td>
                   </tr>
                 ))}
@@ -434,6 +540,7 @@ const Secrets = () => {
           target={editing}
           provider={provider}
           providers={providers}
+          appId={appId}
           existingKeys={secrets}
           isSaving={isSending}
           errorMessage={commandError}
@@ -462,6 +569,8 @@ const Secrets = () => {
       {showBulk && (
         <BulkApplyModal
           provider={provider}
+          maxValueLength={maxValueLengthFor(providers, provider)}
+          lengthUnit={lengthUnitFor(providers, provider)}
           onRun={handleBulkRun}
           onClose={() => setShowBulk(false)}
         />
