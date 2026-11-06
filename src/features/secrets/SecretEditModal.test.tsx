@@ -116,6 +116,48 @@ describe('multi-line values keep their line breaks', () => {
     expect(onSubmit.mock.calls[0][0].value).toBe(PEM);
   });
 
+  it('blocks saving while a file is read, and ignores a read replaced by Clear', async () => {
+    const onSubmit = renderModal('CrestronSecureSecrets');
+    let finishRead: (text: string) => void = () => {};
+    const file = new File([PEM], 'slow.key');
+    Object.defineProperty(file, 'text', {
+      value: () =>
+        new Promise<string>((resolve) => {
+          finishRead = resolve;
+        }),
+    });
+
+    fireEvent.change(valueInput(), { target: { value: 'typed-first' } });
+    fireEvent.change(screen.getByTestId('secret-value-file'), {
+      target: { files: [file] },
+    });
+    expect(addButton()).toBeDisabled();
+
+    fireEvent.change(valueInput(), { target: { value: 'typed-after' } });
+    finishRead(PEM);
+    await waitFor(() => expect(addButton()).toBeEnabled());
+    expect(screen.queryByText(/Multi-line value/)).not.toBeInTheDocument();
+
+    fireEvent.click(addButton());
+    expect(onSubmit.mock.calls[0][0].value).toBe('typed-after');
+  });
+
+  it('reports a failed read without the file content and allows a retry', async () => {
+    renderModal('CrestronSecureSecrets');
+    const file = new File([PEM], 'broken.key');
+    Object.defineProperty(file, 'text', {
+      value: () => Promise.reject(new Error('NotReadableError')),
+    });
+    const input = screen.getByTestId('secret-value-file') as HTMLInputElement;
+    fireEvent.change(input, { target: { files: [file] } });
+
+    expect(
+      await screen.findByText('"broken.key" could not be read.')
+    ).toBeInTheDocument();
+    expect(input.value).toBe('');
+    expect(addButton()).toBeDisabled();
+  });
+
   it('clears a loaded value back to the normal field', () => {
     renderModal('CrestronSecureSecrets');
     fireEvent.paste(valueInput(), { clipboardData: { getData: () => PEM } });

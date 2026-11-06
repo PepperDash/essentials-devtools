@@ -73,7 +73,11 @@ const SecretEditModal = ({
   // the field shows only its size.
   const [multiline, setMultiline] = useState<MultilineValue | null>(null);
   const [fileError, setFileError] = useState<string | null>(null);
+  const [readingFile, setReadingFile] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  // Bumped by every value change, so a file read that finishes late can tell it has been replaced
+  // and must not overwrite a newer value.
+  const readId = useRef(0);
 
   const maxValueLength = maxValueLengthFor(providers, selectedProvider);
 
@@ -91,36 +95,65 @@ const SecretEditModal = ({
   const valueTooLong = value.length > maxValueLength;
   const lineCount = value === '' ? 0 : value.split(/\r\n|\r|\n/).length;
 
+  /** Abandons any file read in progress; its result will be ignored. */
+  const supersedeRead = () => {
+    readId.current += 1;
+    setReadingFile(false);
+    setFileError(null);
+  };
+
+  const handleValueChange = (next: string) => {
+    supersedeRead();
+    setValue(next);
+  };
+
   const handlePaste = (event: ClipboardEvent<HTMLInputElement>) => {
     const pasted = event.clipboardData.getData('text');
     if (!/[\r\n]/.test(pasted)) return;
     event.preventDefault();
+    supersedeRead();
     setValue(pasted);
     setMultiline({ source: 'pasted text' });
   };
 
   const handleFile = async (file: File | undefined) => {
-    setFileError(null);
+    supersedeRead();
     if (!file) return;
     if (file.size > MAX_VALUE_FILE_BYTES) {
       setFileError(
         `"${file.name}" is too large for a secret value (${file.size} bytes).`
       );
+      if (fileRef.current) fileRef.current.value = '';
       return;
     }
-    setValue(await file.text());
-    setMultiline({ source: file.name });
-    if (fileRef.current) fileRef.current.value = '';
+
+    const id = readId.current;
+    setReadingFile(true);
+    try {
+      const text = await file.text();
+      if (id !== readId.current) return;
+      setValue(text);
+      setMultiline({ source: file.name });
+    } catch {
+      // Never includes any of the file's content.
+      if (id === readId.current)
+        setFileError(`"${file.name}" could not be read.`);
+    } finally {
+      if (id === readId.current) setReadingFile(false);
+      // Lets the same file be chosen again, e.g. to retry after a failed read.
+      if (fileRef.current) fileRef.current.value = '';
+    }
   };
 
   const clearValue = () => {
+    supersedeRead();
     setValue('');
     setMultiline(null);
-    setFileError(null);
   };
 
   const blocked =
     isSaving ||
+    readingFile ||
     trimmedKey === '' ||
     value === '' ||
     valueTooLong ||
@@ -240,7 +273,7 @@ const SecretEditModal = ({
                 <Form.Control
                   type={showValue ? 'text' : 'password'}
                   value={value}
-                  onChange={(e) => setValue(e.target.value)}
+                  onChange={(e) => handleValueChange(e.target.value)}
                   onPaste={handlePaste}
                   disabled={isSaving}
                   isInvalid={valueTooLong}
