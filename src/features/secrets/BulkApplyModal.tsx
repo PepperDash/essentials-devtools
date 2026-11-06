@@ -4,6 +4,7 @@ import { Button, Form, Modal, Spinner } from 'react-bootstrap';
 import {
   BulkSecretEntry,
   BulkSecretsResponse,
+  SecretLengthUnit,
 } from '../../store/secretsContract';
 import BulkPreviewTable from './BulkPreviewTable';
 import {
@@ -17,6 +18,8 @@ export interface BulkApplyModalProps {
   provider: string;
   /** The provider's value limit, from its `maxValueLength`. Defaults to the Data Store limit. */
   maxValueLength?: number;
+  /** How the provider counts lengths. Defaults to characters. */
+  lengthUnit?: SecretLengthUnit;
   /** Runs a preview or a commit and resolves with the processor's verdict. */
   onRun: (
     entries: BulkSecretEntry[],
@@ -47,6 +50,7 @@ type Stage = 'choose' | 'review' | 'done';
 const BulkApplyModal = ({
   provider,
   maxValueLength,
+  lengthUnit,
   onRun,
   onClose,
 }: BulkApplyModalProps) => {
@@ -119,6 +123,7 @@ const BulkApplyModal = ({
       fileName: file.name,
       fileSize: file.size,
       maxValueLength,
+      lengthUnit,
     });
 
     if (!parsed.ok) {

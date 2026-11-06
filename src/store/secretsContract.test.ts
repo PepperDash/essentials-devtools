@@ -6,6 +6,8 @@ import {
   describeProviderStorage,
   describeSecretsError,
   hiddenRecordReason,
+  lengthUnitFor,
+  measureValue,
   programNumberFromAppId,
   DOCUMENTED_MAX_SECRET_KEY_LENGTH,
   MAX_SECRET_VALUE_LENGTH,
@@ -223,6 +225,7 @@ describe('describeProviderStorage', () => {
           maxValueLength: 4096,
           maxTotalLength: 6144,
           maxSecrets: 8,
+          lengthUnit: 'bytes',
         },
         'app01',
         'PepperDashEssentials'
@@ -230,7 +233,7 @@ describe('describeProviderStorage', () => {
     ).toEqual({
       option: 'encrypted, app01',
       summary:
-        'Encrypted. Stored for app01. Up to 4,096 characters per secret, 6,144 in total, 8 secrets.',
+        'Encrypted. Stored for app01. Up to 4,096 bytes per secret, 6,144 bytes in total including its index, 8 secrets.',
     });
   });
 
@@ -267,6 +270,37 @@ describe('describeProviderStorage', () => {
       option: 'this program',
       summary: '',
     });
+  });
+});
+
+describe('measureValue and lengthUnitFor', () => {
+  it('counts UTF-8 bytes for a provider that counts bytes', () => {
+    expect(measureValue('é'.repeat(3000), 'bytes')).toBe(6000);
+    expect(measureValue('é'.repeat(3000), 'characters')).toBe(3000);
+    expect(measureValue('abc', undefined)).toBe(3);
+  });
+
+  it("reads the provider's unit, defaulting to characters", () => {
+    const providers = [
+      {
+        key: 'CrestronSecureSecrets',
+        scope: 'local' as const,
+        enumerationSupported: true,
+        maxKeyLength: 32,
+        maxValueLength: 4096,
+        lengthUnit: 'bytes' as const,
+      },
+      {
+        key: 'default',
+        scope: 'local' as const,
+        enumerationSupported: true,
+        maxKeyLength: 32,
+        maxValueLength: 1600,
+      },
+    ];
+    expect(lengthUnitFor(providers, 'CrestronSecureSecrets')).toBe('bytes');
+    expect(lengthUnitFor(providers, 'default')).toBe('characters');
+    expect(lengthUnitFor(providers, 'missing')).toBe('characters');
   });
 });
 

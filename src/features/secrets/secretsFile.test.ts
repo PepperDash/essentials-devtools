@@ -468,3 +468,25 @@ describe('value limit follows the target provider', () => {
     expect(codes(result)).toEqual(['valueTooLong']);
   });
 });
+
+describe('value limit in bytes', () => {
+  it('counts UTF-8 bytes when the provider does', () => {
+    // 3,000 characters, 6,000 bytes: under a 4,096 limit only when counting characters.
+    const text = json([{ key: 'accented', value: 'é'.repeat(3000) }]);
+    const asBytes = parseSecretsFile({
+      text,
+      fileName: 'secrets.json',
+      fileSize: text.length,
+      maxValueLength: 4096,
+      lengthUnit: 'bytes',
+    });
+    expect(codes(asBytes)).toEqual(['valueTooLong']);
+    const asCharacters = parseSecretsFile({
+      text,
+      fileName: 'secrets.json',
+      fileSize: text.length,
+      maxValueLength: 4096,
+    });
+    expect(asCharacters.ok && asCharacters.entries).toHaveLength(1);
+  });
+});

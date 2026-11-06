@@ -27,6 +27,7 @@ import {
   describeSecretsError,
   hiddenRecordReason,
   isEncryptedRecord,
+  lengthUnitFor,
   maxValueLengthFor,
   programNumberFromAppId,
   SecretEntry,
@@ -106,9 +107,12 @@ const Secrets = () => {
   const programName = providerData?.programName;
   // This program's own Data Store rows. Usage is kept per program name, so programs that share
   // the name share these figures.
-  const ownUsage = (storageData?.usage ?? []).filter(
-    (row) => !programName || row.owner === programName
-  );
+  // The storage response names the program itself; the providers response is the fallback.
+  // With neither, no row can be attributed, so none is shown.
+  const usageProgram = storageData?.programName ?? programName;
+  const ownUsage = usageProgram
+    ? (storageData?.usage ?? []).filter((row) => row.owner === usageProgram)
+    : [];
   const selectedProvider = providers.find(
     (item) => item.key.toLowerCase() === provider.toLowerCase()
   );
@@ -367,9 +371,12 @@ const Secrets = () => {
         </div>
       )}
 
-      {ownUsage.length > 0 && (
+      {hasStorageRoute && (
         <div className="small" data-testid="storage-usage">
           <span className="text-muted">Data Store use: </span>
+          {ownUsage.length === 0 && (
+            <span className="text-muted">unavailable</span>
+          )}
           {ownUsage.map((row, index) => (
             <span key={row.store}>
               {index > 0 && ', '}
@@ -563,6 +570,7 @@ const Secrets = () => {
         <BulkApplyModal
           provider={provider}
           maxValueLength={maxValueLengthFor(providers, provider)}
+          lengthUnit={lengthUnitFor(providers, provider)}
           onRun={handleBulkRun}
           onClose={() => setShowBulk(false)}
         />

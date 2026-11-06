@@ -5,7 +5,9 @@ import EyeIcon from '../../shared/components/EyeIcon';
 import {
   describeProviderStorage,
   DOCUMENTED_MAX_SECRET_KEY_LENGTH,
+  lengthUnitFor,
   maxValueLengthFor,
+  measureValue,
   SecretEntry,
   SecretProviderInfo,
 } from '../../store/secretsContract';
@@ -84,6 +86,7 @@ const SecretEditModal = ({
   const readId = useRef(0);
 
   const maxValueLength = maxValueLengthFor(providers, selectedProvider);
+  const lengthUnit = lengthUnitFor(providers, selectedProvider);
 
   const trimmedKey = key.trim();
   const collision = existingKeys.find(
@@ -96,7 +99,7 @@ const SecretEditModal = ({
   // A warning, not a block: the processor accepts longer keys than the SDK documents, and it is
   // the authority on what it will take. See DOCUMENTED_MAX_SECRET_KEY_LENGTH.
   const keyIsLong = trimmedKey.length > DOCUMENTED_MAX_SECRET_KEY_LENGTH;
-  const valueTooLong = value.length > maxValueLength;
+  const valueTooLong = measureValue(value, lengthUnit) > maxValueLength;
   const lineCount = value === '' ? 0 : value.split(/\r\n|\r|\n/).length;
 
   /** Abandons any file read in progress; its result will be ignored. */
@@ -268,7 +271,7 @@ const SecretEditModal = ({
                 </Button>
                 <Form.Control.Feedback type="invalid">
                   {selectedProvider} accepts values up to {maxValueLength}{' '}
-                  characters.
+                  {lengthUnit}.
                 </Form.Control.Feedback>
               </InputGroup>
             ) : (
@@ -295,7 +298,7 @@ const SecretEditModal = ({
                 </Button>
                 <Form.Control.Feedback type="invalid">
                   {selectedProvider} accepts values up to {maxValueLength}{' '}
-                  characters.
+                  {lengthUnit}.
                 </Form.Control.Feedback>
               </InputGroup>
             )}

@@ -64,6 +64,11 @@ export interface SecretProviderInfo {
   maxValueLength: number;
   /** Whether values are encrypted at rest. Absent from Essentials builds older than #1552. */
   encrypted?: boolean;
+  /**
+   * The unit the length limits are counted in. Absent from older Essentials builds, whose
+   * providers all count characters.
+   */
+  lengthUnit?: SecretLengthUnit;
   /** Most characters the provider stores in total, when it sets a total. */
   maxTotalLength?: number;
   /** Most secrets the provider holds, when it sets a count. */
@@ -87,7 +92,7 @@ export function describeProviderStorage(
     Partial<
       Pick<
         SecretProviderInfo,
-        'maxValueLength' | 'maxTotalLength' | 'maxSecrets'
+        'maxValueLength' | 'maxTotalLength' | 'maxSecrets' | 'lengthUnit'
       >
     >,
   appId: string | undefined,
@@ -114,13 +119,16 @@ export function describeProviderStorage(
   }
 
   const limits: string[] = [];
+  const unit = provider.lengthUnit === 'bytes' ? 'bytes' : 'characters';
   if (provider.maxValueLength) {
     limits.push(
-      `up to ${provider.maxValueLength.toLocaleString('en-US')} characters per secret`
+      `up to ${provider.maxValueLength.toLocaleString('en-US')} ${unit} per secret`
     );
   }
   if (provider.maxTotalLength) {
-    limits.push(`${provider.maxTotalLength.toLocaleString('en-US')} in total`);
+    limits.push(
+      `${provider.maxTotalLength.toLocaleString('en-US')} ${unit} in total including its index`
+    );
   }
   if (provider.maxSecrets) {
     limits.push(`${provider.maxSecrets} secrets`);
@@ -193,6 +201,30 @@ export function programNumberFromAppId(
 
 /** Prefix Crestron gives the Data Store records that hold local secure-storage values. */
 export const SECURE_STORAGE_RECORD_PREFIX = 'Local_SecureStorage_';
+
+/** How a provider counts value lengths: characters (the Data Store) or UTF-8 bytes. */
+export type SecretLengthUnit = 'characters' | 'bytes';
+
+/** A value's length in the unit a provider counts. */
+export function measureValue(
+  value: string,
+  unit: SecretLengthUnit | undefined
+): number {
+  return unit === 'bytes'
+    ? new TextEncoder().encode(value).length
+    : value.length;
+}
+
+/** The unit a provider counts lengths in; characters when it doesn't say. */
+export function lengthUnitFor(
+  providers: readonly SecretProviderInfo[],
+  providerKey: string | undefined
+): SecretLengthUnit {
+  const match = providers.find(
+    (item) => item.key.toLowerCase() === (providerKey ?? '').toLowerCase()
+  );
+  return match?.lengthUnit === 'bytes' ? 'bytes' : 'characters';
+}
 
 export interface SecretsProvidersResponse {
   providers: SecretProviderInfo[];
