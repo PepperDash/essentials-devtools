@@ -12,6 +12,7 @@ import {
   useGetPathsQuery,
   useGetSecretProvidersQuery,
   useGetSecretsQuery,
+  useGetSecretsStorageQuery,
   useLazyGetSecretsTemplateQuery,
   useSendSecretCommandMutation,
 } from '../store/apiSlice';
@@ -23,9 +24,14 @@ import {
   deleteSecretCommand,
   describeProviderStorage,
   describeSecretsError,
+  hiddenRecordReason,
+  isEncryptedRecord,
   maxValueLengthFor,
+  programNumberFromAppId,
   SecretEntry,
   setSecretCommand,
+  STORAGE_FULL_PERCENT,
+  STORAGE_WARN_PERCENT,
   supportsSecretsApi,
 } from '../store/secretsContract';
 import BulkApplyModal from './secrets/BulkApplyModal';
@@ -79,7 +85,25 @@ const Secrets = () => {
   const [fetchTemplate, { isFetching: isFetchingTemplate }] =
     useLazyGetSecretsTemplateQuery();
 
+  // Older Essentials builds have no storage route; the usage line is then left out.
+  const hasStorageRoute = useMemo(
+    () =>
+      (apiPaths?.routes ?? []).some((route) =>
+        /(^|\/)secrets\/storage$/i.test(route.Url ?? '')
+      ),
+    [apiPaths]
+  );
+  const { data: storageData } = useGetSecretsStorageQuery(
+    appId && canManageSecrets && hasStorageRoute ? { appId } : skipToken
+  );
+
   const providers = providerData?.providers ?? [];
+  const programName = providerData?.programName;
+  // This program's own Data Store rows. Usage is kept per program name, so programs that share
+  // the name share these figures.
+  const ownUsage = (storageData?.usage ?? []).filter(
+    (row) => !programName || row.owner === programName
+  );
   const selectedProvider = providers.find(
     (item) => item.key.toLowerCase() === provider.toLowerCase()
   );
@@ -94,9 +118,16 @@ const Secrets = () => {
     const shown = secrets.filter(matches);
     return {
       managed: shown.filter((s) => s.managed),
-      unmanaged: shown.filter((s) => !s.managed),
+      // The processor lists every program's local records. Leave out the encrypted provider's
+      // records (listed there by key) and other programs' records (unreadable from here).
+      unmanaged: shown.filter(
+        (s) =>
+          !s.managed &&
+          hiddenRecordReason(s, programName, programNumberFromAppId(appId)) ===
+            null
+      ),
     };
-  }, [secrets, filter]);
+  }, [secrets, filter, programName, appId]);
 
   // ── Actions ───────────────────────────────────────────────────────────────
 
@@ -287,7 +318,8 @@ const Secrets = () => {
             : [{ key: DEFAULT_PROVIDER, scope: 'local' as const }]
           ).map((item) => (
             <option key={item.key} value={item.key}>
-              {item.key} ({describeProviderStorage(item, appId).option})
+              {item.key} (
+              {describeProviderStorage(item, appId, programName).option})
             </option>
           ))}
         </Form.Select>
@@ -323,7 +355,39 @@ const Secrets = () => {
 
       {selectedProvider && (
         <div className="small text-muted" data-testid="provider-storage">
-          {describeProviderStorage(selectedProvider, appId).summary}
+          {
+            describeProviderStorage(selectedProvider, appId, programName)
+              .summary
+          }
+        </div>
+      )}
+
+      {ownUsage.length > 0 && (
+        <div className="small" data-testid="storage-usage">
+          <span className="text-muted">Data Store use: </span>
+          {ownUsage.map((row, index) => (
+            <span key={row.store}>
+              {index > 0 && ', '}
+              <span
+                className={
+                  row.percentUsed >= STORAGE_FULL_PERCENT
+                    ? 'text-danger fw-bold'
+                    : row.percentUsed >= STORAGE_WARN_PERCENT
+                      ? 'text-warning-emphasis fw-bold'
+                      : 'text-muted'
+                }
+              >
+                {row.percentUsed}% ({row.store})
+              </span>
+            </span>
+          ))}
+          {ownUsage.some((row) => row.percentUsed >= STORAGE_FULL_PERCENT) && (
+            <span className="text-danger">
+              {' '}
+              Over the processor&apos;s quota; delete secrets before adding
+              more.
+            </span>
+          )}
         </div>
       )}
 
@@ -409,25 +473,34 @@ const Secrets = () => {
                   <tr key={entry.key}>
                     <td className="text-break">
                       {entry.key}{' '}
-                      <span className="badge text-bg-secondary">
-                        Not managed here
-                      </span>
+                      {isEncryptedRecord(entry) ? (
+                        <span className="badge text-bg-info">
+                          Encrypted, managed under CrestronSecureSecrets
+                        </span>
+                      ) : (
+                        <span className="badge text-bg-secondary">
+                          Not managed here
+                        </span>
+                      )}
                     </td>
                     <td className="small text-muted">{entry.owner}</td>
                     <td className="small text-muted d-none d-md-table-cell">
                       {entry.lastModifiedUtc}
                     </td>
                     <td className="d-flex justify-content-end">
-                      <Button
-                        size="sm"
-                        variant="outline-danger"
-                        onClick={() => {
-                          setCommandError(null);
-                          setPendingDelete(entry);
-                        }}
-                      >
-                        Delete
-                      </Button>
+                      {/* Deleting an encrypted record here would bypass its provider's key list. */}
+                      {!isEncryptedRecord(entry) && (
+                        <Button
+                          size="sm"
+                          variant="outline-danger"
+                          onClick={() => {
+                            setCommandError(null);
+                            setPendingDelete(entry);
+                          }}
+                        >
+                          Delete
+                        </Button>
+                      )}
                     </td>
                   </tr>
                 ))}

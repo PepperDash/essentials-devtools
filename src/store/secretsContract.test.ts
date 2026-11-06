@@ -5,6 +5,8 @@ import {
   deleteSecretCommand,
   describeProviderStorage,
   describeSecretsError,
+  hiddenRecordReason,
+  programNumberFromAppId,
   DOCUMENTED_MAX_SECRET_KEY_LENGTH,
   MAX_SECRET_VALUE_LENGTH,
   maxValueLengthFor,
@@ -212,37 +214,105 @@ describe('maxValueLengthFor', () => {
 });
 
 describe('describeProviderStorage', () => {
-  it('says the secure provider is encrypted and private to the program', () => {
+  it('says the encrypted provider stores per program, with its limits', () => {
     expect(
       describeProviderStorage(
-        { scope: 'local', encrypted: true, maxValueLength: 8192 },
-        'app01'
+        {
+          scope: 'local',
+          encrypted: true,
+          maxValueLength: 4096,
+          maxTotalLength: 6144,
+          maxSecrets: 8,
+        },
+        'app01',
+        'PepperDashEssentials'
       )
     ).toEqual({
-      option: 'encrypted, app01 only',
+      option: 'encrypted, app01',
       summary:
-        'Encrypted. Only program app01 can read these. Values up to 8,192 characters.',
+        'Encrypted. Stored for app01. Up to 4,096 characters per secret, 6,144 in total, 8 secrets.',
     });
   });
 
-  it('says a global provider is shared by every program', () => {
+  it('says the plain local provider is shared by programs with the same name', () => {
+    expect(
+      describeProviderStorage(
+        { scope: 'local', encrypted: false, maxValueLength: 1600 },
+        'app02',
+        'PepperDashEssentials'
+      )
+    ).toEqual({
+      option: 'not encrypted',
+      summary:
+        'Not encrypted. Shared with other programs named PepperDashEssentials on this processor. Up to 1,600 characters per secret.',
+    });
+  });
+
+  it('says a global provider can be read by every program', () => {
     expect(
       describeProviderStorage(
         { scope: 'global', encrypted: false, maxValueLength: 1600 },
-        'app01'
+        'app01',
+        'PepperDashEssentials'
       )
     ).toEqual({
       option: 'all programs',
       summary:
-        'Not encrypted. Every program on this processor can read these. Values up to 1,600 characters.',
+        'Not encrypted. Every program on this processor can read these. Up to 1,600 characters per secret.',
     });
   });
 
-  it('says nothing about encryption when an older processor does not report it', () => {
-    expect(describeProviderStorage({ scope: 'local' }, 'app02')).toEqual({
-      option: 'app02 only',
-      summary: 'Only program app02 can read these.',
+  it('states nothing an older processor does not report', () => {
+    expect(describeProviderStorage({ scope: 'local' }, 'app01')).toEqual({
+      option: 'this program',
+      summary: '',
     });
+  });
+});
+
+describe('hiddenRecordReason', () => {
+  const me = 'PepperDashEssentials';
+  const reason = (key: string, owner = me, number: number | undefined = 1) =>
+    hiddenRecordReason({ key, owner }, me, number);
+
+  it("keeps this program's own and shared records", () => {
+    expect(reason('Local_SecureStorage_1:iotCert')).toBeNull();
+    expect(reason('DoNotLoadOnNextBoot')).toBeNull();
+    expect(reason('1:mobileControl-directServer-tokens')).toBeNull();
+  });
+
+  it("hides records carrying another program's number", () => {
+    expect(reason('Local_SecureStorage_2:iotCert')).toBe('otherApp');
+    expect(reason('2:mobileControl-directServer-tokens')).toBe('otherApp');
+    expect(reason('Local_SecureStorage_1:iotCert', me, 2)).toBe('otherApp');
+  });
+
+  it("keeps this program's encrypted index and key list", () => {
+    expect(reason('Local_SecureStorage_1:__essSecretsIdx00')).toBeNull();
+    expect(reason('Local_SecureStorage_1:__essSecretsIdxKeys')).toBeNull();
+  });
+
+  it('hides records owned by a program with another name', () => {
+    expect(reason('probeFromApp2', 'CdsScopeProbe')).toBe('otherProgram');
+  });
+
+  it('keeps numbered records when the program number is unknown', () => {
+    expect(
+      hiddenRecordReason(
+        { key: 'Local_SecureStorage_2:iotCert', owner: me },
+        me,
+        undefined
+      )
+    ).toBeNull();
+  });
+});
+
+describe('programNumberFromAppId', () => {
+  it('reads the number from an app id', () => {
+    expect(programNumberFromAppId('app01')).toBe(1);
+    expect(programNumberFromAppId('app10')).toBe(10);
+    expect(programNumberFromAppId(undefined)).toBeUndefined();
+    expect(programNumberFromAppId('debug')).toBeUndefined();
   });
 });
 

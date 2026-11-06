@@ -64,44 +64,159 @@ export interface SecretProviderInfo {
   maxValueLength: number;
   /** Whether values are encrypted at rest. Absent from Essentials builds older than #1552. */
   encrypted?: boolean;
+  /** Most characters the provider stores in total, when it sets a total. */
+  maxTotalLength?: number;
+  /** Most secrets the provider holds, when it sets a count. */
+  maxSecrets?: number;
 }
 
 /**
- * Plain-language facts about where a provider keeps its values and which programs can read them.
+ * Plain-language facts about a provider: whether it encrypts, who shares its keys, and its limits.
  *
  * `option` is a short suffix for the provider picker; `summary` is the sentence shown under it.
- * Encryption is stated only when the processor reports it.
+ * Each statement was checked on a processor (RMC4, firmware 2.8006.00110):
+ *   - the Data Store keeps local records per program NAME, so programs with the same name (two
+ *     Essentials programs) share the `default` provider's keys;
+ *   - the encrypted provider stores each secret under the program number as well, so each
+ *     program keeps its own;
+ *   - global records can be read by every program.
+ * A statement is left out when the processor does not report what it needs.
  */
 export function describeProviderStorage(
   provider: Pick<SecretProviderInfo, 'scope' | 'encrypted'> &
-    Partial<Pick<SecretProviderInfo, 'maxValueLength'>>,
-  appId: string | undefined
+    Partial<
+      Pick<
+        SecretProviderInfo,
+        'maxValueLength' | 'maxTotalLength' | 'maxSecrets'
+      >
+    >,
+  appId: string | undefined,
+  programName?: string
 ): { option: string; summary: string } {
-  const program = appId ?? 'this program';
-  const shared = provider.scope === 'global';
-  const access = shared ? 'all programs' : `${program} only`;
-  const option = provider.encrypted === true ? `encrypted, ${access}` : access;
-
   const parts: string[] = [];
-  if (provider.encrypted !== undefined) {
-    parts.push(provider.encrypted ? 'Encrypted.' : 'Not encrypted.');
+  let option: string;
+
+  if (provider.scope === 'global') {
+    option = 'all programs';
+    if (provider.encrypted === false) parts.push('Not encrypted.');
+    parts.push('Every program on this processor can read these.');
+  } else if (provider.encrypted === true) {
+    option = appId ? `encrypted, ${appId}` : 'encrypted';
+    parts.push(appId ? `Encrypted. Stored for ${appId}.` : 'Encrypted.');
+  } else {
+    option = provider.encrypted === false ? 'not encrypted' : 'this program';
+    if (provider.encrypted === false) parts.push('Not encrypted.');
+    if (programName) {
+      parts.push(
+        `Shared with other programs named ${programName} on this processor.`
+      );
+    }
   }
-  parts.push(
-    shared
-      ? 'Every program on this processor can read these.'
-      : `Only program ${program} can read these.`
-  );
+
+  const limits: string[] = [];
   if (provider.maxValueLength) {
-    parts.push(
-      `Values up to ${provider.maxValueLength.toLocaleString('en-US')} characters.`
+    limits.push(
+      `up to ${provider.maxValueLength.toLocaleString('en-US')} characters per secret`
     );
   }
+  if (provider.maxTotalLength) {
+    limits.push(`${provider.maxTotalLength.toLocaleString('en-US')} in total`);
+  }
+  if (provider.maxSecrets) {
+    limits.push(`${provider.maxSecrets} secrets`);
+  }
+  if (limits.length > 0) {
+    const text = limits.join(', ');
+    parts.push(text.charAt(0).toUpperCase() + text.slice(1) + '.');
+  }
+
   return { option, summary: parts.join(' ') };
 }
 
+/**
+ * Why a listed record is left off this program's page, or null when it belongs on it.
+ *
+ * The processor's listing returns every program's local records, not just this one's. Kept:
+ * records with no program number (shared by programs with this name) and records carrying this
+ * program's number. Left out:
+ *   - `otherApp`: a record carrying another program's number, e.g. `Local_SecureStorage_2:…` or
+ *     Mobile Control's `2:…-tokens`, seen from program 1;
+ *   - `otherProgram`: owned by a program with a different name, which this program can neither
+ *     read nor delete (checked on an RMC4).
+ */
+export function hiddenRecordReason(
+  entry: Pick<SecretEntry, 'key' | 'owner'>,
+  programName: string | undefined,
+  programNumber: number | undefined
+): 'otherApp' | 'otherProgram' | null {
+  if (programName && entry.owner && entry.owner !== programName) {
+    return 'otherProgram';
+  }
+
+  const rest = entry.key.startsWith(SECURE_STORAGE_RECORD_PREFIX)
+    ? entry.key.slice(SECURE_STORAGE_RECORD_PREFIX.length)
+    : entry.key;
+  const numbered = /^(\d+):/.exec(rest);
+  if (
+    numbered &&
+    programNumber !== undefined &&
+    Number(numbered[1]) !== programNumber
+  ) {
+    return 'otherApp';
+  }
+
+  return null;
+}
+
+/** True for a record that holds one of the encrypted provider's values. */
+export function isEncryptedRecord(entry: Pick<SecretEntry, 'key'>): boolean {
+  return entry.key.startsWith(SECURE_STORAGE_RECORD_PREFIX);
+}
+
+/** The program number in an app id such as "app01", or undefined. */
+export function programNumberFromAppId(
+  appId: string | undefined
+): number | undefined {
+  const match = /^app0*(\d+)$/i.exec(appId ?? '');
+  return match ? Number(match[1]) : undefined;
+}
+
+/** Prefix Crestron gives the Data Store records that hold local secure-storage values. */
+export const SECURE_STORAGE_RECORD_PREFIX = 'Local_SecureStorage_';
+
 export interface SecretsProvidersResponse {
   providers: SecretProviderInfo[];
+  /**
+   * This program's name. The Data Store keeps local records, and each record's owner, per program
+   * name, so programs with the same name share them.
+   */
+  programName?: string;
 }
+
+// ─── Storage usage ───────────────────────────────────────────────────────────
+
+export const SECRETS_STORAGE_PATH = 'secrets/storage';
+
+/** One program name's use of one Data Store space, from the processor's DATASTORESTATUS. */
+export interface DataStoreUsage {
+  store: 'local' | 'global';
+  owner: string;
+  records: number;
+  bytes: number;
+  /** As the processor reports it; can exceed 100, which the processor does not prevent. */
+  percentUsed: number;
+}
+
+export interface SecretsStorageResponse {
+  programName?: string;
+  available: boolean;
+  usage: DataStoreUsage[];
+  error?: SecretsApiError;
+}
+
+/** Percent at which usage is shown as a warning, and at which it is over the quota. */
+export const STORAGE_WARN_PERCENT = 80;
+export const STORAGE_FULL_PERCENT = 100;
 
 /**
  * The longest value a provider accepts, from its own `maxValueLength`.
