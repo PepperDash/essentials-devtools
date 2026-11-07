@@ -200,7 +200,7 @@ const DeviceDetailRender = ({
                   feedbacks.BoolValues.map((f) => (
                     <tr key={f.FeedbackKey}>
                       <td className="text-break">{f.FeedbackKey}</td>
-                      <td className="text-break">{String(f.Value)}</td>
+                      <td className="feedback-value">{String(f.Value)}</td>
                     </tr>
                   ))
                 ) : (
@@ -224,7 +224,7 @@ const DeviceDetailRender = ({
                   feedbacks.IntValues.map((f) => (
                     <tr key={f.FeedbackKey}>
                       <td className="text-break">{f.FeedbackKey}</td>
-                      <td className="text-break">{f.Value}</td>
+                      <td className="feedback-value">{f.Value}</td>
                     </tr>
                   ))
                 ) : (
@@ -248,7 +248,7 @@ const DeviceDetailRender = ({
                   feedbacks.SerialValues.map((f) => (
                     <tr key={f.FeedbackKey}>
                       <td className="text-break">{f.FeedbackKey}</td>
-                      <td className="text-break">{f.Value}</td>
+                      <td className="feedback-value">{f.Value}</td>
                     </tr>
                   ))
                 ) : (

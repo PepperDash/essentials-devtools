@@ -1987,6 +1987,13 @@ $elastic: linear(
   overflow-wrap: anywhere;
 }
 
+// A device value (a property's or a feedback's) reads as code
+@mixin code-value {
+  font-family: $font-family-monospace;
+  font-size: 0.8125rem;
+  overflow-wrap: anywhere;
+}
+
 // Device properties: names and types stay on one line, only the value wraps
 .device-props {
   .prop-name {
@@ -2003,9 +2010,7 @@ $elastic: linear(
 
   .prop-value {
     width: 100%;
-    font-family: $font-family-monospace;
-    font-size: 0.8125rem;
-    overflow-wrap: anywhere;
+    @include code-value;
   }
 
   .prop-access {
@@ -2096,5 +2101,9 @@ $elastic: linear(
 
   > thead > tr > th:first-child {
     width: 40%;
+  }
+
+  .feedback-value {
+    @include code-value;
   }
 }
