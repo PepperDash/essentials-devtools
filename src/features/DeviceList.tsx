@@ -20,8 +20,8 @@ const DeviceList = () => {
       <div
         className={`h-100 overflow-hidden flex-column device-list-pane ${selectedDevice ? 'd-none d-md-flex' : 'd-flex'}`}
       >
-        <div className="h-100 overflow-auto">
-          <h2>Devices</h2>
+        <h2>Devices</h2>
+        <div className="flex-fill overflow-auto">
           <table className="table table-sm table-striped table-hover">
             <thead>
               <tr>
@@ -33,10 +33,10 @@ const DeviceList = () => {
               {devices.map((i) => (
                 <tr
                   key={i.Key}
-                  className={`cursor-pointer${selectedDevice?.Key === i.Key ? ' table-active' : ''}`}
+                  className={`cursor-pointer${selectedDevice?.Key === i.Key ? ' row-selected' : ''}`}
                   onClick={() => setSelectedDevice(i)}
                 >
-                  <td className="text-break">{i.Key}</td>
+                  <td className="device-key">{i.Key}</td>
                   <td className="text-break">{i.Name}</td>
                 </tr>
               ))}

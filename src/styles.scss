@@ -456,7 +456,8 @@ a:hover {
 
 // The device list beside the detail pane; the whole width on its own on a phone
 .device-list-pane {
-  flex: 0 0 33%;
+  // Just wide enough for a key and a name; the detail pane gets the rest
+  flex: 0 0 clamp(15rem, 24%, 21rem);
   min-width: 0;
 
   @include media-breakpoint-down(md) {
@@ -1969,5 +1970,39 @@ $elastic: linear(
 
   &:focus-visible {
     outline: 2px solid var(--app-accent);
+  }
+}
+
+// Device list: keys read as identifiers, names as labels
+.device-key {
+  font-family: $font-family-monospace;
+  font-size: 0.8125rem;
+  overflow-wrap: anywhere;
+}
+
+// Device properties: names and types stay on one line, only the value wraps
+.device-props {
+  .prop-name {
+    white-space: nowrap;
+    font-weight: 500;
+  }
+
+  .prop-type {
+    white-space: nowrap;
+    font-family: $font-family-monospace;
+    font-size: 0.75rem;
+    color: var(--bs-secondary-color);
+  }
+
+  .prop-value {
+    width: 100%;
+    font-family: $font-family-monospace;
+    font-size: 0.8125rem;
+    overflow-wrap: anywhere;
+  }
+
+  .prop-access {
+    white-space: nowrap;
+    text-align: end;
   }
 }
