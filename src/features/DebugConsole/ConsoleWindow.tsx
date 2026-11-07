@@ -20,7 +20,7 @@ const Content = ({ filteredItems }: ConsoleWindowProps) => {
 
   return (
     <>
-      <Container fluid className="table-striped">
+      <Container fluid className="console-log">
         {filteredItems.map((message, index) => (
           <Row
             key={index}
@@ -30,8 +30,8 @@ const Content = ({ filteredItems }: ConsoleWindowProps) => {
               (selectedItem === message
                 ? 'bg-primary text-white'
                 : index % 2 === 0
-                  ? 'bg-light'
-                  : 'bg-white')
+                  ? 'console-row-alt'
+                  : 'console-row')
             }
           >
             {/* On a phone: timestamp, key and level on one line, the message on the next */}

@@ -17,6 +17,24 @@
         document.head.appendChild(base);
       })();
     </script>
+    <script>
+      // Set the colour theme before first paint so a dark page doesn't flash white. Keep in step
+      // with resolveTheme in src/shared/hooks/useTheme.ts.
+      (function () {
+        var theme = null;
+        try {
+          theme = window.localStorage.getItem('essentials-devtools-theme');
+        } catch (e) {}
+        if (theme !== 'light' && theme !== 'dark') {
+          theme =
+            window.matchMedia &&
+            window.matchMedia('(prefers-color-scheme: dark)').matches
+              ? 'dark'
+              : 'light';
+        }
+        document.documentElement.setAttribute('data-bs-theme', theme);
+      })();
+    </script>
     <link rel="icon" href="/favicon.ico" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#000000" />

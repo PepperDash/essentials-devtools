@@ -1,5 +1,8 @@
 //* Bootstrap Customizations
 
+// Functions first, so the variable overrides below can use tint-color() and friends
+@import 'bootstrap/scss/functions';
+
 // Customize variables
 $font-size-base: 0.875rem; // from 1rem (16px -> 14px)
 
@@ -9,16 +12,19 @@ $enable-negative-margins: true;
 $offcanvas-horizontal-width: 50%;
 
 // Customize bootstrap base colors
-$primary: #4466a2;
-$secondary: #7f7f7f;
-$success: #00b5aa;
-$warning: #ff9400;
+// Essentials brand blue (#005294 in the Essentials logo)
+$primary: #005294;
+// Slate rather than neutral gray: 4.8:1 on white, so muted text stays readable at 14px
+$secondary: #64748b;
+$success: #00a39a;
+$warning: #f59e0b;
 $danger: #d90169; // New Danger
-$dark: #000000;
-$light: #e9edf3;
-$muted: #7f7f7f;
-$body-color: #7f7f7f !default;
-$body-bg: #e9edf3;
+$dark: #0f172a;
+$light: #e8edf4;
+$muted: #64748b;
+// Body text is a darker slate (9.9:1 on white); $muted/$secondary carry secondary information
+$body-color: #334155;
+$body-bg: #f1f4f9;
 
 // additional colors
 $action-items: #fc1c6d;
@@ -66,19 +72,66 @@ $doughnut4: #00ccc0;
 $doughnut5: #e9b500;
 $doughnut6: #e6ebf8;
 
+// Dark theme palette, consumed by Bootstrap's [data-bs-theme='dark'] variables
+$body-bg-dark: #0b1220;
+$body-color-dark: #cbd5e1;
+$body-secondary-bg-dark: #162033;
+$body-tertiary-bg-dark: #111a2b;
+$body-emphasis-color-dark: #f1f5f9;
+$border-color-dark: #26334a;
+$secondary-color-dark: #94a3b8;
+$link-color-dark: #6cb2ff;
+$link-hover-color-dark: #9ccaff;
+$form-select-indicator-color-dark: #94a3b8;
+
+// Typography: the system UI stack. This app is served from a processor or VC-4, often with no
+// internet access, so it can't depend on a web font CDN.
+$font-family-sans-serif:
+  'Inter',
+  system-ui,
+  -apple-system,
+  'Segoe UI',
+  Roboto,
+  'Helvetica Neue',
+  Arial,
+  sans-serif;
+$font-family-monospace:
+  ui-monospace, 'SF Mono', 'Cascadia Mono', Menlo, Consolas, 'Liberation Mono',
+  monospace;
+$headings-font-weight: 600;
+$headings-color: var(--bs-emphasis-color);
+$line-height-base: 1.5;
+
+// Shape and depth
+$border-color: #dde3ec;
+$border-radius: 0.5rem;
+$border-radius-sm: 0.375rem;
+$border-radius-lg: 0.75rem;
+$box-shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.06);
+$box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+$box-shadow-lg: 0 12px 32px rgba(15, 23, 42, 0.14);
+
 // Modal customization (remove :horizontal lines)
 $modal-header-border-width: 0;
 $modal-footer-border-width: 0;
+$modal-content-border-width: 0;
+$modal-content-bg: var(--app-surface);
+$modal-content-border-radius: $border-radius-lg;
+$modal-content-box-shadow-xs: $box-shadow-lg;
+$modal-content-box-shadow-sm-up: $box-shadow-lg;
+$modal-backdrop-bg: $dark;
+$modal-backdrop-opacity: 0.45;
 
 // Form controls
-$input-bg: white;
-$input-placeholder-color: $med-gray;
-// $form-select-bg: transparent;
-// $form-select-border-width: 0;
+$input-bg: var(--app-surface);
+$input-placeholder-color: #94a3b8;
 $form-select-indicator-color: $secondary;
-$input-border-color: $secondary;
-$input-focus-border-color: #0000ff;
-$input-btn-focus-width: 1px;
+$input-border-color: var(--app-input-border);
+$input-focus-border-color: tint-color($primary, 40%);
+// A soft ring instead of Bootstrap's default; visible but not heavy
+$input-btn-focus-width: 0.2rem;
+$input-btn-focus-color-opacity: 0.18;
+$input-disabled-bg: var(--bs-secondary-bg);
 
 .form-switch {
   .form-check-input {
@@ -87,8 +140,49 @@ $input-btn-focus-width: 1px;
 }
 $form-switch-width: 2.75em; // from 2 default
 
-$nav-link-color: $body-color;
-$dropdown-link-color: $body-color;
+// Buttons
+$btn-font-weight: 500;
+$btn-border-radius: $border-radius;
+$btn-border-radius-sm: $border-radius-sm;
+$btn-transition:
+  color 0.15s ease-in-out,
+  background-color 0.15s ease-in-out,
+  border-color 0.15s ease-in-out,
+  box-shadow 0.15s ease-in-out;
+
+$nav-link-color: var(--app-accent);
+$dropdown-color: var(--bs-body-color);
+$dropdown-link-color: var(--bs-body-color);
+$dropdown-link-hover-color: var(--bs-emphasis-color);
+$dropdown-bg: var(--app-surface);
+$dropdown-link-hover-bg: var(--app-hover);
+$dropdown-link-active-bg: $primary;
+$dropdown-border-color: var(--bs-border-color);
+$dropdown-border-radius: $border-radius;
+$dropdown-box-shadow: $box-shadow;
+$dropdown-padding-y: 0.375rem;
+$dropdown-item-padding-y: 0.375rem;
+
+// Cards, tables, badges, drawers
+$card-bg: var(--app-surface);
+$card-border-color: var(--bs-border-color);
+$card-border-radius: $border-radius-lg;
+$card-cap-bg: var(--app-surface-muted);
+$table-border-color: var(--bs-border-color);
+$table-striped-bg: var(--app-stripe);
+$table-hover-bg: var(--app-hover);
+$table-cell-padding-y: 0.5rem;
+$badge-font-weight: 600;
+$offcanvas-border-width: 0;
+$offcanvas-box-shadow: $box-shadow-lg;
+$list-group-bg: var(--app-surface);
+$list-group-border-color: var(--bs-border-color);
+$offcanvas-bg-color: var(--app-surface);
+$navbar-padding-y: 0.5rem;
+$navbar-brand-font-size: 1.05rem;
+$navbar-brand-padding-y: 0.25rem;
+$focus-ring-width: 0.2rem;
+$focus-ring-opacity: 0.18;
 
 // Links
 $link-decoration: none;
@@ -97,12 +191,9 @@ $link-hover-decoration: underline;
 // Width of company title
 $left-width: 12rem;
 
-// Button focus is stupid
-$input-btn-focus-width: 0.1rem !default;
-$input-btn-focus-color-opacity: 0.1;
-
 $form-label-margin-bottom: 0.25rem;
 $form-label-font-size: small;
+$form-label-font-weight: 500;
 
 // Keep bootstrap variable overrides before these imports
 @import 'bootstrap/scss/bootstrap.scss';
@@ -164,22 +255,22 @@ $font-sizes: map-merge($font-sizes, $custom-font-sizes);
 
 // Buttons
 .btn-outline-primary {
-  --bs-btn-color: $body-color;
+  --bs-btn-color: #{$body-color};
   --bs-btn-active-color: white;
 }
 
 .btn-outline-success {
-  --bs-btn-color: $body-color;
+  --bs-btn-color: #{$body-color};
   --bs-btn-active-color: white;
 }
 
 .btn-outline-danger {
-  --bs-btn-color: $body-color;
+  --bs-btn-color: #{$body-color};
   --bs-btn-active-color: white;
 }
 
 .btn-outline-secondary {
-  --bs-btn-color: $body-color;
+  --bs-btn-color: #{$body-color};
   --bs-btn-active-color: white;
 }
 
@@ -264,6 +355,11 @@ $utilities: map-merge(
 
 @import 'bootstrap/scss/utilities/api';
 
+body {
+  background: var(--app-page-bg);
+  background-attachment: fixed;
+}
+
 html,
 body,
 #root {
@@ -275,8 +371,9 @@ body,
   max-height: 100dvh;
   margin: 0;
   padding: 0;
-  font-family: Roboto, 'Helvetica Neue', sans-serif;
+  font-family: $font-family-sans-serif;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
   // background-color: $body-color;
   // background-color: lightgreen;
 }
@@ -332,7 +429,7 @@ a:hover {
 }
 
 .hover:hover {
-  background-color: #{rgba(shade-color($body-bg, 10%), 0.25)} !important;
+  background-color: var(--app-hover) !important;
 }
 
 .list-selected {
@@ -349,7 +446,7 @@ a:hover {
 }
 
 .hover.bg-white:hover {
-  background-color: #{rgba(shade-color($white, 3%), 1)} !important;
+  background-color: var(--app-hover) !important;
 }
 
 .hover.list-white-selected:hover {
@@ -416,7 +513,7 @@ a:hover {
 }
 
 .bg-body {
-  background-color: $body-bg;
+  background-color: var(--bs-body-bg);
 }
 
 .bg-very-light {
@@ -435,7 +532,8 @@ a:hover {
 .right-drawer {
   // width: 50%;
   max-width: 45rem;
-  top: 3.6rem !important;
+  top: var(--top-nav-height) !important;
+  border-left: 1px solid var(--bs-border-color);
   // bottom: 0rem;
   // right: 0.5rem;
 
@@ -476,7 +574,7 @@ a:hover {
 .help-sidebar {
   width: 10rem;
   min-width: 10rem;
-  border-right: $border-width solid $border-color;
+  border-right: $border-width solid var(--bs-border-color);
 
   @include media-breakpoint-down(md) {
     width: auto;
@@ -920,6 +1018,429 @@ textarea:hover {
   cursor: default;
 }
 
+//* Theme layer: the modern look. Tokens live in the variables at the top of this file.
+
+// Fine grain laid over the page background (an SVG turbulence tile at low opacity), as in the
+// Essentials demo panel app
+$noise: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.5 0 0 0 0 0.5 0 0 0 0 0.5 0 0 0 1 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.07'/%3E%3C/svg%3E");
+
+:root {
+  // Keep in step with the top nav's height. The right drawer sits directly beneath it.
+  --top-nav-height: 3.5rem;
+  --app-surface: #{$white};
+  --app-surface-muted: #f8fafc;
+  --app-input-border: #cbd5e1;
+  --app-hover: #{rgba($primary, 0.06)};
+  --app-stripe: rgba(15, 23, 42, 0.025);
+  --app-hairline: #f1f5f9;
+  --app-accent: #{$primary};
+  --app-accent-soft: #{rgba($primary, 0.1)};
+  --app-scrollbar: #cbd5e1;
+  --app-shadow: rgba(15, 23, 42, 0.08);
+  // Glass: translucent nav and floating panels over the ambient page background
+  --app-glass: rgba(255, 255, 255, 0.78);
+  --app-panel-bg: rgba(255, 255, 255, 0.9);
+  --app-glass-border: rgba(26, 46, 82, 0.1);
+  --app-page-bg:
+    #{$noise},
+    radial-gradient(
+      ellipse 55% 60% at 12% 18%,
+      rgba(196, 214, 240, 0.75),
+      transparent 70%
+    ),
+    radial-gradient(
+      ellipse 45% 50% at 88% 22%,
+      rgba(208, 222, 244, 0.7),
+      transparent 70%
+    ),
+    radial-gradient(
+      ellipse 60% 55% at 72% 88%,
+      rgba(188, 207, 236, 0.6),
+      transparent 70%
+    ),
+    #eef2f8;
+}
+
+[data-bs-theme='dark'] {
+  color-scheme: dark;
+  --app-surface: #111a2b;
+  --app-surface-muted: #162033;
+  --app-input-border: #334155;
+  --app-hover: rgba(148, 197, 255, 0.08);
+  --app-stripe: rgba(255, 255, 255, 0.025);
+  --app-hairline: #1b2740;
+  --app-accent: #6cb2ff;
+  --app-accent-soft: rgba(108, 178, 255, 0.16);
+  --app-scrollbar: #334155;
+  --app-shadow: rgba(0, 0, 0, 0.45);
+  --app-glass: rgba(11, 20, 36, 0.78);
+  --app-panel-bg: rgba(16, 28, 50, 0.92);
+  --app-glass-border: rgba(255, 255, 255, 0.12);
+  --app-page-bg:
+    #{$noise},
+    radial-gradient(
+      ellipse 55% 60% at 12% 18%,
+      rgba(46, 84, 150, 0.4),
+      transparent 70%
+    ),
+    radial-gradient(
+      ellipse 45% 50% at 88% 22%,
+      rgba(34, 66, 124, 0.35),
+      transparent 70%
+    ),
+    radial-gradient(
+      ellipse 60% 55% at 72% 88%,
+      rgba(40, 76, 140, 0.3),
+      transparent 70%
+    ),
+    #08111f;
+
+  // Brand blue is too dark to read against the dark surfaces, so lift it for buttons
+  .btn-primary {
+    --bs-btn-bg: #1d6fc4;
+    --bs-btn-border-color: #1d6fc4;
+    --bs-btn-hover-bg: #2f80d6;
+    --bs-btn-hover-border-color: #2f80d6;
+    --bs-btn-active-bg: #1a62ae;
+    --bs-btn-active-border-color: #1a62ae;
+    --bs-btn-disabled-bg: #1d6fc4;
+    --bs-btn-disabled-border-color: #1d6fc4;
+  }
+
+  .btn-light {
+    --bs-btn-color: #e2e8f0;
+    --bs-btn-bg: #1b2740;
+    --bs-btn-border-color: #26334a;
+    --bs-btn-hover-color: #fff;
+    --bs-btn-hover-bg: #26334a;
+    --bs-btn-hover-border-color: #334155;
+    --bs-btn-active-bg: #334155;
+    --bs-btn-active-border-color: #334155;
+    color: #e2e8f0;
+  }
+
+  .btn-outline-primary,
+  .btn-outline-success,
+  .btn-outline-danger,
+  .btn-outline-secondary {
+    --bs-btn-color: #{$body-color-dark};
+  }
+
+  .bg-white {
+    background-color: var(--app-surface) !important;
+  }
+
+  .bg-light {
+    background-color: var(--app-surface-muted) !important;
+  }
+
+  .text-bg-light {
+    color: #e2e8f0 !important;
+    background-color: #26334a !important;
+  }
+
+  .bg-body {
+    background-color: var(--bs-body-bg);
+  }
+
+  .hover.bg-white:hover {
+    background-color: var(--app-hover) !important;
+  }
+
+  .navbar-toggler-icon {
+    filter: invert(1);
+  }
+
+  .navbar-toggler {
+    --bs-navbar-toggler-border-color: rgba(255, 255, 255, 0.2);
+  }
+
+  .modal-backdrop {
+    --bs-backdrop-opacity: 0.65;
+  }
+
+  .shadow-sm {
+    box-shadow: 0 1px 2px var(--app-shadow) !important;
+  }
+
+  .table > thead > tr > th {
+    color: var(--bs-secondary-color);
+  }
+}
+
+::selection {
+  background-color: var(--app-accent-soft);
+}
+
+// Top nav: a quiet white bar, pill links, the active page shown in brand blue
+.top-nav {
+  // Above sticky table headers and the like (z-index 1020), which would otherwise draw over the
+  // menus that open from here. backdrop-filter below makes the nav its own stacking layer, so this
+  // lifts everything inside it, menus included.
+  position: relative;
+  z-index: $zindex-fixed;
+  // A literal, not --top-nav-height: that variable is the nav's measured height (see TopNav), so
+  // reading it back here would lock the nav at the tallest height it ever reached
+  min-height: 3.5rem;
+  background-color: var(--app-glass);
+  border-bottom: 1px solid var(--app-glass-border);
+  -webkit-backdrop-filter: blur(16px) saturate(140%);
+  backdrop-filter: blur(16px) saturate(140%);
+}
+
+.top-nav .navbar-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--bs-emphasis-color);
+}
+
+.top-nav-logo {
+  // The artwork is brand blue, which disappears on the dark bar: flatten it to near-white there
+  [data-bs-theme='dark'] & {
+    filter: brightness(0) invert(1) opacity(0.92);
+  }
+
+  width: 1.5rem;
+  height: 1.5rem;
+  flex-shrink: 0;
+}
+
+.top-nav-help {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.35rem 0.6rem;
+  border-radius: $border-radius;
+  font-weight: 500;
+  color: var(--bs-body-color);
+  white-space: nowrap;
+
+  &:hover {
+    background-color: var(--app-hover);
+    color: var(--bs-emphasis-color);
+    text-decoration: none;
+  }
+
+  &.active {
+    background-color: var(--app-accent-soft);
+    color: var(--app-accent) !important;
+    font-weight: 600;
+  }
+}
+
+// The app selector and the page menu share one button style
+.top-nav .top-nav-btn.btn {
+  --bs-btn-color: var(--bs-body-color);
+  --bs-btn-bg: var(--app-surface-muted);
+  --bs-btn-border-color: var(--app-glass-border);
+  --bs-btn-hover-color: var(--bs-emphasis-color);
+  --bs-btn-hover-bg: var(--app-hover);
+  --bs-btn-hover-border-color: var(--app-glass-border);
+  --bs-btn-active-color: var(--app-accent);
+  --bs-btn-active-bg: var(--app-accent-soft);
+  --bs-btn-active-border-color: var(--app-glass-border);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  height: 2.25rem;
+  padding: 0 0.75rem;
+  max-width: 14rem;
+  font-weight: 500;
+  color: var(--bs-body-color);
+  border-radius: $border-radius;
+
+  &.show {
+    color: var(--app-accent);
+  }
+}
+
+.top-nav-btn-icon {
+  flex-shrink: 0;
+  width: 1.125rem;
+  height: 1.125rem;
+  color: var(--bs-secondary-color);
+}
+
+.top-nav .top-nav-btn.show .top-nav-btn-icon {
+  color: var(--app-accent);
+}
+
+.nav-menu-current {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.side-nav-icon {
+  flex-shrink: 0;
+  width: 1.125rem;
+  height: 1.125rem;
+}
+
+.nav-menu {
+  --bs-dropdown-padding-x: 0.75rem;
+  --bs-dropdown-padding-y: 0.75rem;
+  width: min(46rem, calc(100vw - 1rem));
+  max-height: calc(100dvh - var(--top-nav-height) - 1rem);
+  overflow-y: auto;
+}
+
+.nav-menu-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.25rem 1rem;
+
+  @include media-breakpoint-down(md) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.nav-menu .dropdown-header {
+  padding: 0.25rem 0.6rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--bs-secondary-color);
+}
+
+.top-nav .nav-menu .dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.5rem 0.6rem;
+  border-radius: $border-radius;
+  white-space: normal;
+  color: var(--bs-body-color);
+
+  .side-nav-icon {
+    color: var(--bs-secondary-color);
+  }
+
+  &:hover,
+  &:focus {
+    background-color: var(--app-hover);
+    color: var(--bs-emphasis-color);
+  }
+
+  &.active {
+    background-color: var(--app-accent-soft);
+    color: var(--app-accent);
+    font-weight: 600;
+
+    .side-nav-icon {
+      color: var(--app-accent);
+    }
+  }
+
+  &.disabled {
+    opacity: 0.5;
+  }
+}
+
+.nav-menu-label {
+  display: flex;
+  flex: 1 1 auto;
+  align-items: center;
+  min-width: 0;
+}
+
+.top-nav-status {
+  font-size: 0.75rem;
+  line-height: 1.35;
+  color: var(--bs-secondary-color);
+}
+
+// Console log: dense mono rows with a hairline between them
+.console-log .row {
+  padding: 0.125rem 0;
+  border-bottom: 1px solid var(--app-hairline);
+  font-family: $font-family-monospace;
+  font-size: 0.8rem;
+}
+
+.console-row-alt {
+  background-color: var(--app-surface-muted);
+}
+
+.console-row {
+  background-color: var(--app-surface);
+}
+
+// Cards, panes and surfaces
+.card {
+  box-shadow: $box-shadow-sm;
+}
+
+.table > thead > tr > th {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--bs-secondary-color);
+  background-color: var(--app-surface-muted);
+}
+
+.modal-content {
+  overflow: hidden;
+}
+
+.modal-title {
+  font-weight: 600;
+  color: var(--bs-emphasis-color);
+}
+
+.offcanvas-header {
+  border-bottom: 1px solid var(--bs-border-color);
+}
+
+.offcanvas-title {
+  font-weight: 600;
+  color: var(--bs-emphasis-color);
+}
+
+.badge {
+  letter-spacing: 0.02em;
+}
+
+code,
+pre,
+kbd,
+samp {
+  font-family: $font-family-monospace;
+}
+
+code {
+  padding: 0.1em 0.35em;
+  border-radius: $border-radius-sm;
+  background-color: var(--app-accent-soft);
+  color: var(--app-accent);
+}
+
+pre code {
+  padding: 0;
+  background: none;
+  color: inherit;
+}
+
+// Thin, unobtrusive scrollbars
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--app-scrollbar) transparent;
+}
+
+// Respect people who ask for less motion
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}
+
 //* Phones and small tablets
 
 @include media-breakpoint-down(md) {
@@ -949,34 +1470,106 @@ textarea:hover {
   }
 }
 
-// Collapsed top nav: give each link a finger-sized row
-@include media-breakpoint-down(xl) {
-  // The open menu can be taller than a short screen, such as a phone in landscape. Let the nav
-  // take the full height and scroll while it's open, keeping the header row (which can wrap)
-  // pinned above the links.
-  .top-nav {
-    flex-shrink: 0;
-    padding-top: 0;
-  }
+// Glass for floating layers: modals, drawers and menus blur what's behind them
+.modal-content,
+.offcanvas,
+.dropdown-menu,
+.popover {
+  background-color: var(--app-panel-bg);
+  border: 1px solid var(--app-glass-border);
+  -webkit-backdrop-filter: blur(20px) saturate(140%);
+  backdrop-filter: blur(20px) saturate(140%);
+}
 
-  // Only while the menu is open: scrolling the closed nav would clip the app selector's list
-  .top-nav.top-nav-open {
-    max-height: 100%;
-    overflow-y: auto;
-  }
+.modal-backdrop {
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+}
 
-  .top-nav-header {
-    position: sticky;
-    top: 0;
-    z-index: 1;
-    padding-top: $navbar-padding-y;
-    padding-bottom: $navbar-padding-y;
-    background-color: $white;
-  }
+// Damped-spring easing for the toggle knob (overshoots a little, then settles); the cubic-bezier
+// before it is the fallback where CSS linear() easing isn't supported
+$elastic: linear(
+  0,
+  0.331,
+  0.618,
+  0.833,
+  0.972,
+  1.049,
+  1.08,
+  1.081,
+  1.068,
+  1.049,
+  1.031,
+  1.016,
+  1.006,
+  0.999,
+  0.996,
+  0.995,
+  0.996,
+  0.997,
+  0.998,
+  0.999,
+  0.999,
+  1
+);
 
-  .top-nav-links > a,
-  .top-nav-links > span {
-    padding: 0.5rem 0;
-    border-bottom: 1px solid $light;
+// Light/dark switch: a pill with a sliding knob. The knob covers the icon of the inactive mode,
+// leaving the current mode's icon showing in the empty half. Off is light (sun), on is dark (moon).
+.theme-toggle {
+  position: relative;
+  flex-shrink: 0;
+  width: 3.5rem;
+  height: 1.875rem;
+  padding: 0;
+  border: 1px solid var(--app-glass-border);
+  border-radius: 999px;
+  background: var(--app-surface-muted);
+  color: var(--bs-secondary-color);
+  box-shadow: inset 0 1px 2px var(--app-shadow);
+
+  &:focus-visible {
+    outline: 2px solid var(--app-accent);
+    outline-offset: 2px;
   }
+}
+
+.theme-toggle-knob {
+  position: absolute;
+  top: 0.1875rem;
+  left: 0.1875rem;
+  z-index: 1;
+  width: 1.375rem;
+  height: 1.375rem;
+  border-radius: 50%;
+  background: linear-gradient(180deg, #fff, #d6e2f5);
+  box-shadow: 0 2px 6px var(--app-shadow);
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: transform 0.45s $elastic;
+}
+
+.theme-toggle-on .theme-toggle-knob {
+  transform: translateX(1.625rem);
+}
+
+.theme-toggle-icon {
+  position: absolute;
+  top: 50%;
+  width: 0.9375rem;
+  height: 0.9375rem;
+  transform: translateY(-50%);
+}
+
+.theme-toggle-sun {
+  left: 0.4375rem;
+}
+
+.theme-toggle-moon {
+  right: 0.4375rem;
+}
+
+// Routing canvas. Dark mode uses Bootstrap's bg-dark; light mode gets a pale surface of its own, so
+// the dotted grid has something to sit on and the canvas reads as a defined area like the dark one.
+.routing-canvas-light {
+  background-color: var(--app-surface-muted);
+  border-top: 1px solid var(--bs-border-color);
 }
