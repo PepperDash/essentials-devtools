@@ -1,6 +1,8 @@
 import { skipToken } from '@reduxjs/toolkit/query';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Button, Modal } from 'react-bootstrap';
+import EmptyState from '../shared/components/EmptyState';
+import { FilterSearchText } from '../shared/FilterSearchText';
 import useAppParams from '../shared/hooks/useAppParams';
 import {
   ActionPath,
@@ -36,6 +38,19 @@ const MobileControl = () => {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [newRoomKey, setNewRoomKey] = useState('');
   const [newGrantCode, setNewGrantCode] = useState('');
+  const [pathSearch, setPathSearch] = useState('');
+
+  // Every whitespace-separated term must appear (case-insensitive) in the messenger key or path
+  const allPaths = actionPaths?.actionPaths;
+  const visiblePaths = useMemo(() => {
+    const paths = allPaths ?? [];
+    const terms = pathSearch.toLowerCase().split(/\s+/).filter(Boolean);
+    if (terms.length === 0) return paths;
+    return paths.filter((ap) => {
+      const haystack = `${ap.messengerKey} ${ap.path}`.toLowerCase();
+      return terms.every((t) => haystack.includes(t));
+    });
+  }, [allPaths, pathSearch]);
 
   const handleConfirmDelete = async () => {
     if (!appId || !pendingDelete) return;
@@ -173,26 +188,51 @@ const MobileControl = () => {
       </div>
 
       <div className="d-flex flex-column h-100">
-        <h5>Action Paths</h5>
+        <div className="d-flex align-items-baseline gap-2 mb-2">
+          <h5 className="mb-0">Action Paths</h5>
+          <span className="console-count">
+            {visiblePaths.length !== actionPaths.actionPaths.length
+              ? `Showing ${visiblePaths.length} of ${actionPaths.actionPaths.length}`
+              : `${actionPaths.actionPaths.length} paths`}
+          </span>
+        </div>
+        <div className="mb-2">
+          <FilterSearchText
+            value={pathSearch}
+            onChangeValue={setPathSearch}
+            debounceMs={150}
+            placeholder="Search messenger key or path"
+          />
+        </div>
         <div className="overflow-auto flex-grow-1">
-          <table className="table table-striped table-bordered mb-0">
-            <thead>
-              <tr>
-                <th>Messenger Key</th>
-                <th>Path</th>
-              </tr>
-            </thead>
-            <tbody>
-              {actionPaths.actionPaths.map((ap: ActionPath) => (
-                <tr key={ap.messengerKey}>
-                  <td>{ap.messengerKey}</td>
-                  <td>
-                    <code>{ap.path}</code>
-                  </td>
+          {visiblePaths.length === 0 ? (
+            <EmptyState
+              tone="neutral"
+              title="No action paths match your search."
+              description="Try part of a messenger key or a piece of the path."
+            />
+          ) : (
+            <table className="table table-striped table-bordered mb-0">
+              <thead>
+                <tr>
+                  <th>Messenger Key</th>
+                  <th>Path</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {visiblePaths.map((ap: ActionPath, index) => (
+                  // Messenger keys repeat (one messenger can register several paths), and a
+                  // duplicate key leaves stale rows on screen when the list is filtered
+                  <tr key={`${ap.messengerKey}|${ap.path}|${index}`}>
+                    <td>{ap.messengerKey}</td>
+                    <td>
+                      <code>{ap.path}</code>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
         </div>
       </div>
 
