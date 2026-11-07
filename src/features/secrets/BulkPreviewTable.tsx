@@ -109,7 +109,7 @@ const BulkPreviewTable = ({
 
       <div className="overflow-auto" style={{ maxHeight: 320 }}>
         <table className="table table-sm table-striped table-bordered mb-0">
-          <thead className="table-light sticky-top">
+          <thead>
             <tr>
               <th>Key</th>
               <th>Provider</th>

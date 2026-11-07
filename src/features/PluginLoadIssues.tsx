@@ -1,6 +1,7 @@
 import { skipToken } from '@reduxjs/toolkit/query';
 import { Fragment, useState } from 'react';
 import { Badge } from 'react-bootstrap';
+import EmptyState from '../shared/components/EmptyState';
 import useAppParams from '../shared/hooks/useAppParams';
 import {
   PluginLoadReport,
@@ -42,14 +43,11 @@ const PluginLoadIssues = () => {
 
   if (!data || data.Plugins.length === 0) {
     return (
-      <div className="p-3">
-        <div className="text-success">No plugin load issues reported.</div>
-        {data && (
-          <div className="text-muted small mt-1">
-            Running Essentials {data.EssentialsVersion}
-          </div>
-        )}
-      </div>
+      <EmptyState
+        title="No plugin load issues reported."
+        description="Every plugin loaded and is compatible with this version of Essentials."
+        meta={data ? `Running Essentials ${data.EssentialsVersion}` : undefined}
+      />
     );
   }
 
@@ -73,7 +71,7 @@ const PluginLoadIssues = () => {
       </div>
       <div className="overflow-auto flex-grow-1 pane-scroll-sm">
         <table className="table table-hover align-middle mb-0">
-          <thead className="table-light sticky-top">
+          <thead>
             <tr>
               <th style={{ width: '6rem' }}>Severity</th>
               <th className="d-none d-md-table-cell" style={{ width: '14rem' }}>

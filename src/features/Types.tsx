@@ -30,11 +30,11 @@ const Types = () => {
       </h2>
       <div className="h-100 flex-grow-1 overflow-auto">
         <table className="table table-striped table-bordered mb-0">
-          <thead className="table-light">
+          <thead>
             <tr>
-              <th className="position-sticky top-0 bg-body">Type Name</th>
-              <th className="position-sticky top-0 bg-body">Class Type</th>
-              <th className="position-sticky top-0 bg-body">Description</th>
+              <th>Type Name</th>
+              <th>Class Type</th>
+              <th>Description</th>
             </tr>
           </thead>
           <tbody>

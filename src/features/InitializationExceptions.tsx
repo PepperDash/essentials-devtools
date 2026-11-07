@@ -1,5 +1,6 @@
 import { skipToken } from '@reduxjs/toolkit/query';
 import { Fragment, useState } from 'react';
+import EmptyState from '../shared/components/EmptyState';
 import useAppParams from '../shared/hooks/useAppParams';
 import {
   EssentialsException,
@@ -24,9 +25,10 @@ const InitializationExceptions = () => {
 
   if (!data || data.Exceptions.length === 0) {
     return (
-      <div className="p-3 text-success">
-        No initialization exceptions reported.
-      </div>
+      <EmptyState
+        title="No initialization exceptions reported."
+        description="Every device, room and plugin initialized without throwing."
+      />
     );
   }
 
@@ -35,7 +37,7 @@ const InitializationExceptions = () => {
       <h2 className="mb-2">Initialization Exceptions</h2>
       <div className="overflow-auto flex-grow-1">
         <table className="table table-striped table-hover align-middle mb-0">
-          <thead className="table-light sticky-top">
+          <thead>
             <tr>
               <th style={{ width: '2rem' }}>#</th>
               <th>Message</th>

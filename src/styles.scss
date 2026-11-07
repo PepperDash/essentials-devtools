@@ -1230,8 +1230,9 @@ $noise: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width=
   }
 }
 
-// The app selector and the page menu share one button style
-.top-nav .top-nav-btn.btn {
+// The quiet "pill" button used for selectors: the app selector and page menu in the top bar, and
+// the log level and device pickers in the console toolbar
+@mixin pill-button($height) {
   --bs-btn-color: var(--bs-body-color);
   --bs-btn-bg: var(--app-surface-muted);
   --bs-btn-border-color: var(--app-glass-border);
@@ -1244,9 +1245,8 @@ $noise: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width=
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  height: 2.25rem;
+  height: $height;
   padding: 0 0.75rem;
-  max-width: 14rem;
   font-weight: 500;
   color: var(--bs-body-color);
   border-radius: $border-radius;
@@ -1254,6 +1254,33 @@ $noise: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width=
   &.show {
     color: var(--app-accent);
   }
+}
+
+.top-nav .top-nav-btn.btn {
+  @include pill-button(2.25rem);
+  max-width: 14rem;
+}
+
+.toolbar-btn.btn {
+  @include pill-button(2rem);
+  font-size: 0.875rem;
+}
+
+.toolbar-btn-caption {
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  color: var(--bs-secondary-color);
+}
+
+.toolbar-link.btn {
+  --bs-btn-color: var(--bs-secondary-color);
+  --bs-btn-hover-color: var(--app-accent);
+  height: 2rem;
+  padding: 0 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  text-decoration: none;
 }
 
 .top-nav-btn-icon {
@@ -1375,6 +1402,14 @@ $noise: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width=
 }
 
 .table > thead > tr > th {
+  // Every table's header stays in view while its rows scroll beneath it. The cell background is
+  // opaque so rows don't show through, and the divider is a shadow because borders don't travel
+  // with a sticky cell in a collapsed-border table. This applies to every table in the app; give a
+  // table its own scrolling container (overflow: auto) and nothing else is needed.
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  box-shadow: inset 0 -1px 0 var(--bs-border-color);
   font-size: 0.75rem;
   font-weight: 600;
   letter-spacing: 0.04em;
@@ -1572,4 +1607,367 @@ $elastic: linear(
 .routing-canvas-light {
   background-color: var(--app-surface-muted);
   border-top: 1px solid var(--bs-border-color);
+}
+
+// The page menu button keeps one width whatever page is showing, wide enough for the longest page
+// name ("Initialization Exceptions"), so the bar doesn't shift as you navigate
+.top-nav .nav-menu-dropdown .top-nav-btn.btn {
+  width: 17.5rem;
+  max-width: calc(100vw - 1rem);
+
+  .nav-menu-current {
+    flex: 1 1 auto;
+    min-width: 0;
+    text-align: left;
+  }
+}
+
+// "Nothing to report" state for pages that list problems
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  max-width: 30rem;
+  margin: 3rem auto;
+  padding: 2rem 1.5rem;
+  text-align: center;
+  background-color: var(--app-surface);
+  border: 1px solid var(--bs-border-color);
+  border-radius: $border-radius-lg;
+  box-shadow: $box-shadow-sm;
+}
+
+.empty-state-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 3.5rem;
+  height: 3.5rem;
+  margin-bottom: 1rem;
+  border-radius: 50%;
+  color: var(--bs-success);
+  background-color: #{rgba($success, 0.14)};
+
+  svg {
+    width: 1.75rem;
+    height: 1.75rem;
+  }
+}
+
+.empty-state-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--bs-emphasis-color);
+}
+
+.empty-state-description {
+  margin: 0.375rem 0 0;
+  color: var(--bs-secondary-color);
+}
+
+.empty-state-meta {
+  margin-top: 1rem;
+  padding: 0.2rem 0.65rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--bs-secondary-color);
+  background-color: var(--app-surface-muted);
+  border: 1px solid var(--bs-border-color);
+  border-radius: 999px;
+}
+
+// Debug console: one toolbar card, grouped by what the controls act on
+.console-toolbar {
+  padding: 0.625rem 0.75rem;
+  background-color: var(--app-surface);
+  border: 1px solid var(--bs-border-color);
+  border-radius: $border-radius-lg;
+  box-shadow: $box-shadow-sm;
+
+  // The filter row sits inside the card, so it doesn't need its own spacing
+  > .d-flex {
+    margin: 0.625rem 0 0 !important;
+    padding-left: 0 !important;
+    padding-top: 0.625rem;
+    border-top: 1px solid var(--bs-border-color);
+  }
+}
+
+.console-toolbar-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1.25rem;
+}
+
+.console-toolbar-group {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.console-toolbar-group-program {
+  // The boot setting and the buttons it affects read as one unit
+  padding: 0.25rem 0.5rem 0.25rem 0.75rem;
+  background-color: var(--app-surface-muted);
+  border: 1px solid var(--bs-border-color);
+  border-radius: $border-radius;
+
+  .form-check-label {
+    font-size: 0.875rem;
+    color: var(--bs-body-color);
+  }
+}
+
+.console-count {
+  padding: 0.2rem 0.65rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  white-space: nowrap;
+  color: var(--bs-secondary-color);
+  background-color: var(--app-surface-muted);
+  border: 1px solid var(--bs-border-color);
+  border-radius: 999px;
+}
+
+// Search box with a leading icon; used by every list page's filter header
+.filter-search {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-width: 14rem;
+}
+
+.filter-search-icon {
+  position: absolute;
+  left: 0.6rem;
+  width: 1rem;
+  height: 1rem;
+  color: var(--bs-secondary-color);
+  pointer-events: none;
+}
+
+.filter-search .filter-search-input {
+  height: 2rem;
+  padding-left: 2rem;
+  border-radius: $border-radius;
+}
+
+// Console column header, aligned with the rows beneath it
+.console-header {
+  padding: 0.5rem 0 0.375rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--bs-secondary-color);
+  border-bottom: 1px solid var(--bs-border-color);
+}
+
+// Log levels carry a colour; a selected row keeps its own white text
+.log-level {
+  font-weight: 500;
+  --log-color: var(--bs-secondary-color);
+  color: var(--log-color);
+}
+
+.log-level-information {
+  --log-color: #{$primary};
+}
+
+.log-level-warning {
+  --log-color: #b45309;
+}
+
+.log-level-error,
+.log-level-fatal {
+  --log-color: var(--bs-danger);
+}
+
+.log-level-fatal {
+  font-weight: 700;
+}
+
+[data-bs-theme='dark'] {
+  .log-level-information {
+    --log-color: #6cb2ff;
+  }
+
+  .log-level-warning {
+    --log-color: #fbbf24;
+  }
+
+  .log-level-error,
+  .log-level-fatal {
+    --log-color: #ff7b9c;
+  }
+}
+
+.bg-primary .log-level {
+  color: inherit;
+}
+
+// API paths: grouped rows, a selected row in the theme's accent, and room for the detail drawer
+.api-list-with-drawer {
+  // The drawer covers the right half; narrow the list so the URL column isn't hidden behind it
+  margin-right: min(45rem, 50%);
+
+  @include media-breakpoint-down(md) {
+    margin-right: 0;
+  }
+}
+
+.api-url {
+  font-family: $font-family-monospace;
+  font-size: 0.8rem;
+  color: var(--bs-secondary-color);
+}
+
+.api-detail-url {
+  padding: 0.5rem 0.65rem;
+  word-break: break-all;
+  color: var(--bs-body-color);
+  background-color: var(--app-surface-muted);
+  border: 1px solid var(--bs-border-color);
+  border-radius: $border-radius;
+}
+
+.api-group-row > td {
+  padding-top: 1rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--bs-secondary-color);
+  background-color: transparent;
+  box-shadow: none;
+  border-bottom-color: var(--bs-border-color);
+}
+
+.api-group-count {
+  margin-left: 0.5rem;
+  padding: 0.05rem 0.45rem;
+  font-weight: 500;
+  letter-spacing: 0;
+  background-color: var(--app-surface-muted);
+  border: 1px solid var(--bs-border-color);
+  border-radius: 999px;
+}
+
+// A selected table row: the accent colour, readable in either theme (replaces Bootstrap's
+// table-primary, which is a pale blue in dark mode too)
+.table > tbody > tr.row-selected > * {
+  --bs-table-bg-state: var(--app-accent-soft);
+  color: var(--bs-emphasis-color);
+}
+
+.table > tbody > tr.row-selected > :first-child {
+  box-shadow:
+    inset 3px 0 0 var(--app-accent),
+    inset 0 0 0 9999px var(--app-accent-soft);
+}
+
+.empty-state-icon-neutral {
+  color: var(--bs-secondary-color);
+  background-color: var(--app-surface-muted);
+}
+
+// Suggestion list under a text field (SuggestInput): one compact row per item
+.suggest {
+  position: relative;
+}
+
+.suggest-list {
+  position: absolute;
+  top: calc(100% + 0.25rem);
+  left: 0;
+  right: 0;
+  z-index: $zindex-dropdown;
+  max-height: 14rem;
+  margin: 0;
+  padding: 0.25rem;
+  overflow-y: auto;
+  list-style: none;
+  background-color: var(--app-panel-bg);
+  border: 1px solid var(--app-glass-border);
+  border-radius: $border-radius;
+  box-shadow: $box-shadow;
+  -webkit-backdrop-filter: blur(20px) saturate(140%);
+  backdrop-filter: blur(20px) saturate(140%);
+}
+
+.suggest-item {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.3rem 0.5rem;
+  border-radius: $border-radius-sm;
+  cursor: pointer;
+}
+
+.suggest-item-active {
+  background-color: var(--app-accent-soft);
+}
+
+.suggest-value {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: $font-family-monospace;
+  font-size: 0.8rem;
+  color: var(--bs-emphasis-color);
+}
+
+.suggest-item-active .suggest-value {
+  color: var(--app-accent);
+}
+
+.suggest-label {
+  flex-shrink: 0;
+  max-width: 45%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.75rem;
+  color: var(--bs-secondary-color);
+}
+
+.suggest-more {
+  padding: 0.3rem 0.5rem;
+  font-size: 0.75rem;
+  color: var(--bs-secondary-color);
+}
+
+// The clear (x) button inside a SuggestInput field
+.suggest .suggest-input-clearable {
+  padding-right: 2rem;
+}
+
+.suggest-clear {
+  position: absolute;
+  top: 50%;
+  right: 0.375rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--bs-secondary-color);
+  transform: translateY(-50%);
+
+  &:hover {
+    background-color: var(--app-hover);
+    color: var(--bs-emphasis-color);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--app-accent);
+  }
 }

@@ -113,7 +113,7 @@ const MobileControl = () => {
         <h5>Clients</h5>
         <div className="overflow-auto flex-grow-1">
           <table className="table table-striped table-bordered">
-            <thead className="table-light sticky-top">
+            <thead>
               <tr>
                 <th>#</th>
                 <th>Room Key</th>
@@ -176,7 +176,7 @@ const MobileControl = () => {
         <h5>Action Paths</h5>
         <div className="overflow-auto flex-grow-1">
           <table className="table table-striped table-bordered mb-0">
-            <thead className="table-light sticky-top">
+            <thead>
               <tr>
                 <th>Messenger Key</th>
                 <th>Path</th>

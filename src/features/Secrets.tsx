@@ -439,7 +439,7 @@ const Secrets = () => {
       <div className="overflow-auto flex-grow-1 pane-scroll-sm">
         <h5 className="mb-2">Managed secrets</h5>
         <table className="table table-striped table-bordered">
-          <thead className="table-light sticky-top">
+          <thead>
             <tr>
               <th>Key</th>
               <th>Description</th>
@@ -483,7 +483,7 @@ const Secrets = () => {
               something unrelated.
             </p>
             <table className="table table-striped table-bordered">
-              <thead className="table-light sticky-top">
+              <thead>
                 <tr>
                   <th>Key</th>
                   <th>Owner</th>
