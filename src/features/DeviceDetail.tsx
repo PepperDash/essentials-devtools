@@ -1,12 +1,13 @@
 import { skipToken } from '@reduxjs/toolkit/query';
 import { useState } from 'react';
-import { Button, Form, Modal, Spinner } from 'react-bootstrap';
+import { Button, Form, InputGroup, Modal, Spinner } from 'react-bootstrap';
 import useAppParams from '../shared/hooks/useAppParams';
 import {
   DeviceFeedbacks,
   DeviceMethods,
   DeviceProperties,
   IKeyed,
+  MethodParam,
   useGetDeviceFeedbacksQuery,
   useGetDeviceMethodsQuery,
   useGetDevicePropertiesQuery,
@@ -16,6 +17,25 @@ import { livePolling, POLL_INTERVALS_MS } from '../store/polling';
 
 // Parameter types arrive as bare or qualified names ("Boolean", "System.Boolean")
 const isBooleanType = (type: string) => /^(System\.)?Boolean$/i.test(type);
+const isIntegerType = (type: string) =>
+  /^(System\.)?(U?Int(8|16|32|64)?|Byte|SByte|Short|UShort|Long|ULong)$/i.test(
+    type
+  );
+
+// Types that can be typed into a single field. Anything else (objects, collections, actions and
+// other delegates) can only be entered in a dialog.
+const isSimpleType = (type: string) =>
+  isBooleanType(type) ||
+  isIntegerType(type) ||
+  /^(System\.)?(String|Char|Single|Double|Decimal|Float)$/i.test(type);
+
+const defaultParamValue = (type: string) =>
+  isBooleanType(type) ? 'false' : '';
+
+// Integers must be whole numbers; everything else (strings, and types we don't recognise) is sent
+// as typed
+const isParamValid = (type: string, value: string) =>
+  !isIntegerType(type) || /^-?\d+$/.test(value.trim());
 
 // How long "Press & Release" holds true before sending false, in seconds
 const PRESS_DELAY_DEFAULT_S = 0.75;
@@ -79,79 +99,6 @@ const DeviceDetailRender = ({
   isRefreshing,
   refreshFailed,
 }: DeviceDetailRenderProps) => {
-  const { appId } = useAppParams();
-  const [selectedMethod, setSelectedMethod] = useState<DeviceMethods | null>(
-    null
-  );
-  const [paramValues, setParamValues] = useState<Record<string, string>>({});
-  const [executeMethod, { isLoading: isExecuting }] =
-    useSetDeviceJsonCommandMutation();
-
-  const handleOpen = (method: DeviceMethods) => {
-    setSelectedMethod(method);
-    setParamValues(
-      Object.fromEntries(
-        method.Params.map((p) => [p.Name, isBooleanType(p.Type) ? 'false' : ''])
-      )
-    );
-  };
-
-  const [isPressing, setIsPressing] = useState(false);
-  const [pressDelay, setPressDelay] = useState(String(PRESS_DELAY_DEFAULT_S));
-  const pressDelayS = Number(pressDelay);
-  const pressDelayValid =
-    pressDelay.trim() !== '' &&
-    Number.isFinite(pressDelayS) &&
-    pressDelayS >= PRESS_DELAY_MIN_S &&
-    pressDelayS <= PRESS_DELAY_MAX_S;
-
-  // A method with a single Boolean parameter is a momentary press: send true, hold, send false
-  const isPressable =
-    selectedMethod?.Params.length === 1 &&
-    isBooleanType(selectedMethod.Params[0].Type);
-
-  const handlePressRelease = async () => {
-    if (!selectedMethod || !appId || !isPressable || !pressDelayValid) return;
-    setIsPressing(true);
-    try {
-      const send = (value: string) =>
-        executeMethod({
-          appId,
-          deviceKey,
-          methodName: selectedMethod.Name,
-          params: [value],
-        });
-      // Time the delay from when true goes out, so the gap between the two sends is the delay
-      // entered (or one round trip, if that is longer)
-      const start = performance.now();
-      await send('true');
-      const remaining = pressDelayS * 1000 - (performance.now() - start);
-      if (remaining > 0) {
-        await new Promise((resolve) => setTimeout(resolve, remaining));
-      }
-      await send('false');
-    } finally {
-      setIsPressing(false);
-    }
-    handleClose();
-  };
-
-  const handleClose = () => {
-    setSelectedMethod(null);
-    setParamValues({});
-  };
-
-  const handleExecute = async () => {
-    if (!selectedMethod || !appId) return;
-    await executeMethod({
-      appId,
-      deviceKey,
-      methodName: selectedMethod.Name,
-      params: Object.values(paramValues),
-    });
-    handleClose();
-  };
-
   return (
     <>
       <div className="d-flex flex-wrap align-items-center gap-3">
@@ -183,7 +130,7 @@ const DeviceDetailRender = ({
         </Button>
       </div>
       <div className="h-100 d-flex flex-column overflow-auto">
-        <h3>Properties</h3>
+        <h3 className="device-section-title">Properties</h3>
         <table className="table table-sm table-striped device-props">
           <thead>
             <tr>
@@ -218,142 +165,30 @@ const DeviceDetailRender = ({
           </tbody>
         </table>
 
-        <h3>Methods</h3>
-        <table className="table table-sm table-striped">
+        <h3 className="device-section-title">Methods</h3>
+        <table className="table table-sm table-striped device-methods">
           <thead>
             <tr>
               <th>Name</th>
-              <th>Params</th>
-              <th></th>
+              <th className="method-run-col">Run</th>
             </tr>
           </thead>
           <tbody>
             {methods.map((m) => (
-              <tr key={m.Name}>
-                <td className="text-break">{m.Name}</td>
-                <td>
-                  {m.Params.map((param) => `${param.Name}: ${param.Type}`).join(
-                    ', '
-                  )}
-                </td>
-                <td>
-                  <button
-                    className="btn btn-sm btn-primary"
-                    onClick={() => handleOpen(m)}
-                  >
-                    Execute
-                  </button>
-                </td>
-              </tr>
+              <MethodRow
+                key={`${deviceKey}|${m.Name}|${m.Params.map((p) => p.Name).join(',')}`}
+                method={m}
+                deviceKey={deviceKey}
+              />
             ))}
           </tbody>
         </table>
 
-        <Modal show={!!selectedMethod} onHide={handleClose}>
-          <Modal.Header closeButton>
-            <Modal.Title>Execute: {selectedMethod?.Name}</Modal.Title>
-          </Modal.Header>
-          <Modal.Body>
-            {selectedMethod?.Params.length === 0 ? (
-              <p>This method has no parameters.</p>
-            ) : (
-              <Form>
-                {selectedMethod?.Params.map((param) => (
-                  <Form.Group key={param.Name} className="mb-3">
-                    <Form.Label>
-                      {param.Name}{' '}
-                      <small className="text-muted">({param.Type})</small>
-                    </Form.Label>
-                    {isBooleanType(param.Type) ? (
-                      <Form.Select
-                        value={paramValues[param.Name] ?? 'false'}
-                        onChange={(e) =>
-                          setParamValues((prev) => ({
-                            ...prev,
-                            [param.Name]: e.target.value,
-                          }))
-                        }
-                      >
-                        <option value="true">true</option>
-                        <option value="false">false</option>
-                      </Form.Select>
-                    ) : (
-                      <Form.Control
-                        type="text"
-                        placeholder={param.Type}
-                        value={paramValues[param.Name] ?? ''}
-                        onChange={(e) =>
-                          setParamValues((prev) => ({
-                            ...prev,
-                            [param.Name]: e.target.value,
-                          }))
-                        }
-                      />
-                    )}
-                  </Form.Group>
-                ))}
-              </Form>
-            )}
-            {isPressable && (
-              <Form.Group className="mb-1">
-                <Form.Label htmlFor="press-release-delay">
-                  Press &amp; Release delay{' '}
-                  <small className="text-muted">(seconds)</small>
-                </Form.Label>
-                <Form.Control
-                  id="press-release-delay"
-                  type="number"
-                  min={PRESS_DELAY_MIN_S}
-                  max={PRESS_DELAY_MAX_S}
-                  step={0.05}
-                  value={pressDelay}
-                  isInvalid={!pressDelayValid}
-                  disabled={isPressing}
-                  onChange={(e) => setPressDelay(e.target.value)}
-                />
-                <Form.Control.Feedback type="invalid">
-                  Enter {PRESS_DELAY_MIN_S} to {PRESS_DELAY_MAX_S} seconds.
-                </Form.Control.Feedback>
-                <Form.Text muted>
-                  Sends true, then false this long after. Can't be shorter than
-                  one request round trip.
-                </Form.Text>
-              </Form.Group>
-            )}
-          </Modal.Body>
-          <Modal.Footer>
-            {isPressable && (
-              <Button
-                variant="outline-primary"
-                onClick={() => void handlePressRelease()}
-                disabled={isPressing || isExecuting || !pressDelayValid}
-                title={`Sends true, then false ${pressDelay}s later`}
-              >
-                {isPressing ? 'Pressing…' : 'Press & Release'}
-              </Button>
-            )}
-            <Button
-              variant="primary"
-              onClick={() => void handleExecute()}
-              disabled={isExecuting || isPressing}
-            >
-              {isExecuting ? 'Executing…' : 'Execute'}
-            </Button>
-            <Button
-              variant="secondary"
-              onClick={handleClose}
-              disabled={isPressing}
-            >
-              Cancel
-            </Button>
-          </Modal.Footer>
-        </Modal>
-
-        <h3>Feedbacks</h3>
+        <h3 className="device-section-title">Feedbacks</h3>
         {feedbacks && (
           <>
-            <h4>Boolean</h4>
-            <table className="table table-sm table-striped">
+            <h4 className="device-subsection-title">Boolean</h4>
+            <table className="table table-sm table-striped device-feedback">
               <thead>
                 <tr>
                   <th>Key</th>
@@ -376,8 +211,8 @@ const DeviceDetailRender = ({
               </tbody>
             </table>
 
-            <h4>Integer</h4>
-            <table className="table table-sm table-striped">
+            <h4 className="device-subsection-title">Integer</h4>
+            <table className="table table-sm table-striped device-feedback">
               <thead>
                 <tr>
                   <th>Key</th>
@@ -388,8 +223,8 @@ const DeviceDetailRender = ({
                 {feedbacks.IntValues.length > 0 ? (
                   feedbacks.IntValues.map((f) => (
                     <tr key={f.FeedbackKey}>
-                      <td>{f.FeedbackKey}</td>
-                      <td>{f.Value}</td>
+                      <td className="text-break">{f.FeedbackKey}</td>
+                      <td className="text-break">{f.Value}</td>
                     </tr>
                   ))
                 ) : (
@@ -400,8 +235,8 @@ const DeviceDetailRender = ({
               </tbody>
             </table>
 
-            <h4>Serial</h4>
-            <table className="table table-sm table-striped">
+            <h4 className="device-subsection-title">Serial</h4>
+            <table className="table table-sm table-striped device-feedback">
               <thead>
                 <tr>
                   <th>Key</th>
@@ -412,8 +247,8 @@ const DeviceDetailRender = ({
                 {feedbacks.SerialValues.length > 0 ? (
                   feedbacks.SerialValues.map((f) => (
                     <tr key={f.FeedbackKey}>
-                      <td>{f.FeedbackKey}</td>
-                      <td>{f.Value}</td>
+                      <td className="text-break">{f.FeedbackKey}</td>
+                      <td className="text-break">{f.Value}</td>
                     </tr>
                   ))
                 ) : (
@@ -427,6 +262,279 @@ const DeviceDetailRender = ({
         )}
       </div>
     </>
+  );
+};
+
+// One method, with its parameters as inline inputs. Execute sends the values as entered; a method
+// whose only parameter is a Boolean also gets Press & Release, which sends true, waits the delay,
+// then sends false.
+const MethodRow = ({ method, deviceKey }: MethodRowProps) => {
+  const { appId } = useAppParams();
+  const [executeMethod, { isLoading: isExecuting }] =
+    useSetDeviceJsonCommandMutation();
+  const [values, setValues] = useState<Record<string, string>>(() =>
+    Object.fromEntries(
+      method.Params.map((p) => [p.Name, defaultParamValue(p.Type)])
+    )
+  );
+  const [isPressing, setIsPressing] = useState(false);
+  const [pressDelay, setPressDelay] = useState(String(PRESS_DELAY_DEFAULT_S));
+  const [result, setResult] = useState<'sent' | 'failed' | null>(null);
+
+  const pressDelayS = Number(pressDelay);
+  const pressDelayValid =
+    pressDelay.trim() !== '' &&
+    Number.isFinite(pressDelayS) &&
+    pressDelayS >= PRESS_DELAY_MIN_S &&
+    pressDelayS <= PRESS_DELAY_MAX_S;
+
+  const isPressable =
+    method.Params.length === 1 && isBooleanType(method.Params[0].Type);
+  // Inline entry is for one simple parameter (or none). Several parameters, or any complex one,
+  // are entered in a dialog, where there's room to label each clearly.
+  const [showModal, setShowModal] = useState(false);
+  const runnable =
+    method.Params.length <= 1 &&
+    method.Params.every((p) => isSimpleType(p.Type));
+  const paramsValid = method.Params.every((p) =>
+    isParamValid(p.Type, values[p.Name] ?? '')
+  );
+  const busy = isExecuting || isPressing;
+
+  const run = async (params: string[]) => {
+    if (!appId) return false;
+    const response = await executeMethod({
+      appId,
+      deviceKey,
+      methodName: method.Name,
+      params,
+    });
+    return !('error' in response);
+  };
+
+  const handleExecute = async () => {
+    if (!paramsValid) return;
+    setResult(null);
+    const ok = await run(method.Params.map((p) => values[p.Name] ?? ''));
+    setResult(ok ? 'sent' : 'failed');
+    setShowModal(false);
+  };
+
+  const handlePressRelease = async () => {
+    if (!isPressable || !pressDelayValid) return;
+    setResult(null);
+    setIsPressing(true);
+    try {
+      // Time the delay from when true goes out, so the gap between the two sends is the delay
+      // entered (or one round trip, if that is longer)
+      const start = performance.now();
+      if (!(await run(['true']))) {
+        setResult('failed');
+        return;
+      }
+      const remaining = pressDelayS * 1000 - (performance.now() - start);
+      if (remaining > 0) {
+        await new Promise((resolve) => setTimeout(resolve, remaining));
+      }
+      setResult((await run(['false'])) ? 'sent' : 'failed');
+    } finally {
+      setIsPressing(false);
+    }
+  };
+
+  const setValue = (name: string, value: string) => {
+    setResult(null);
+    setValues((prev) => ({ ...prev, [name]: value }));
+  };
+
+  return (
+    <tr>
+      <td className="text-break">
+        {method.Name}
+        {/* Parameters entered in the dialog are listed by signature, as there's no inline field */}
+        {!runnable && (
+          <div className="small text-body-secondary">
+            {method.Params.map((p) => `${p.Name}: ${p.Type}`).join(', ')}
+          </div>
+        )}
+      </td>
+      <td className="method-run-col">
+        {/* Two coupled groups, left to right. Press & Release sends true, waits the delay, then
+            sends false. Execute sends its parameters as entered. */}
+        <div className="method-actions">
+          <div className="method-press-slot">
+            {isPressable && (
+              <InputGroup size="sm" className="method-group">
+                <Form.Control
+                  type="number"
+                  className="press-delay-input"
+                  aria-label="Press & Release delay (seconds)"
+                  title={`Press & Release delay in seconds (${PRESS_DELAY_MIN_S}-${PRESS_DELAY_MAX_S})`}
+                  min={PRESS_DELAY_MIN_S}
+                  max={PRESS_DELAY_MAX_S}
+                  step={0.05}
+                  value={pressDelay}
+                  isInvalid={!pressDelayValid}
+                  disabled={busy}
+                  onChange={(e) => setPressDelay(e.target.value)}
+                />
+                <InputGroup.Text>s</InputGroup.Text>
+                <Button
+                  variant="outline-primary"
+                  onClick={() => void handlePressRelease()}
+                  disabled={busy || !pressDelayValid}
+                  title={`Sends true, then false ${pressDelay}s later`}
+                >
+                  {isPressing ? 'Pressing…' : 'Press & Release'}
+                </Button>
+              </InputGroup>
+            )}
+          </div>
+          <div className="method-execute-slot">
+            <InputGroup size="sm" className="method-group method-execute-group">
+              {runnable &&
+                method.Params.map((param) => (
+                  <MethodParamInput
+                    key={param.Name}
+                    param={param}
+                    value={values[param.Name] ?? ''}
+                    disabled={busy}
+                    onChange={(v) => setValue(param.Name, v)}
+                    onSubmit={() => void handleExecute()}
+                  />
+                ))}
+              <Button
+                variant="primary"
+                onClick={() =>
+                  runnable ? void handleExecute() : setShowModal(true)
+                }
+                disabled={busy || (runnable && !paramsValid)}
+              >
+                {isExecuting ? 'Executing…' : 'Execute'}
+              </Button>
+            </InputGroup>
+          </div>
+          <div className="method-status">
+            {result && (
+              <span
+                className={`small ${result === 'sent' ? 'text-success' : 'text-danger'}`}
+                role="status"
+              >
+                {result === 'sent' ? 'Sent' : 'Failed'}
+              </span>
+            )}
+          </div>
+        </div>
+      </td>
+      {!runnable && (
+        <td className="p-0 border-0">
+          <Modal show={showModal} onHide={() => setShowModal(false)}>
+            <Modal.Header closeButton>
+              <Modal.Title>Execute: {method.Name}</Modal.Title>
+            </Modal.Header>
+            <Modal.Body>
+              <Form onSubmit={(e) => e.preventDefault()}>
+                {method.Params.map((param) => (
+                  <Form.Group key={param.Name} className="mb-3">
+                    <Form.Label>
+                      {param.Name}{' '}
+                      <small className="text-muted">({param.Type})</small>
+                    </Form.Label>
+                    {isBooleanType(param.Type) ? (
+                      <Form.Select
+                        value={values[param.Name] ?? 'false'}
+                        onChange={(e) => setValue(param.Name, e.target.value)}
+                      >
+                        <option value="true">true</option>
+                        <option value="false">false</option>
+                      </Form.Select>
+                    ) : (
+                      <Form.Control
+                        type="text"
+                        placeholder={param.Type}
+                        value={values[param.Name] ?? ''}
+                        isInvalid={
+                          !isParamValid(param.Type, values[param.Name] ?? '')
+                        }
+                        onChange={(e) => setValue(param.Name, e.target.value)}
+                      />
+                    )}
+                  </Form.Group>
+                ))}
+              </Form>
+            </Modal.Body>
+            <Modal.Footer>
+              <Button
+                variant="primary"
+                onClick={() => void handleExecute()}
+                disabled={isExecuting || !paramsValid}
+              >
+                {isExecuting ? 'Executing…' : 'Execute'}
+              </Button>
+              <Button variant="secondary" onClick={() => setShowModal(false)}>
+                Cancel
+              </Button>
+            </Modal.Footer>
+          </Modal>
+        </td>
+      )}
+    </tr>
+  );
+};
+
+interface MethodRowProps {
+  method: DeviceMethods;
+  deviceKey: string;
+}
+
+const MethodParamInput = ({
+  param,
+  value,
+  disabled,
+  onChange,
+  onSubmit,
+}: {
+  param: MethodParam;
+  value: string;
+  disabled: boolean;
+  onChange: (value: string) => void;
+  onSubmit: () => void;
+}) => {
+  const label = `${param.Name} (${param.Type})`;
+  if (isBooleanType(param.Type)) {
+    return (
+      <Form.Select
+        size="sm"
+        className="method-param-input"
+        aria-label={label}
+        title={label}
+        value={value}
+        disabled={disabled}
+        onChange={(e) => onChange(e.target.value)}
+      >
+        <option value="true">true</option>
+        <option value="false">false</option>
+      </Form.Select>
+    );
+  }
+  const integer = isIntegerType(param.Type);
+  return (
+    <Form.Control
+      size="sm"
+      className="method-param-input"
+      type="text"
+      inputMode={integer ? 'numeric' : undefined}
+      aria-label={label}
+      title={label}
+      placeholder={param.Name}
+      value={value}
+      disabled={disabled}
+      isInvalid={!isParamValid(param.Type, value)}
+      onChange={(e) => onChange(e.target.value)}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter') onSubmit();
+      }}
+    />
   );
 };
 

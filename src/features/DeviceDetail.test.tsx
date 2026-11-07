@@ -5,6 +5,7 @@ import {
   render,
   screen,
   waitFor,
+  within,
 } from '@testing-library/react';
 import { AxiosAdapter, InternalAxiosRequestConfig } from 'axios';
 import { Provider } from 'react-redux';
@@ -21,6 +22,9 @@ const api = oneSliceToRuleThemAll.apiSlice;
 // What the processor currently reports; tests change it to simulate the device changing
 let power = false;
 let requests: string[] = [];
+// The request bodies POSTed to the command endpoint, in order
+let commands: { methodName: string; params: unknown[] }[] = [];
+let methods: { Name: string; Params: { Name: string; Type: string }[] }[] = [];
 
 const respond = (config: InternalAxiosRequestConfig, data: unknown) =>
   Promise.resolve({ data, status: 200, statusText: 'OK', headers: {}, config });
@@ -38,8 +42,7 @@ const adapter: AxiosAdapter = (config) => {
         canWrite: false,
       },
     ]);
-  if (url.includes('/deviceMethods/'))
-    return respond(config, [{ Name: 'PowerOn', Params: [] }]);
+  if (url.includes('/deviceMethods/')) return respond(config, methods);
   if (url.includes('/deviceFeedbacks/'))
     return respond(config, {
       BoolValues: [{ FeedbackKey: 'powerIsOn', Value: power }],
@@ -47,6 +50,9 @@ const adapter: AxiosAdapter = (config) => {
       SerialValues: [],
     });
   if (url.includes('/deviceCommands/')) {
+    commands.push(
+      typeof config.data === 'string' ? JSON.parse(config.data) : config.data
+    );
     power = true;
     return respond(config, undefined);
   }
@@ -85,6 +91,8 @@ describe('DeviceDetail live updates', () => {
   beforeEach(() => {
     power = false;
     requests = [];
+    commands = [];
+    methods = [{ Name: 'PowerOn', Params: [] }];
     originalAdapter = httpClient.defaults.adapter;
     httpClient.defaults.adapter = adapter;
     vi.useFakeTimers({ shouldAdvanceTime: true });
@@ -137,13 +145,141 @@ describe('DeviceDetail live updates', () => {
     fireEvent.click(screen.getByLabelText(/Live updates/));
 
     fireEvent.click(screen.getByRole('button', { name: 'Execute' }));
-    const dialogExecute = await screen.findAllByRole('button', {
-      name: 'Execute',
-    });
-    fireEvent.click(dialogExecute[dialogExecute.length - 1]);
 
     // Live updates are off, so only the mutation's invalidation can fetch the new value
     await waitFor(() => expect(feedbackValue()).toBe('true'));
     expect(requests).toContain('POST /cws/app01/api/deviceCommands/pdu-1');
+  });
+
+  it('executes a method with one inline integer value, without a dialog', async () => {
+    methods = [
+      { Name: 'SetLevel', Params: [{ Name: 'level', Type: 'Int32' }] },
+    ];
+    renderDetail();
+    await screen.findByText('powerIsOn');
+
+    const execute = screen.getByRole('button', { name: 'Execute' });
+    fireEvent.change(screen.getByLabelText('level (Int32)'), {
+      target: { value: 'abc' },
+    });
+    // A non-integer blocks the send
+    expect(execute).toBeDisabled();
+
+    fireEvent.change(screen.getByLabelText('level (Int32)'), {
+      target: { value: '42' },
+    });
+    fireEvent.click(execute);
+
+    await waitFor(() => expect(commands).toHaveLength(1));
+    expect(commands[0]).toMatchObject({
+      methodName: 'SetLevel',
+      params: ['42'],
+    });
+    expect(screen.queryByRole('dialog')).toBeNull();
+  });
+
+  it('enters several parameters in a dialog rather than inline', async () => {
+    methods = [
+      {
+        Name: 'SetLevel',
+        Params: [
+          { Name: 'level', Type: 'Int32' },
+          { Name: 'label', Type: 'String' },
+        ],
+      },
+    ];
+    renderDetail();
+    await screen.findByText('powerIsOn');
+
+    expect(screen.queryByLabelText('level (Int32)')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Execute' }));
+    const dialog = await screen.findByRole('dialog');
+    fireEvent.change(within(dialog).getByPlaceholderText('Int32'), {
+      target: { value: '7' },
+    });
+    fireEvent.change(within(dialog).getByPlaceholderText('String'), {
+      target: { value: 'Main' },
+    });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Execute' }));
+
+    await waitFor(() => expect(commands).toHaveLength(1));
+    expect(commands[0]).toMatchObject({
+      methodName: 'SetLevel',
+      params: ['7', 'Main'],
+    });
+  });
+
+  it('offers Press & Release for a lone Boolean parameter and validates its delay', async () => {
+    methods = [
+      { Name: 'VolumeUp', Params: [{ Name: 'pressRelease', Type: 'Boolean' }] },
+    ];
+    renderDetail();
+    await screen.findByText('powerIsOn');
+
+    const press = screen.getByRole('button', { name: 'Press & Release' });
+    const delay = screen.getByLabelText('Press & Release delay (seconds)');
+    expect(press).toBeEnabled();
+
+    fireEvent.change(delay, { target: { value: '0.1' } });
+    expect(press).toBeDisabled();
+    fireEvent.change(delay, { target: { value: '31' } });
+    expect(press).toBeDisabled();
+
+    fireEvent.change(delay, { target: { value: '0.5' } });
+    fireEvent.click(press);
+    await waitFor(() => expect(commands).toHaveLength(1));
+    expect(commands[0].params).toEqual(['true']);
+    await act(() => vi.advanceTimersByTimeAsync(600));
+    await waitFor(() => expect(commands).toHaveLength(2));
+    expect(commands[1].params).toEqual(['false']);
+  });
+
+  it('does not offer Press & Release when a method has other parameters', async () => {
+    methods = [
+      {
+        Name: 'Set',
+        Params: [
+          { Name: 'on', Type: 'Boolean' },
+          { Name: 'level', Type: 'Int32' },
+        ],
+      },
+    ];
+    renderDetail();
+    await screen.findByText('powerIsOn');
+    expect(
+      screen.queryByRole('button', { name: 'Press & Release' })
+    ).toBeNull();
+  });
+
+  it('enters object and action parameters in a dialog rather than inline', async () => {
+    methods = [
+      {
+        Name: 'Configure',
+        Params: [{ Name: 'settings', Type: 'Newtonsoft.Json.Linq.JObject' }],
+      },
+    ];
+    renderDetail();
+    await screen.findByText('powerIsOn');
+
+    // Listed by signature, with no inline field
+    expect(
+      screen.getByText('settings: Newtonsoft.Json.Linq.JObject')
+    ).toBeTruthy();
+    expect(screen.queryByLabelText(/settings/)).toBeNull();
+    expect(screen.queryByRole('dialog')).toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Execute' }));
+    const dialog = await screen.findByRole('dialog');
+    fireEvent.change(
+      within(dialog).getByPlaceholderText('Newtonsoft.Json.Linq.JObject'),
+      { target: { value: '{"a":1}' } }
+    );
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Execute' }));
+
+    await waitFor(() => expect(commands).toHaveLength(1));
+    expect(commands[0]).toMatchObject({
+      methodName: 'Configure',
+      params: ['{"a":1}'],
+    });
   });
 });

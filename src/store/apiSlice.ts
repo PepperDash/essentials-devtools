@@ -587,7 +587,7 @@ interface Feedback {
   Value: string;
 }
 
-interface MethodParam {
+export interface MethodParam {
   Name: string;
   Type: string;
 }

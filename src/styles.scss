@@ -2013,3 +2013,88 @@ $elastic: linear(
     text-align: end;
   }
 }
+
+// Inline method parameters and the run controls. Two coupled groups sit left to right: the delay
+// field attached to Press & Release, then the parameters attached to Execute. Both groups live in
+// fixed-width slots that are right-aligned, so every row's Execute button, Press & Release group
+// and status line up from row to row, whether or not a row uses them.
+.device-methods {
+  > :not(caption) > * > * {
+    vertical-align: middle;
+  }
+
+  .method-param-input {
+    width: 9rem;
+    flex: 0 0 auto;
+  }
+
+  .press-delay-input {
+    width: 4.5rem;
+    flex: 0 0 auto;
+  }
+
+  .method-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.75rem;
+  }
+
+  .method-press-slot,
+  .method-execute-slot {
+    display: flex;
+    flex: 0 0 auto;
+    justify-content: flex-end;
+    min-width: 14.5rem;
+  }
+
+  .method-group {
+    width: auto;
+    flex-wrap: nowrap;
+  }
+
+  .method-status {
+    flex: 0 0 auto;
+    width: 3.25rem;
+  }
+
+  // The run controls take a fixed width of their own and the name takes the rest, so the Run
+  // heading sits over the controls
+  @include media-breakpoint-up(lg) {
+    .method-run-col {
+      width: 1%;
+      white-space: nowrap;
+    }
+
+    // One line: left to right, Press & Release, Execute, status. They only wrap on a narrow window.
+    .method-actions {
+      flex-wrap: nowrap;
+    }
+  }
+}
+
+// Device Detail sections sit clearly below the page heading: Bootstrap's h3 (1.75rem) is nearly the
+// size of the h2 above it
+.device-section-title {
+  margin: 1rem 0 0.5rem;
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+
+.device-subsection-title {
+  margin: 0.75rem 0 0.375rem;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--bs-secondary-color);
+}
+
+// The three feedback tables (Boolean, Integer, Serial) share one column layout, so Key and Value
+// line up from one table to the next instead of each sizing to its own contents
+.device-feedback {
+  table-layout: fixed;
+
+  > thead > tr > th:first-child {
+    width: 40%;
+  }
+}
