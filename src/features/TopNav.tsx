@@ -12,9 +12,9 @@ import { selectAvailableApps } from '../store/auth/authSelectors';
 import { useAppSelector } from '../store/hooks';
 import NavMenu from './nav/NavMenu';
 
-const AppIcon = () => (
+const AppIcon = ({ className }: { className: string }) => (
   <svg
-    className="top-nav-btn-icon"
+    className={className}
     viewBox="0 0 24 24"
     fill="none"
     stroke="currentColor"
@@ -94,20 +94,25 @@ const TopNav = ({ isConnected }: { isConnected: boolean }) => {
               id="dropdown-basic"
               className="top-nav-btn"
             >
-              <AppIcon />
+              <AppIcon className="top-nav-btn-icon" />
               {/* display the currently selected appId or "Select Application" if no appId is selected */}
               {params.appId || 'Select Application'}
               <IconDarkChevronDown />
             </Dropdown.Toggle>
             {/* Fixed positioning keeps the list from being clipped */}
-            <Dropdown.Menu popperConfig={{ strategy: 'fixed' }}>
+            <Dropdown.Menu
+              className="nav-menu app-menu"
+              popperConfig={{ strategy: 'fixed' }}
+            >
+              <Dropdown.Header>Applications</Dropdown.Header>
               {appIdOptions.map((id: string) => (
                 <Dropdown.Item
                   key={id}
                   as={NavLink}
                   to={`/${id}/${currentSubRoute}`}
                 >
-                  {id}
+                  <AppIcon className="side-nav-icon" />
+                  <span className="nav-menu-label">{id}</span>
                 </Dropdown.Item>
               ))}
             </Dropdown.Menu>

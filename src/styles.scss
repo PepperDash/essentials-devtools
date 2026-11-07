@@ -1315,6 +1315,13 @@ $noise: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width=
   overflow-y: auto;
 }
 
+.nav-menu.app-menu {
+  // The application list is one narrow column: as wide as its longest entry and no wider
+  --bs-dropdown-min-width: 0;
+  width: max-content;
+  max-width: calc(100vw - 1rem);
+}
+
 .nav-menu-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
