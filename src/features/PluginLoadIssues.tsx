@@ -3,6 +3,8 @@ import { Fragment, useState } from 'react';
 import { Badge } from 'react-bootstrap';
 import EmptyState from '../shared/components/EmptyState';
 import useAppParams from '../shared/hooks/useAppParams';
+import { SortableTh } from '../shared/SortableTh';
+import { SortAccessors, useSort } from '../shared/sorting';
 import {
   PluginLoadReport,
   useGetPluginLoadIssuesQuery,
@@ -16,6 +18,22 @@ import {
 } from '../store/pluginLoadIssuesContract';
 
 const COLUMNS = 4;
+
+// An issue keeps its original position in its plugin's list: an expanded row is remembered by it,
+// so that survives the issues being sorted
+type PluginIssue = PluginLoadReport['Issues'][number];
+interface IndexedIssue {
+  index: number;
+  issue: PluginIssue;
+}
+
+type IssueColumn = 'severity' | 'category' | 'message';
+const ISSUE_SORT: SortAccessors<IndexedIssue, IssueColumn> = {
+  // Errors before warnings when ascending
+  severity: ({ issue }) => (issue.Severity === 'Error' ? 0 : 1),
+  category: ({ issue }) => categoryLabel(issue.Category),
+  message: ({ issue }) => issue.Message,
+};
 
 const builtAgainstText = (report: PluginLoadReport) => {
   const entries = Object.entries(report.BuiltAgainst ?? {});
@@ -34,6 +52,7 @@ const PluginLoadIssues = () => {
   );
 
   const [expandedKey, setExpandedKey] = useState<string | null>(null);
+  const sorter = useSort(ISSUE_SORT);
 
   if (isLoading) return <div className="p-3">Loading…</div>;
   if (isError)
@@ -73,11 +92,20 @@ const PluginLoadIssues = () => {
         <table className="table table-hover align-middle mb-0">
           <thead>
             <tr>
-              <th style={{ width: '6rem' }}>Severity</th>
-              <th className="d-none d-md-table-cell" style={{ width: '14rem' }}>
-                Category
-              </th>
-              <th>Message</th>
+              <SortableTh
+                sorter={sorter}
+                column="severity"
+                label="Severity"
+                style={{ width: '6rem' }}
+              />
+              <SortableTh
+                sorter={sorter}
+                column="category"
+                label="Category"
+                className="d-none d-md-table-cell"
+                style={{ width: '14rem' }}
+              />
+              <SortableTh sorter={sorter} column="message" label="Message" />
               <th style={{ width: '7rem' }}>Detail</th>
             </tr>
           </thead>
@@ -110,65 +138,71 @@ const PluginLoadIssues = () => {
                       )}
                     </td>
                   </tr>
-                  {report.Issues.map((issue, idx) => {
-                    const key = `${report.FileName}-${idx}`;
-                    const isExpanded = expandedKey === key;
-                    return (
-                      <Fragment key={key}>
-                        <tr>
-                          <td>
-                            <Badge
-                              bg={severityVariant(issue.Severity)}
-                              text={badgeText(severityVariant(issue.Severity))}
-                            >
-                              {issue.Severity}
-                            </Badge>
-                          </td>
-                          <td className="d-none d-md-table-cell">
-                            {categoryLabel(issue.Category)}
-                          </td>
-                          <td className="text-break">
-                            <div className="d-md-none small fw-semibold">
-                              {categoryLabel(issue.Category)}
-                            </div>
-                            {issue.Message}
-                            {issue.TriggeredBy !== 'Direct load' && (
-                              <span className="text-muted small ms-1">
-                                (required by {issue.TriggeredBy})
-                              </span>
-                            )}
-                          </td>
-                          <td>
-                            {issue.Detail && (
-                              <button
-                                className="btn btn-sm btn-outline-secondary"
-                                onClick={() =>
-                                  setExpandedKey(isExpanded ? null : key)
-                                }
-                              >
-                                {isExpanded ? 'Hide' : 'Show'}
-                              </button>
-                            )}
-                          </td>
-                        </tr>
-                        {isExpanded && issue.Detail && (
+                  {sorter
+                    .apply(
+                      report.Issues.map((issue, index) => ({ issue, index }))
+                    )
+                    .map(({ issue, index: idx }) => {
+                      const key = `${report.FileName}-${idx}`;
+                      const isExpanded = expandedKey === key;
+                      return (
+                        <Fragment key={key}>
                           <tr>
-                            <td colSpan={COLUMNS} className="p-0">
-                              <pre
-                                className="m-0 p-3 bg-light text-muted"
-                                style={{
-                                  fontSize: '0.75rem',
-                                  whiteSpace: 'pre-wrap',
-                                }}
+                            <td>
+                              <Badge
+                                bg={severityVariant(issue.Severity)}
+                                text={badgeText(
+                                  severityVariant(issue.Severity)
+                                )}
                               >
-                                {issue.Detail}
-                              </pre>
+                                {issue.Severity}
+                              </Badge>
+                            </td>
+                            <td className="d-none d-md-table-cell">
+                              {categoryLabel(issue.Category)}
+                            </td>
+                            <td className="text-break">
+                              <div className="d-md-none small fw-semibold">
+                                {categoryLabel(issue.Category)}
+                              </div>
+                              {issue.Message}
+                              {issue.TriggeredBy !== 'Direct load' && (
+                                <span className="text-muted small ms-1">
+                                  (required by {issue.TriggeredBy})
+                                </span>
+                              )}
+                            </td>
+                            <td>
+                              {issue.Detail && (
+                                <button
+                                  className="btn btn-sm btn-outline-secondary"
+                                  onClick={() =>
+                                    setExpandedKey(isExpanded ? null : key)
+                                  }
+                                >
+                                  {isExpanded ? 'Hide' : 'Show'}
+                                </button>
+                              )}
                             </td>
                           </tr>
-                        )}
-                      </Fragment>
-                    );
-                  })}
+                          {isExpanded && issue.Detail && (
+                            <tr>
+                              <td colSpan={COLUMNS} className="p-0">
+                                <pre
+                                  className="m-0 p-3 bg-light text-muted"
+                                  style={{
+                                    fontSize: '0.75rem',
+                                    whiteSpace: 'pre-wrap',
+                                  }}
+                                >
+                                  {issue.Detail}
+                                </pre>
+                              </td>
+                            </tr>
+                          )}
+                        </Fragment>
+                      );
+                    })}
                 </Fragment>
               );
             })}

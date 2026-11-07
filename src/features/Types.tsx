@@ -3,12 +3,22 @@ import { useMemo, useState } from 'react';
 import EmptyState from '../shared/components/EmptyState';
 import { FilterSearchText } from '../shared/FilterSearchText';
 import useAppParams from '../shared/hooks/useAppParams';
-import { useGetTypesQuery } from '../store/apiSlice';
+import { SortableTh } from '../shared/SortableTh';
+import { SortAccessors, useSort } from '../shared/sorting';
+import { Type, useGetTypesQuery } from '../store/apiSlice';
+
+type TypeColumn = 'type' | 'cType' | 'description';
+const TYPE_SORT: SortAccessors<Type, TypeColumn> = {
+  type: (t) => t.Type,
+  cType: (t) => t.CType,
+  description: (t) => t.Description,
+};
 
 const Types = () => {
   const { appId } = useAppParams();
   const { data: types } = useGetTypesQuery(appId ? { appId } : skipToken);
   const [search, setSearch] = useState('');
+  const sorter = useSort(TYPE_SORT);
 
   const sorted = useMemo(
     () =>
@@ -34,6 +44,7 @@ const Types = () => {
       return terms.every((term) => haystack.includes(term));
     });
   }, [sorted, search]);
+  const rows = useMemo(() => sorter.apply(visible), [sorter, visible]);
 
   if (!types) {
     return <div>Loading...</div>;
@@ -72,13 +83,17 @@ const Types = () => {
           <table className="table table-striped table-bordered mb-0">
             <thead>
               <tr>
-                <th>Type Name</th>
-                <th>Class Type</th>
-                <th>Description</th>
+                <SortableTh sorter={sorter} column="type" label="Type Name" />
+                <SortableTh sorter={sorter} column="cType" label="Class Type" />
+                <SortableTh
+                  sorter={sorter}
+                  column="description"
+                  label="Description"
+                />
               </tr>
             </thead>
             <tbody>
-              {visible.map((i) => (
+              {rows.map((i) => (
                 <tr key={i.Type}>
                   <td>{i.Type}</td>
                   <td>{i.CType}</td>

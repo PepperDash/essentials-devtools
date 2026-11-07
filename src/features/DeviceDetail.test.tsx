@@ -46,8 +46,8 @@ const adapter: AxiosAdapter = (config) => {
   if (url.includes('/deviceFeedbacks/'))
     return respond(config, {
       BoolValues: [{ FeedbackKey: 'powerIsOn', Value: power }],
-      IntValues: [],
-      SerialValues: [],
+      IntValues: [{ FeedbackKey: 'level', Value: '10' }],
+      SerialValues: [{ FeedbackKey: 'currentInput', Value: 'hdmi1' }],
     });
   if (url.includes('/deviceCommands/')) {
     commands.push(
@@ -281,5 +281,77 @@ describe('DeviceDetail live updates', () => {
       methodName: 'Configure',
       params: ['{"a":1}'],
     });
+  });
+
+  it('shows methods with feedbacks together, and properties on their own tab', async () => {
+    renderDetail();
+    // The default tab: methods and the feedbacks they affect, on one screen
+    expect(await screen.findByText('powerIsOn')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Execute' })).toBeTruthy();
+    expect(screen.queryByText('Power')).toBeNull();
+
+    fireEvent.click(screen.getByRole('tab', { name: /Properties/ }));
+    expect(await screen.findByText('Power')).toBeTruthy();
+    expect(screen.queryByText('powerIsOn')).toBeNull();
+
+    fireEvent.click(screen.getByRole('tab', { name: /Methods & Feedbacks/ }));
+    expect(await screen.findByText('powerIsOn')).toBeTruthy();
+  });
+
+  it('resizes the methods and feedbacks split from the keyboard, within limits', async () => {
+    renderDetail();
+    await screen.findByText('powerIsOn');
+
+    const handle = screen.getByRole('separator');
+    const start = Number(handle.getAttribute('aria-valuenow'));
+    fireEvent.keyDown(handle, { key: 'ArrowUp' });
+    expect(Number(handle.getAttribute('aria-valuenow'))).toBe(start - 5);
+
+    fireEvent.keyDown(handle, { key: 'Home' });
+    expect(handle.getAttribute('aria-valuenow')).toBe('20');
+    fireEvent.keyDown(handle, { key: 'ArrowUp' });
+    expect(handle.getAttribute('aria-valuenow')).toBe('20');
+
+    fireEvent.keyDown(handle, { key: 'End' });
+    expect(handle.getAttribute('aria-valuenow')).toBe('85');
+
+    fireEvent.doubleClick(handle);
+    expect(handle.getAttribute('aria-valuenow')).toBe('65');
+  });
+
+  it('lists every feedback in one table with a type column, sortable by each column', async () => {
+    renderDetail();
+    await screen.findByText('powerIsOn');
+
+    // The feedback table's rows (the methods table has its own)
+    const table = screen.getByText('powerIsOn').closest('table') as HTMLElement;
+    const keys = () =>
+      within(table)
+        .getAllByRole('row')
+        .slice(1)
+        .map((row) => row.firstElementChild?.textContent);
+    // The device's own order: Boolean, then Integer, then Serial
+    expect(keys()).toEqual(['powerIsOn', 'level', 'currentInput']);
+    expect(screen.getByText('Integer')).toBeTruthy();
+
+    const heading = (name: string) =>
+      screen.getByRole('button', { name: new RegExp(`^${name}`) });
+    fireEvent.click(heading('Key'));
+    expect(keys()).toEqual(['currentInput', 'level', 'powerIsOn']);
+    fireEvent.click(heading('Key'));
+    expect(keys()).toEqual(['powerIsOn', 'level', 'currentInput']);
+    fireEvent.click(heading('Key'));
+    expect(
+      screen
+        .getByRole('columnheader', { name: /^Key/ })
+        .getAttribute('aria-sort')
+    ).toBe('none');
+
+    // Values: false, 10, hdmi1 sort as text, numbers numerically
+    fireEvent.click(heading('Value'));
+    expect(keys()).toEqual(['level', 'powerIsOn', 'currentInput']);
+    fireEvent.click(heading('Type'));
+    fireEvent.click(heading('Type'));
+    expect(keys()).toEqual(['currentInput', 'level', 'powerIsOn']);
   });
 });

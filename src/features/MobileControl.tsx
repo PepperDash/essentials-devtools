@@ -4,6 +4,8 @@ import { Button, Modal } from 'react-bootstrap';
 import EmptyState from '../shared/components/EmptyState';
 import { FilterSearchText } from '../shared/FilterSearchText';
 import useAppParams from '../shared/hooks/useAppParams';
+import { SortableTh } from '../shared/SortableTh';
+import { SortAccessors, useSort } from '../shared/sorting';
 import {
   ActionPath,
   ClientRequest,
@@ -16,6 +18,21 @@ import {
   useGetMobileControlInfoQuery,
 } from '../store/apiSlice';
 import { livePolling, POLL_INTERVALS_MS } from '../store/polling';
+
+type ClientColumn = 'number' | 'room' | 'touchpanel' | 'token' | 'url';
+const CLIENT_SORT: SortAccessors<MobileControlClient, ClientColumn> = {
+  number: (c) => c.clientNumber,
+  room: (c) => c.roomKey,
+  touchpanel: (c) => c.touchpanelKey,
+  token: (c) => c.token,
+  url: (c) => c.url,
+};
+
+type PathColumn = 'messengerKey' | 'path';
+const PATH_SORT: SortAccessors<ActionPath, PathColumn> = {
+  messengerKey: (p) => p.messengerKey,
+  path: (p) => p.path,
+};
 
 const MobileControl = () => {
   const { appId } = useAppParams();
@@ -39,6 +56,13 @@ const MobileControl = () => {
   const [newRoomKey, setNewRoomKey] = useState('');
   const [newGrantCode, setNewGrantCode] = useState('');
   const [pathSearch, setPathSearch] = useState('');
+  const clientSorter = useSort(CLIENT_SORT);
+  const pathSorter = useSort(PATH_SORT);
+  const allClients = info?.directServer?.clients;
+  const clients = useMemo(
+    () => clientSorter.apply(allClients ?? []),
+    [clientSorter, allClients]
+  );
 
   // Every whitespace-separated term must appear (case-insensitive) in the messenger key or path
   const allPaths = actionPaths?.actionPaths;
@@ -51,6 +75,10 @@ const MobileControl = () => {
       return terms.every((t) => haystack.includes(t));
     });
   }, [allPaths, pathSearch]);
+  const sortedPaths = useMemo(
+    () => pathSorter.apply(visiblePaths),
+    [pathSorter, visiblePaths]
+  );
 
   const handleConfirmDelete = async () => {
     if (!appId || !pendingDelete) return;
@@ -130,11 +158,23 @@ const MobileControl = () => {
           <table className="table table-striped table-bordered">
             <thead>
               <tr>
-                <th>#</th>
-                <th>Room Key</th>
-                <th>Touchpanel Key</th>
-                <th>Token</th>
-                <th>URL</th>
+                <SortableTh sorter={clientSorter} column="number" label="#" />
+                <SortableTh
+                  sorter={clientSorter}
+                  column="room"
+                  label="Room Key"
+                />
+                <SortableTh
+                  sorter={clientSorter}
+                  column="touchpanel"
+                  label="Touchpanel Key"
+                />
+                <SortableTh
+                  sorter={clientSorter}
+                  column="token"
+                  label="Token"
+                />
+                <SortableTh sorter={clientSorter} column="url" label="URL" />
                 <th>
                   <div className="d-flex justify-content-end gap-1">
                     <Button
@@ -158,7 +198,7 @@ const MobileControl = () => {
               </tr>
             </thead>
             <tbody>
-              {ds.clients.map((client) => (
+              {clients.map((client) => (
                 <tr key={client.clientNumber}>
                   <td>{client.clientNumber}</td>
                   <td>{client.roomKey}</td>
@@ -215,12 +255,16 @@ const MobileControl = () => {
             <table className="table table-striped table-bordered mb-0">
               <thead>
                 <tr>
-                  <th>Messenger Key</th>
-                  <th>Path</th>
+                  <SortableTh
+                    sorter={pathSorter}
+                    column="messengerKey"
+                    label="Messenger Key"
+                  />
+                  <SortableTh sorter={pathSorter} column="path" label="Path" />
                 </tr>
               </thead>
               <tbody>
-                {visiblePaths.map((ap: ActionPath, index) => (
+                {sortedPaths.map((ap: ActionPath, index) => (
                   // Messenger keys repeat (one messenger can register several paths), and a
                   // duplicate key leaves stale rows on screen when the list is filtered
                   <tr key={`${ap.messengerKey}|${ap.path}|${index}`}>

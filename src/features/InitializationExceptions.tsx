@@ -1,11 +1,26 @@
 import { skipToken } from '@reduxjs/toolkit/query';
-import { Fragment, useState } from 'react';
+import { Fragment, useMemo, useState } from 'react';
 import EmptyState from '../shared/components/EmptyState';
 import useAppParams from '../shared/hooks/useAppParams';
+import { SortableTh } from '../shared/SortableTh';
+import { SortAccessors, useSort } from '../shared/sorting';
 import {
   EssentialsException,
   useGetInitializationExceptionsQuery,
 } from '../store/apiSlice';
+
+// Each exception keeps its original position: it's the number shown, and what an expanded row is
+// remembered by, so both survive the table being sorted
+interface NumberedException {
+  number: number;
+  exception: EssentialsException;
+}
+
+type ExceptionColumn = 'number' | 'message';
+const EXCEPTION_SORT: SortAccessors<NumberedException, ExceptionColumn> = {
+  number: (e) => e.number,
+  message: (e) => e.exception.Message,
+};
 
 const InitializationExceptions = () => {
   const { appId } = useAppParams();
@@ -14,6 +29,18 @@ const InitializationExceptions = () => {
   );
 
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
+  const sorter = useSort(EXCEPTION_SORT);
+  const exceptions = data?.Exceptions;
+  const rows = useMemo(
+    () =>
+      sorter.apply(
+        (exceptions ?? []).map((exception, i) => ({
+          number: i + 1,
+          exception,
+        }))
+      ),
+    [sorter, exceptions]
+  );
 
   if (isLoading) return <div className="p-3">Loading…</div>;
   if (isError)
@@ -39,18 +66,24 @@ const InitializationExceptions = () => {
         <table className="table table-striped table-hover align-middle mb-0">
           <thead>
             <tr>
-              <th style={{ width: '2rem' }}>#</th>
-              <th>Message</th>
+              <SortableTh
+                sorter={sorter}
+                column="number"
+                label="#"
+                style={{ width: '2rem' }}
+              />
+              <SortableTh sorter={sorter} column="message" label="Message" />
               <th style={{ width: '8rem' }}>Stack trace</th>
             </tr>
           </thead>
           <tbody>
-            {data.Exceptions.map((ex: EssentialsException, idx: number) => {
+            {rows.map(({ number, exception: ex }) => {
+              const idx = number - 1;
               const isExpanded = expandedIndex === idx;
               return (
                 <Fragment key={`ex-${idx}`}>
                   <tr>
-                    <td className="text-muted">{idx + 1}</td>
+                    <td className="text-muted">{number}</td>
                     <td>
                       <span className="text-danger fw-semibold">
                         {ex.Message}

@@ -1,7 +1,9 @@
 import { skipToken } from '@reduxjs/toolkit/query';
-import { useState } from 'react';
-import { Button, Form, InputGroup, Modal, Spinner } from 'react-bootstrap';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Button, Form, InputGroup, Modal, Nav, Spinner } from 'react-bootstrap';
 import useAppParams from '../shared/hooks/useAppParams';
+import { SortableTh } from '../shared/SortableTh';
+import { SortAccessors, useSort } from '../shared/sorting';
 import {
   DeviceFeedbacks,
   DeviceMethods,
@@ -43,9 +45,47 @@ const PRESS_DELAY_DEFAULT_S = 0.75;
 const PRESS_DELAY_MIN_S = 0.5;
 const PRESS_DELAY_MAX_S = 30;
 
+type DetailTab = 'run' | 'properties';
+
+type PropertyColumn = 'name' | 'type' | 'value' | 'access';
+const PROPERTY_SORT: SortAccessors<DeviceProperties, PropertyColumn> = {
+  name: (p) => p.Name,
+  type: (p) => p.Type,
+  value: (p) => p.Value,
+  // Read and write, then read only, then neither
+  access: (p) => (p.CanRead ? 2 : 0) + (p.canWrite ? 1 : 0),
+};
+
+const METHOD_SORT: SortAccessors<DeviceMethods, 'name'> = {
+  name: (m) => m.Name,
+};
+
+// The share of the Methods & Feedbacks tab given to Methods; Feedbacks, docked beneath, gets the
+// rest. Methods is the longer list, but feedbacks sit side by side and need little height.
+const SPLIT_DEFAULT = 0.65;
+const SPLIT_MIN = 0.2;
+const SPLIT_MAX = 0.85;
+const SPLIT_KEY_STEP = 0.05;
+const SPLIT_STORAGE_KEY = 'essentials-devtools.run-split';
+
+const clampSplit = (value: number) =>
+  Math.min(SPLIT_MAX, Math.max(SPLIT_MIN, value));
+
+// The remembered split, if there is one: storage can be missing or blocked
+const readSplit = () => {
+  try {
+    const saved = Number(localStorage.getItem(SPLIT_STORAGE_KEY));
+    return saved > 0 ? clampSplit(saved) : SPLIT_DEFAULT;
+  } catch {
+    return SPLIT_DEFAULT;
+  }
+};
+
 const DeviceDetail = ({ item }: DeviceDetailProps) => {
   const { appId } = useAppParams();
   const [liveUpdates, setLiveUpdates] = useState(true);
+  // Kept here, not in the render below, so the chosen tab survives switching device
+  const [tab, setTab] = useState<DetailTab>('run');
 
   const args = appId && item?.Key ? { appId, key: item.Key } : skipToken;
   // Property and feedback values change underneath us (device polling, hardware changed out of
@@ -75,6 +115,8 @@ const DeviceDetail = ({ item }: DeviceDetailProps) => {
       deviceName={item.Name}
       liveUpdates={liveUpdates}
       onLiveUpdatesChange={setLiveUpdates}
+      tab={tab}
+      onTabChange={setTab}
       onRefresh={refresh}
       isRefreshing={propertiesQuery.isFetching || feedbacksQuery.isFetching}
       // Keep showing the last values when a refresh fails, but say so
@@ -97,10 +139,57 @@ const DeviceDetailRender = ({
   deviceName,
   liveUpdates,
   onLiveUpdatesChange,
+  tab,
+  onTabChange,
   onRefresh,
   isRefreshing,
   refreshFailed,
 }: DeviceDetailRenderProps) => {
+  const propertySorter = useSort(PROPERTY_SORT);
+  const methodSorter = useSort(METHOD_SORT);
+  const sortedProperties = useMemo(
+    () => propertySorter.apply(properties),
+    [propertySorter, properties]
+  );
+  const sortedMethods = useMemo(
+    () => methodSorter.apply(methods),
+    [methodSorter, methods]
+  );
+  const splitRef = useRef<HTMLDivElement>(null);
+  const [split, setSplit] = useState(readSplit);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(SPLIT_STORAGE_KEY, String(split));
+    } catch {
+      // Not remembered, which is fine
+    }
+  }, [split]);
+
+  // Dragging the handle sets the split from where the pointer is within the tab
+  const dragSplit = (e: React.PointerEvent<HTMLDivElement>) => {
+    const box = splitRef.current?.getBoundingClientRect();
+    if (!box || !e.currentTarget.hasPointerCapture(e.pointerId)) return;
+    setSplit(clampSplit((e.clientY - box.top) / box.height));
+  };
+
+  const keySplit = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    const moves: Record<string, number> = {
+      ArrowUp: -SPLIT_KEY_STEP,
+      ArrowDown: SPLIT_KEY_STEP,
+    };
+    if (e.key in moves) {
+      e.preventDefault();
+      setSplit((prev) => clampSplit(prev + moves[e.key]));
+    } else if (e.key === 'Home') {
+      e.preventDefault();
+      setSplit(SPLIT_MIN);
+    } else if (e.key === 'End') {
+      e.preventDefault();
+      setSplit(SPLIT_MAX);
+    }
+  };
+
   return (
     <>
       <div className="d-flex flex-wrap align-items-center gap-3">
@@ -135,139 +224,201 @@ const DeviceDetailRender = ({
           )}
         </Button>
       </div>
-      <div className="h-100 d-flex flex-column overflow-auto">
-        <h3 className="device-section-title">Properties</h3>
-        <table className="table table-sm table-striped device-props">
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>Type</th>
-              <th>Value</th>
-              <th className="d-none d-md-table-cell">Access</th>
-            </tr>
-          </thead>
-          <tbody>
-            {properties.map((p) => (
-              <tr key={p.Name}>
-                <td className="prop-name">{p.Name}</td>
-                <td className="prop-type">{p.Type}</td>
-                <td className="prop-value">{p.Value}</td>
-                <td className="d-none d-md-table-cell prop-access">
-                  <span
-                    className={`badge ${p.CanRead ? 'text-bg-secondary' : 'bg-transparent border text-body-secondary'}`}
-                    title={p.CanRead ? 'Readable' : 'Not readable'}
-                  >
-                    R
-                  </span>{' '}
-                  <span
-                    className={`badge ${p.canWrite ? 'text-bg-primary' : 'bg-transparent border text-body-secondary'}`}
-                    title={p.canWrite ? 'Writable' : 'Read-only'}
-                  >
-                    W
-                  </span>
-                </td>
+      <Nav
+        variant="tabs"
+        role="tablist"
+        className="detail-tabs"
+        activeKey={tab}
+        onSelect={(key) => key && onTabChange(key as DetailTab)}
+      >
+        <Nav.Item>
+          <Nav.Link eventKey="run" role="tab" aria-selected={tab === 'run'}>
+            Methods &amp; Feedbacks
+            <span className="detail-tab-count">{methods.length}</span>
+          </Nav.Link>
+        </Nav.Item>
+        <Nav.Item>
+          <Nav.Link
+            eventKey="properties"
+            role="tab"
+            aria-selected={tab === 'properties'}
+          >
+            Properties
+            <span className="detail-tab-count">{properties.length}</span>
+          </Nav.Link>
+        </Nav.Item>
+      </Nav>
+
+      {tab === 'properties' ? (
+        <div className="detail-scroll">
+          <table className="table table-sm table-striped device-props">
+            <thead>
+              <tr>
+                <SortableTh
+                  sorter={propertySorter}
+                  column="name"
+                  label="Name"
+                />
+                <SortableTh
+                  sorter={propertySorter}
+                  column="type"
+                  label="Type"
+                />
+                <SortableTh
+                  sorter={propertySorter}
+                  column="value"
+                  label="Value"
+                />
+                <SortableTh
+                  sorter={propertySorter}
+                  column="access"
+                  label="Access"
+                  className="d-none d-md-table-cell"
+                />
               </tr>
-            ))}
-          </tbody>
-        </table>
-
-        <h3 className="device-section-title">Methods</h3>
-        <table className="table table-sm table-striped device-methods">
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th className="method-run-col">Run</th>
-            </tr>
-          </thead>
-          <tbody>
-            {methods.map((m) => (
-              <MethodRow
-                key={`${deviceKey}|${m.Name}|${m.Params.map((p) => p.Name).join(',')}`}
-                method={m}
-                deviceKey={deviceKey}
-              />
-            ))}
-          </tbody>
-        </table>
-
-        <h3 className="device-section-title">Feedbacks</h3>
-        {feedbacks && (
-          <>
-            <h4 className="device-subsection-title">Boolean</h4>
-            <table className="table table-sm table-striped device-feedback">
+            </thead>
+            <tbody>
+              {sortedProperties.map((p) => (
+                <tr key={p.Name}>
+                  <td className="prop-name">{p.Name}</td>
+                  <td className="prop-type">{p.Type}</td>
+                  <td className="prop-value">{p.Value}</td>
+                  <td className="d-none d-md-table-cell prop-access">
+                    <span
+                      className={`badge ${p.CanRead ? 'text-bg-secondary' : 'bg-transparent border text-body-secondary'}`}
+                      title={p.CanRead ? 'Readable' : 'Not readable'}
+                    >
+                      R
+                    </span>{' '}
+                    <span
+                      className={`badge ${p.canWrite ? 'text-bg-primary' : 'bg-transparent border text-body-secondary'}`}
+                      title={p.canWrite ? 'Writable' : 'Read-only'}
+                    >
+                      W
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : (
+        // Methods above, feedbacks docked beneath, each scrolling on its own: run a method and
+        // watch its feedback change without scrolling between them
+        <div className="run-split" ref={splitRef}>
+          <section className="run-methods" style={{ flexGrow: split }}>
+            <h3 className="device-section-title">Methods</h3>
+            <table className="table table-sm table-striped device-methods">
               <thead>
                 <tr>
-                  <th>Key</th>
-                  <th>Value</th>
+                  <SortableTh
+                    sorter={methodSorter}
+                    column="name"
+                    label="Name"
+                  />
+                  <th className="method-run-col">Run</th>
                 </tr>
               </thead>
               <tbody>
-                {feedbacks.BoolValues.length > 0 ? (
-                  feedbacks.BoolValues.map((f) => (
-                    <tr key={f.FeedbackKey}>
-                      <td className="text-break">{f.FeedbackKey}</td>
-                      <td className="feedback-value">{String(f.Value)}</td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan={2}>None</td>
-                  </tr>
-                )}
+                {sortedMethods.map((m) => (
+                  <MethodRow
+                    key={`${deviceKey}|${m.Name}|${m.Params.map((p) => p.Name).join(',')}`}
+                    method={m}
+                    deviceKey={deviceKey}
+                  />
+                ))}
               </tbody>
             </table>
-
-            <h4 className="device-subsection-title">Integer</h4>
-            <table className="table table-sm table-striped device-feedback">
-              <thead>
-                <tr>
-                  <th>Key</th>
-                  <th>Value</th>
-                </tr>
-              </thead>
-              <tbody>
-                {feedbacks.IntValues.length > 0 ? (
-                  feedbacks.IntValues.map((f) => (
-                    <tr key={f.FeedbackKey}>
-                      <td className="text-break">{f.FeedbackKey}</td>
-                      <td className="feedback-value">{f.Value}</td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan={2}>None</td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-
-            <h4 className="device-subsection-title">Serial</h4>
-            <table className="table table-sm table-striped device-feedback">
-              <thead>
-                <tr>
-                  <th>Key</th>
-                  <th>Value</th>
-                </tr>
-              </thead>
-              <tbody>
-                {feedbacks.SerialValues.length > 0 ? (
-                  feedbacks.SerialValues.map((f) => (
-                    <tr key={f.FeedbackKey}>
-                      <td className="text-break">{f.FeedbackKey}</td>
-                      <td className="feedback-value">{f.Value}</td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan={2}>None</td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </>
-        )}
-      </div>
+          </section>
+          <div
+            className="split-handle"
+            role="separator"
+            aria-orientation="horizontal"
+            aria-label="Resize methods and feedbacks"
+            aria-valuemin={Math.round(SPLIT_MIN * 100)}
+            aria-valuemax={Math.round(SPLIT_MAX * 100)}
+            aria-valuenow={Math.round(split * 100)}
+            tabIndex={0}
+            title="Drag to resize. Double-click to reset."
+            onPointerDown={(e) =>
+              e.currentTarget.setPointerCapture(e.pointerId)
+            }
+            onPointerMove={dragSplit}
+            onKeyDown={keySplit}
+            onDoubleClick={() => setSplit(SPLIT_DEFAULT)}
+          />
+          <section className="run-feedbacks" style={{ flexGrow: 1 - split }}>
+            <h3 className="device-section-title">Feedbacks</h3>
+            {feedbacks && <FeedbackTable feedbacks={feedbacks} />}
+          </section>
+        </div>
+      )}
     </>
+  );
+};
+
+type FeedbackType = 'Boolean' | 'Integer' | 'Serial';
+type FeedbackColumn = 'key' | 'type' | 'value';
+
+interface FeedbackRow {
+  key: string;
+  type: FeedbackType;
+  value: string;
+}
+
+const FEEDBACK_SORT: SortAccessors<FeedbackRow, FeedbackColumn> = {
+  key: (r) => r.key,
+  type: (r) => r.type,
+  value: (r) => r.value,
+};
+
+// Every feedback in one list: Boolean, Integer and Serial together, with the type as a column. The
+// default order is the device's own, grouped by type; click a heading to sort by it.
+const FeedbackTable = ({ feedbacks }: { feedbacks: DeviceFeedbacks }) => {
+  const sorter = useSort(FEEDBACK_SORT);
+
+  const all = useMemo<FeedbackRow[]>(() => {
+    const toRows = (type: FeedbackType, list: DeviceFeedbacks['BoolValues']) =>
+      list.map((f) => ({
+        key: f.FeedbackKey,
+        type,
+        value: String(f.Value ?? ''),
+      }));
+    return [
+      ...toRows('Boolean', feedbacks.BoolValues),
+      ...toRows('Integer', feedbacks.IntValues),
+      ...toRows('Serial', feedbacks.SerialValues),
+    ];
+  }, [feedbacks]);
+  const rows = useMemo(() => sorter.apply(all), [sorter, all]);
+
+  return (
+    <table className="table table-sm table-striped device-feedback">
+      <thead>
+        <tr>
+          <SortableTh sorter={sorter} column="key" label="Key" />
+          <SortableTh sorter={sorter} column="type" label="Type" />
+          <SortableTh sorter={sorter} column="value" label="Value" />
+        </tr>
+      </thead>
+      <tbody>
+        {rows.length > 0 ? (
+          rows.map((r) => (
+            <tr key={`${r.type}|${r.key}`}>
+              <td className="feedback-key" title={r.key}>
+                {r.key}
+              </td>
+              <td className="feedback-type">{r.type}</td>
+              <td className="feedback-value">{r.value}</td>
+            </tr>
+          ))
+        ) : (
+          <tr>
+            <td colSpan={3}>None</td>
+          </tr>
+        )}
+      </tbody>
+    </table>
   );
 };
 
@@ -552,6 +703,8 @@ interface DeviceDetailRenderProps {
   deviceName?: string;
   liveUpdates: boolean;
   onLiveUpdatesChange: (next: boolean) => void;
+  tab: DetailTab;
+  onTabChange: (next: DetailTab) => void;
   onRefresh: () => void;
   isRefreshing: boolean;
   refreshFailed: boolean;

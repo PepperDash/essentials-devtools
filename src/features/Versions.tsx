@@ -1,27 +1,31 @@
 import { skipToken } from '@reduxjs/toolkit/query';
+import { useMemo } from 'react';
 import useAppParams from '../shared/hooks/useAppParams';
+import { SortableTh } from '../shared/SortableTh';
+import { SortAccessors, useSort } from '../shared/sorting';
 import { Version, useGetVersionsQuery } from '../store/apiSlice';
+
+type VersionColumn = 'name' | 'version';
+const VERSION_SORT: SortAccessors<Version, VersionColumn> = {
+  name: (v) => v.Name,
+  version: (v) => v.Version,
+};
 
 const Versions = () => {
   const { appId } = useAppParams();
   const { data: versions } = useGetVersionsQuery(appId ? { appId } : skipToken);
+  const sorter = useSort(VERSION_SORT);
+
+  // The default order is by name
+  const byName = useMemo(
+    () => [...(versions ?? [])].sort((a, b) => a.Name.localeCompare(b.Name)),
+    [versions]
+  );
+  const rows = useMemo(() => sorter.apply(byName), [sorter, byName]);
 
   if (!versions) {
     return <div>Loading...</div>;
   }
-
-  const unsorted: Version[] = [];
-  Object.assign(unsorted, versions);
-
-  const sorted = unsorted.sort((a, b) => {
-    if (a.Name < b.Name) {
-      return -1;
-    }
-    if (a.Name > b.Name) {
-      return 1;
-    }
-    return 0;
-  });
 
   return (
     <div className="d-flex flex-column h-100" style={{ minHeight: 0 }}>
@@ -30,12 +34,12 @@ const Versions = () => {
         <table className="table table-striped">
           <thead>
             <tr>
-              <th>Name</th>
-              <th>Version</th>
+              <SortableTh sorter={sorter} column="name" label="Name" />
+              <SortableTh sorter={sorter} column="version" label="Version" />
             </tr>
           </thead>
           <tbody>
-            {sorted?.map((i) => (
+            {rows.map((i) => (
               <tr key={i.Name}>
                 <td>{i.Name}</td>
                 <td>{i.Version}</td>

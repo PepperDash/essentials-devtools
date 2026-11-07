@@ -2,6 +2,8 @@ import { skipToken } from '@reduxjs/toolkit/query';
 import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
 import EmptyState from '../shared/components/EmptyState';
 import { FilterSearchText } from '../shared/FilterSearchText';
+import { SortableTh } from '../shared/SortableTh';
+import { SortAccessors, useSort } from '../shared/sorting';
 import useAppParams from '../shared/hooks/useAppParams';
 import { Route, useGetPathsQuery } from '../store/apiSlice';
 import ApiPathDetailDrawer from './ApiPathDetailDrawer';
@@ -18,7 +20,7 @@ const OTHER = 'Other';
  * Groups routes under their leading word, so the long list reads as sections (Get, Execute, ...).
  * A word shared by only one route doesn't earn a section of its own; those go under Other.
  */
-function groupRoutes(routes: Route[]) {
+function groupRoutes(routes: Route[], keepOrder = false) {
   const byWord = new Map<string, Route[]>();
   routes.forEach((r) => {
     const word = leadingWord(r.Name);
@@ -34,7 +36,10 @@ function groupRoutes(routes: Route[]) {
   return [...groups.entries()]
     .map(([name, members]) => ({
       name,
-      routes: members.sort((a, b) => sortKey(a).localeCompare(sortKey(b))),
+      // A column the user has sorted by decides the order within a group; otherwise it's by name
+      routes: keepOrder
+        ? members
+        : members.sort((a, b) => sortKey(a).localeCompare(sortKey(b))),
     }))
     .sort((a, b) =>
       a.name === OTHER
@@ -44,6 +49,12 @@ function groupRoutes(routes: Route[]) {
           : a.name.localeCompare(b.name)
     );
 }
+
+type RouteColumn = 'name' | 'url';
+const ROUTE_SORT: SortAccessors<Route, RouteColumn> = {
+  name: (r) => r.Name,
+  url: (r) => r.Url,
+};
 
 export const ApiPaths = () => {
   const { appId } = useAppParams();
@@ -66,7 +77,12 @@ export const ApiPaths = () => {
     });
   }, [routes, search]);
 
-  const groups = useMemo(() => groupRoutes(visible), [visible]);
+  const sorter = useSort(ROUTE_SORT);
+  // Sorting orders the rows within each group; the groups stay in their own order
+  const groups = useMemo(
+    () => groupRoutes(sorter.apply(visible), sorter.sort !== null),
+    [visible, sorter]
+  );
   // The order the rows appear in, for stepping through them with the arrow keys
   const ordered = useMemo(() => groups.flatMap((g) => g.routes), [groups]);
 
@@ -140,8 +156,8 @@ export const ApiPaths = () => {
           <table className="table table-hover api-paths-table">
             <thead>
               <tr>
-                <th>Name</th>
-                <th>URL</th>
+                <SortableTh sorter={sorter} column="name" label="Name" />
+                <SortableTh sorter={sorter} column="url" label="URL" />
               </tr>
             </thead>
             <tbody>
