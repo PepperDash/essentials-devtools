@@ -72,6 +72,7 @@ const DeviceDetail = ({ item }: DeviceDetailProps) => {
       methods={methods}
       feedbacks={feedbacksQuery.data}
       deviceKey={item.Key}
+      deviceName={item.Name}
       liveUpdates={liveUpdates}
       onLiveUpdatesChange={setLiveUpdates}
       onRefresh={refresh}
@@ -93,6 +94,7 @@ const DeviceDetailRender = ({
   methods,
   feedbacks,
   deviceKey,
+  deviceName,
   liveUpdates,
   onLiveUpdatesChange,
   onRefresh,
@@ -102,7 +104,11 @@ const DeviceDetailRender = ({
   return (
     <>
       <div className="d-flex flex-wrap align-items-center gap-3">
-        <h2 className="me-auto">Device Detail</h2>
+        {/* Name the device being shown, so the pane reads as the list's selection */}
+        <div className="me-auto detail-title">
+          <h2 className="detail-title-name">{deviceName || deviceKey}</h2>
+          {deviceName && <span className="detail-title-key">{deviceKey}</span>}
+        </div>
         {refreshFailed && (
           <span className="small text-danger" role="status">
             Couldn&apos;t refresh; showing the last values read.
@@ -543,6 +549,7 @@ interface DeviceDetailRenderProps {
   methods: DeviceMethods[];
   feedbacks?: DeviceFeedbacks;
   deviceKey: string;
+  deviceName?: string;
   liveUpdates: boolean;
   onLiveUpdatesChange: (next: boolean) => void;
   onRefresh: () => void;

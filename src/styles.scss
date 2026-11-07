@@ -454,17 +454,6 @@ a:hover {
   color: $white !important;
 }
 
-// The device list beside the detail pane; the whole width on its own on a phone
-.device-list-pane {
-  // Just wide enough for a key and a name; the detail pane gets the rest
-  flex: 0 0 clamp(15rem, 24%, 21rem);
-  min-width: 0;
-
-  @include media-breakpoint-down(md) {
-    flex: 1 1 auto;
-  }
-}
-
 .list-selected-primary {
   background-color: $primary !important;
   color: $white !important;
@@ -1980,13 +1969,6 @@ $elastic: linear(
   }
 }
 
-// Device list: keys read as identifiers, names as labels
-.device-key {
-  font-family: $font-family-monospace;
-  font-size: 0.8125rem;
-  overflow-wrap: anywhere;
-}
-
 // A device value (a property's or a feedback's) reads as code
 @mixin code-value {
   font-family: $font-family-monospace;
@@ -2106,4 +2088,135 @@ $elastic: linear(
   .feedback-value {
     @include code-value;
   }
+}
+
+// Master-detail: a list rail and the detail it controls, as one panel on one surface
+.master-detail {
+  display: flex;
+  overflow: hidden;
+  background-color: var(--app-surface);
+  border: 1px solid var(--bs-border-color);
+  border-radius: $border-radius-lg;
+  box-shadow: $box-shadow-sm;
+}
+
+.master-pane {
+  flex: 0 0 clamp(16rem, 26%, 22rem);
+  min-width: 0;
+  min-height: 0;
+  background-color: var(--app-surface-muted);
+  border-right: 1px solid var(--bs-border-color);
+
+  @include media-breakpoint-down(md) {
+    flex: 1 1 auto;
+    border-right: 0;
+  }
+}
+
+.master-pane-header {
+  padding: 0.875rem 0.875rem 0.75rem;
+  border-bottom: 1px solid var(--bs-border-color);
+}
+
+.master-pane-title {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+
+.master-pane-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.device-items {
+  margin: 0;
+  padding: 0.375rem;
+  list-style: none;
+}
+
+.device-item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.0625rem;
+  width: 100%;
+  padding: 0.4375rem 0.625rem;
+  text-align: left;
+  color: var(--bs-body-color);
+  background: transparent;
+  border: 0;
+  border-radius: $border-radius;
+
+  &:hover {
+    background-color: var(--app-hover);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--app-accent);
+    outline-offset: -2px;
+  }
+
+  &.selected {
+    background-color: var(--app-accent-soft);
+    box-shadow: inset 3px 0 0 var(--app-accent);
+
+    .device-item-name {
+      color: var(--app-accent);
+      font-weight: 600;
+    }
+  }
+}
+
+.device-item-name {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.device-item-key {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: $font-family-monospace;
+  font-size: 0.75rem;
+  color: var(--bs-secondary-color);
+}
+
+.detail-pane {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+  padding: 0.875rem 1.25rem;
+
+  // The empty state fills the pane rather than floating near the top of a page
+  .empty-state {
+    margin: auto;
+    background: transparent;
+    border: 0;
+    box-shadow: none;
+  }
+}
+
+// The detail header names the selected device: its name large, its key beneath in code style
+.detail-title {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.detail-title-name {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.detail-title-key {
+  font-family: $font-family-monospace;
+  font-size: 0.8125rem;
+  color: var(--bs-secondary-color);
 }
