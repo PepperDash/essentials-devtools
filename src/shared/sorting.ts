@@ -17,11 +17,17 @@ const collator = new Intl.Collator(undefined, {
   sensitivity: 'base',
 });
 
-/** Numbers compare as numbers, everything else as text: numeric-aware ("2" before "10"), no case. */
-export const compareValues = (a: SortValue, b: SortValue) =>
-  typeof a === 'number' && typeof b === 'number'
-    ? a - b
-    : collator.compare(String(a ?? ''), String(b ?? ''));
+/**
+ * Numbers compare as numbers and come before text; text compares numeric-aware ("2" before "10"),
+ * no case. Splitting by kind keeps the order transitive when a column mixes the two.
+ */
+export const compareValues = (a: SortValue, b: SortValue) => {
+  const aNum = typeof a === 'number';
+  const bNum = typeof b === 'number';
+  if (aNum && bNum) return a - b;
+  if (aNum !== bNum) return aNum ? -1 : 1;
+  return collator.compare(String(a ?? ''), String(b ?? ''));
+};
 
 /** The rows ordered by one column. The sort is stable, so ties keep the order they came in. */
 export function sortRows<T, C extends string>(

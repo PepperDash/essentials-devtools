@@ -119,3 +119,11 @@ describe('SortableTh with useSort', () => {
     expect(sortOf('Size').getAttribute('aria-sort')).toBe('ascending');
   });
 });
+
+describe('compareValues with mixed kinds', () => {
+  it('puts numbers before text and keeps the order transitive', () => {
+    const rows = ['-5', -2, 'b', -10, 'a', 3];
+    const sorted = [...rows].sort(compareValues);
+    expect(sorted).toEqual([-10, -2, 3, '-5', 'a', 'b']);
+  });
+});
