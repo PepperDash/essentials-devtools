@@ -132,10 +132,22 @@ const apiSlice = createApi({
       DeviceFeedbacks,
       { appId: string; key: string }
     >({
-      query: ({ appId, key }) => ({
-        url: `/${appId}/api/deviceFeedbacks/${key}`,
-        method: 'GET',
-      }),
+      // The server answers 404 for a device that has no feedbacks (it doesn't implement
+      // IHasFeedback). That's a normal "none", not a failure, so it becomes an empty set.
+      async queryFn({ appId, key }, api, extraOptions, baseQuery) {
+        const result = await baseQuery({
+          url: `/${appId}/api/deviceFeedbacks/${key}`,
+          method: 'GET',
+        });
+        if ((result.error as { status?: number } | undefined)?.status === 404) {
+          return {
+            data: { BoolValues: [], IntValues: [], SerialValues: [] },
+          };
+        }
+        return result.error
+          ? { error: result.error }
+          : { data: result.data as DeviceFeedbacks };
+      },
       providesTags: (_result, _error, { key }) => [
         { type: 'DeviceFeedback', id: key },
       ],

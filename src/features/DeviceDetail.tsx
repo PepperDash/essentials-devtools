@@ -87,6 +87,30 @@ const readSplit = () => {
   }
 };
 
+// The feedbacks endpoint only lists devices that implement IHasFeedback. Many devices expose their
+// feedbacks only as properties (BoolFeedback / IntFeedback / StringFeedback), so when the endpoint
+// has nothing, build the same table from those properties.
+const feedbacksFromProperties = (
+  properties: DeviceProperties[]
+): DeviceFeedbacks => {
+  const pick = (type: string) =>
+    properties
+      .filter((p) => p.CanRead && p.Type === type)
+      .map((p) => ({
+        FeedbackKey: p.Name,
+        // Properties arrive formatted by .NET ("True"); feedbacks elsewhere read "true"
+        Value: type === 'BoolFeedback' ? p.Value.toLowerCase() : p.Value,
+      }));
+  return {
+    BoolValues: pick('BoolFeedback'),
+    IntValues: pick('IntFeedback'),
+    SerialValues: pick('StringFeedback'),
+  };
+};
+
+const hasFeedbacks = (f: DeviceFeedbacks) =>
+  f.BoolValues.length + f.IntValues.length + f.SerialValues.length > 0;
+
 const DeviceDetail = ({ item }: DeviceDetailProps) => {
   const { appId } = useAppParams();
   const [liveUpdates, setLiveUpdates] = useState(true);
@@ -103,6 +127,19 @@ const DeviceDetail = ({ item }: DeviceDetailProps) => {
   const feedbacksQuery = useGetDeviceFeedbacksQuery(args, polling);
 
   const properties = propertiesQuery.data;
+  // currentData, not data: data keeps the previous device's result while the new one loads
+  const endpointFeedbacks = feedbacksQuery.currentData;
+  const feedbacks = useMemo(() => {
+    if (!properties) return endpointFeedbacks;
+    if (endpointFeedbacks && hasFeedbacks(endpointFeedbacks)) {
+      return endpointFeedbacks;
+    }
+    const derived = feedbacksFromProperties(properties);
+    // Only fall back once the endpoint has answered, so rows don't swap as it loads
+    return endpointFeedbacks && hasFeedbacks(derived)
+      ? derived
+      : endpointFeedbacks;
+  }, [properties, endpointFeedbacks]);
   if (!properties || !methods) {
     return <div>Loading...</div>;
   }
@@ -116,7 +153,7 @@ const DeviceDetail = ({ item }: DeviceDetailProps) => {
     <DeviceDetailRender
       properties={properties}
       methods={methods}
-      feedbacks={feedbacksQuery.data}
+      feedbacks={feedbacks}
       deviceKey={item.Key}
       deviceName={item.Name}
       liveUpdates={liveUpdates}
