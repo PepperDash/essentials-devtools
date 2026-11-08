@@ -1842,6 +1842,35 @@ $elastic: linear(
   border-bottom-color: var(--bs-border-color);
 }
 
+.plugin-file-row > td {
+  // A plugin file's header row: a muted band that follows the theme (Bootstrap's table-secondary
+  // stays light in dark mode)
+  --bs-table-bg-state: var(--app-surface-muted);
+  color: var(--bs-body-color);
+  background-color: var(--app-surface-muted);
+  border-top: 1px solid var(--bs-border-color);
+  border-bottom: 1px solid var(--bs-border-color);
+}
+
+.plugin-issues-table {
+  // Fixed widths on the narrow columns; the message column takes whatever is left
+  table-layout: fixed;
+  width: 100%;
+}
+
+.plugin-file-name {
+  overflow-wrap: break-word;
+}
+
+.plugin-issue-detail {
+  margin: 0;
+  padding: 0.75rem 1rem;
+  font-size: 0.75rem;
+  white-space: pre-wrap;
+  color: var(--bs-secondary-color);
+  background-color: var(--app-surface-muted);
+}
+
 .api-group-count {
   margin-left: 0.5rem;
   padding: 0.05rem 0.45rem;
