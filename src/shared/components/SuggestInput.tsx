@@ -67,9 +67,12 @@ const SuggestInput = ({
       const step = e.key === 'ArrowDown' ? 1 : -1;
       setActive((a) => (a + step + shown.length) % shown.length);
     } else if (e.key === 'Enter' && isOpen && active >= 0) {
-      // Pick the highlighted suggestion rather than submitting the form around the field
+      // Pick the highlighted suggestion rather than submitting the form around the field. The
+      // list can shrink under a highlight (new data loaded), so clear a stale index instead.
       e.preventDefault();
-      pick(shown[active]);
+      const item = shown[active];
+      if (item) pick(item);
+      else setActive(-1);
     } else if (e.key === 'Escape' && isOpen) {
       // Close the list only, not the panel the field sits in
       e.stopPropagation();

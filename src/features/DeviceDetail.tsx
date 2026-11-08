@@ -1,5 +1,11 @@
 import { skipToken } from '@reduxjs/toolkit/query';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from 'react';
 import { Button, Form, InputGroup, Modal, Nav, Spinner } from 'react-bootstrap';
 import useAppParams from '../shared/hooks/useAppParams';
 import { SortableTh } from '../shared/SortableTh';
@@ -363,7 +369,7 @@ type FeedbackColumn = 'key' | 'type' | 'value';
 interface FeedbackRow {
   key: string;
   type: FeedbackType;
-  value: string;
+  value: string | number;
 }
 
 const FEEDBACK_SORT: SortAccessors<FeedbackRow, FeedbackColumn> = {
@@ -378,11 +384,19 @@ const FeedbackTable = ({ feedbacks }: { feedbacks: DeviceFeedbacks }) => {
   const sorter = useSort(FEEDBACK_SORT);
 
   const all = useMemo<FeedbackRow[]>(() => {
-    const toRows = (type: FeedbackType, list: DeviceFeedbacks['BoolValues']) =>
+    const toRows = (
+      type: FeedbackType,
+      list: DeviceFeedbacks['BoolValues']
+    ): FeedbackRow[] =>
       list.map((f) => ({
         key: f.FeedbackKey,
         type,
-        value: String(f.Value ?? ''),
+        // Integers stay numbers so signed values sort numerically (-10 before -2); the text
+        // collator can't read the sign
+        value:
+          type === 'Integer' && f.Value !== '' && f.Value != null
+            ? Number(f.Value)
+            : String(f.Value ?? ''),
       }));
     return [
       ...toRows('Boolean', feedbacks.BoolValues),
@@ -425,6 +439,22 @@ const FeedbackTable = ({ feedbacks }: { feedbacks: DeviceFeedbacks }) => {
 // One method, with its parameters as inline inputs. Execute sends the values as entered; a method
 // whose only parameter is a Boolean also gets Press & Release, which sends true, waits the delay,
 // then sends false.
+// Press & Release timers outlive the row: switching tabs unmounts the rows, but the release must
+// still go out, and the method must stay busy until it has. Keyed by app/device/method.
+const activePulses = new Set<string>();
+const pulseListeners = new Set<() => void>();
+const setPulse = (key: string, active: boolean) => {
+  if (active) activePulses.add(key);
+  else activePulses.delete(key);
+  pulseListeners.forEach((l) => l());
+};
+const subscribePulses = (l: () => void) => {
+  pulseListeners.add(l);
+  return () => {
+    pulseListeners.delete(l);
+  };
+};
+
 const MethodRow = ({ method, deviceKey }: MethodRowProps) => {
   const { appId } = useAppParams();
   const [executeMethod, { isLoading: isExecuting }] =
@@ -434,7 +464,10 @@ const MethodRow = ({ method, deviceKey }: MethodRowProps) => {
       method.Params.map((p) => [p.Name, defaultParamValue(p.Type)])
     )
   );
-  const [isPressing, setIsPressing] = useState(false);
+  const pulseKey = `${appId}|${deviceKey}|${method.Name}`;
+  const isPressing = useSyncExternalStore(subscribePulses, () =>
+    activePulses.has(pulseKey)
+  );
   const [pressDelay, setPressDelay] = useState(String(PRESS_DELAY_DEFAULT_S));
   const [result, setResult] = useState<'sent' | 'failed' | null>(null);
 
@@ -478,14 +511,17 @@ const MethodRow = ({ method, deviceKey }: MethodRowProps) => {
   };
 
   const handlePressRelease = async () => {
-    if (!isPressable || !pressDelayValid) return;
+    if (!isPressable || !pressDelayValid || activePulses.has(pulseKey)) return;
     setResult(null);
-    setIsPressing(true);
+    setPulse(pulseKey, true);
     try {
       // Time the delay from when true goes out, so the gap between the two sends is the delay
       // entered (or one round trip, if that is longer)
       const start = performance.now();
       if (!(await run(['true']))) {
+        // A failed response doesn't prove the press wasn't applied (the connection may have
+        // dropped after the processor acted), so try to release anyway and keep the failure
+        await run(['false']).catch(() => false);
         setResult('failed');
         return;
       }
@@ -495,7 +531,7 @@ const MethodRow = ({ method, deviceKey }: MethodRowProps) => {
       }
       setResult((await run(['false'])) ? 'sent' : 'failed');
     } finally {
-      setIsPressing(false);
+      setPulse(pulseKey, false);
     }
   };
 

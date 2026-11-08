@@ -22,7 +22,7 @@ const systemPrefersDark = () =>
 // The person's explicit choice, else the operating system's. Keep in step with the inline script
 // in index.html, which sets the attribute before first paint.
 export function resolveTheme(): Theme {
-  return readStored() ?? (systemPrefersDark() ? 'dark' : 'light');
+  return explicitChoice ?? readStored() ?? (systemPrefersDark() ? 'dark' : 'light');
 }
 
 const listeners = new Set<() => void>();
@@ -32,7 +32,11 @@ function apply(theme: Theme) {
   listeners.forEach((l) => l());
 }
 
+// Remembered in memory too, so a blocked localStorage doesn't lose the choice mid-visit
+let explicitChoice: Theme | null = null;
+
 export function setTheme(theme: Theme) {
+  explicitChoice = theme;
   try {
     window.localStorage.setItem(STORAGE_KEY, theme);
   } catch {
@@ -49,7 +53,7 @@ function subscribe(listener: () => void) {
       ? window.matchMedia(DARK_QUERY)
       : null;
   const onSystemChange = () => {
-    if (!readStored()) apply(resolveTheme());
+    if (!explicitChoice && !readStored()) apply(resolveTheme());
   };
   mq?.addEventListener('change', onSystemChange);
   return () => {

@@ -2090,6 +2090,18 @@ $elastic: linear(
     width: 6rem;
   }
 
+  // On a phone the detail pane is narrower than 22rem: shrink Key and Type so Value keeps room
+  // (the key still ellipsizes, with its full text in the title)
+  @media (max-width: 575.98px) {
+    > thead > tr > th:nth-child(1) {
+      width: 7rem;
+    }
+
+    > thead > tr > th:nth-child(2) {
+      width: 4.5rem;
+    }
+  }
+
   .feedback-key {
     overflow: hidden;
     text-overflow: ellipsis;

@@ -48,7 +48,7 @@
   cursor: pointer;
 
   &:hover {
-    color: var(--bs-primary);
+    color: var(--app-accent);
   }
 }
 
@@ -117,20 +117,20 @@
   }
 
   &:hover {
-    border-color: var(--bs-primary);
-    color: var(--bs-primary);
+    border-color: var(--app-accent);
+    color: var(--app-accent);
   }
 }
 
 .portButtonActive {
-  border-color: var(--bs-primary) !important;
-  color: var(--bs-primary) !important;
+  border-color: var(--app-accent) !important;
+  color: var(--app-accent) !important;
 }
 
 // Route command sent, awaiting confirmation over the feedback WebSocket.
 .portPending {
   flex-shrink: 0;
-  color: var(--bs-primary);
+  color: var(--app-accent);
   font-size: 0.6rem;
   animation: portPendingPulse 1s ease-in-out infinite;
 }
