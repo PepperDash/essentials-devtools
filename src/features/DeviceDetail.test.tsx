@@ -59,7 +59,12 @@ const adapter: AxiosAdapter = (config) => {
   return Promise.reject(new Error(`Unexpected request ${url}`));
 };
 
-function renderDetail() {
+function renderDetail(
+  item: { Key: string; Name: string; Interfaces?: string[] } = {
+    Key: 'pdu-1',
+    Name: 'PDU 1',
+  }
+) {
   const store = configureStore({
     reducer: { [api.reducerPath]: api.reducer },
     middleware: (getDefault) => getDefault().concat(api.middleware),
@@ -68,10 +73,7 @@ function renderDetail() {
     <Provider store={store}>
       <MemoryRouter initialEntries={['/app01']}>
         <Routes>
-          <Route
-            path="/:appId"
-            element={<DeviceDetail item={{ Key: 'pdu-1', Name: 'PDU 1' }} />}
-          />
+          <Route path="/:appId" element={<DeviceDetail item={item} />} />
         </Routes>
       </MemoryRouter>
     </Provider>
@@ -117,6 +119,21 @@ describe('DeviceDetail live updates', () => {
     expect(count('/deviceProperties/')).toBeGreaterThanOrEqual(2);
     // Methods don't change at runtime, so they aren't polled
     expect(count('/deviceMethods/')).toBe(1);
+  });
+
+  it('does not ask for feedbacks of a device that does not implement IHasFeedback', async () => {
+    renderDetail({
+      Key: 'pdu-1',
+      Name: 'PDU 1',
+      Interfaces: ['IKeyed', 'IKeyName'],
+    });
+    await screen.findByText('PowerOn');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Refresh' }));
+    await act(() => vi.advanceTimersByTimeAsync(0));
+
+    expect(count('/deviceFeedbacks/')).toBe(0);
+    expect(screen.queryByText('powerIsOn')).toBeNull();
   });
 
   it('stops polling when live updates are turned off, and still refreshes on demand', async () => {

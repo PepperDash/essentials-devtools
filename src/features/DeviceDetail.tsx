@@ -111,6 +111,12 @@ const feedbacksFromProperties = (
   };
 };
 
+const NO_FEEDBACKS: DeviceFeedbacks = {
+  BoolValues: [],
+  IntValues: [],
+  SerialValues: [],
+};
+
 const hasFeedbacks = (f: DeviceFeedbacks) =>
   f.BoolValues.length + f.IntValues.length + f.SerialValues.length > 0;
 
@@ -127,12 +133,22 @@ const DeviceDetail = ({ item }: DeviceDetailProps) => {
   const polling = livePolling(liveUpdates ? POLL_INTERVALS_MS.deviceValues : 0);
   const propertiesQuery = useGetDevicePropertiesQuery(args, polling);
   const { data: methods } = useGetDeviceMethodsQuery(args);
-  const feedbacksQuery = useGetDeviceFeedbacksQuery(args, polling);
+  // Only devices implementing IHasFeedback have a feedbacks endpoint; for the rest it answers 404,
+  // which is indistinguishable from a real error, so don't ask. An unknown list (no Interfaces) is
+  // asked anyway.
+  const hasFeedbackEndpoint =
+    !item.Interfaces || item.Interfaces.includes('IHasFeedback');
+  const feedbacksQuery = useGetDeviceFeedbacksQuery(
+    hasFeedbackEndpoint ? args : skipToken,
+    polling
+  );
 
   // currentData, not data: data keeps the previous device's result while the new one loads (or
   // after its request fails), which would show one device's values under another's header
   const properties = propertiesQuery.currentData;
-  const endpointFeedbacks = feedbacksQuery.currentData;
+  const endpointFeedbacks = hasFeedbackEndpoint
+    ? feedbacksQuery.currentData
+    : NO_FEEDBACKS;
   const feedbacks = useMemo(() => {
     if (!properties) return endpointFeedbacks;
     if (endpointFeedbacks && hasFeedbacks(endpointFeedbacks)) {
@@ -150,7 +166,8 @@ const DeviceDetail = ({ item }: DeviceDetailProps) => {
 
   const refresh = () => {
     void propertiesQuery.refetch();
-    void feedbacksQuery.refetch();
+    // A skipped query has nothing to refetch (and refetch would throw)
+    if (hasFeedbackEndpoint) void feedbacksQuery.refetch();
   };
 
   return (

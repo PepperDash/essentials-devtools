@@ -132,22 +132,13 @@ const apiSlice = createApi({
       DeviceFeedbacks,
       { appId: string; key: string }
     >({
-      // The server answers 404 for a device that has no feedbacks (it doesn't implement
-      // IHasFeedback). That's a normal "none", not a failure, so it becomes an empty set.
-      async queryFn({ appId, key }, api, extraOptions, baseQuery) {
-        const result = await baseQuery({
-          url: `/${appId}/api/deviceFeedbacks/${key}`,
-          method: 'GET',
-        });
-        if ((result.error as { status?: number } | undefined)?.status === 404) {
-          return {
-            data: { BoolValues: [], IntValues: [], SerialValues: [] },
-          };
-        }
-        return result.error
-          ? { error: result.error }
-          : { data: result.data as DeviceFeedbacks };
-      },
+      // A device that doesn't implement IHasFeedback answers 404 with an empty body, the same as an
+      // unknown key or a missing route, so a 404 can't be read as "none" here. Callers skip this
+      // request for those devices (see DeviceDetail) and a 404 is left to surface as an error.
+      query: ({ appId, key }) => ({
+        url: `/${appId}/api/deviceFeedbacks/${key}`,
+        method: 'GET',
+      }),
       providesTags: (_result, _error, { key }) => [
         { type: 'DeviceFeedback', id: key },
       ],
@@ -573,6 +564,8 @@ export interface Version {
 export interface IKeyed {
   Key: string;
   Name: string;
+  /** The interfaces the device implements; present on entries from the device list */
+  Interfaces?: string[];
 }
 
 export interface DeviceProperties {
