@@ -51,8 +51,10 @@ const CertificateAlert = ({
   // After the certificate tab was opened, retry once when the user returns to this one
   useEffect(() => {
     if (!opened) return;
+    let fired = false;
     const onReturn = () => {
-      if (document.visibilityState === 'hidden') return;
+      if (document.visibilityState === 'hidden' || fired) return;
+      fired = true;
       setOpened(false);
       retryRef.current();
     };

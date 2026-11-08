@@ -99,7 +99,10 @@ const feedbacksFromProperties = (
       .map((p) => ({
         FeedbackKey: p.Name,
         // Properties arrive formatted by .NET ("True"); feedbacks elsewhere read "true"
-        Value: type === 'BoolFeedback' ? p.Value.toLowerCase() : p.Value,
+        Value:
+          type === 'BoolFeedback'
+            ? (p.Value ?? '').toLowerCase()
+            : (p.Value ?? ''),
       }));
   return {
     BoolValues: pick('BoolFeedback'),
@@ -432,7 +435,10 @@ const FeedbackTable = ({ feedbacks }: { feedbacks: DeviceFeedbacks }) => {
         // Integers stay numbers so signed values sort numerically (-10 before -2); the text
         // collator can't read the sign
         value:
-          type === 'Integer' && f.Value !== '' && f.Value != null
+          type === 'Integer' &&
+          f.Value !== '' &&
+          f.Value != null &&
+          Number.isFinite(Number(f.Value))
             ? Number(f.Value)
             : String(f.Value ?? ''),
       }));

@@ -11,8 +11,10 @@ const PLACEHOLDER = /\{([^}]+)\}/g;
 
 const parse = (raw: string): UrlParameter => {
   const catchAll = raw.startsWith('*');
-  const optional = raw.includes('?') || raw.includes('=');
-  const name = raw.replace(/^\*/, '').split(/[?:=]/)[0];
+  const name = raw.replace(/^\*+/, '').split(/[?:=]/)[0];
+  // Optional means a trailing "?" ("{id?}", "{id:int?}") or a default ("{id=5}"); a "?" inside a
+  // constraint such as {id:regex(^a?$)} doesn't count
+  const optional = raw.endsWith('?') || raw.slice(name.length).startsWith('=');
   return { name, optional, catchAll };
 };
 

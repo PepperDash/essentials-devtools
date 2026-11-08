@@ -102,7 +102,7 @@ const SuggestInput = ({
         autoFocus={autoFocus}
         role="combobox"
         aria-expanded={isOpen}
-        aria-controls={listId}
+        aria-controls={isOpen ? listId : undefined}
         aria-autocomplete="list"
         aria-activedescendant={
           isOpen && active >= 0 ? `${listId}-${active}` : undefined
@@ -148,7 +148,7 @@ const SuggestInput = ({
         >
           {shown.map((item, index) => (
             <li
-              key={item.value}
+              key={`${item.value}|${item.label ?? ''}|${index}`}
               id={`${listId}-${index}`}
               data-index={index}
               role="option"

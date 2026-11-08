@@ -71,10 +71,10 @@ const fileNameParts = (fileName: string) =>
   ));
 
 const toRows = (plugins: PluginLoadReport[]): IssueRow[] =>
-  plugins.flatMap((report) => {
+  plugins.flatMap((report, reportIndex) => {
     const builtAgainst = builtAgainstText(report);
     const make = (issue: PluginIssue | null, index: number): IssueRow => ({
-      key: `${report.FileName}-${index}`,
+      key: `${reportIndex}-${report.FileName}-${index}`,
       report,
       issue,
       builtAgainst,

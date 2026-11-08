@@ -92,7 +92,7 @@ const PathUrl = ({ route, baseUrl }: { route: Route; baseUrl: string }) => {
     >
       {parameters.length > 0 && (
         <div className="d-flex flex-column gap-2 mb-3">
-          {parameters.map((param, index) => (
+          {parameters.map((param) => (
             <Form.Group key={param.name} controlId={`api-param-${param.name}`}>
               <Form.Label>
                 {param.name}
@@ -108,7 +108,6 @@ const PathUrl = ({ route, baseUrl }: { route: Route; baseUrl: string }) => {
                 }
                 suggestions={suggestionsFor(suggestionKind(param.name))}
                 placeholder={`Value for {${param.name}}`}
-                autoFocus={index === 0}
               />
               {suggestionKind(param.name) === 'bridge' &&
                 suggestionsFor('bridge').length === 0 &&
@@ -177,7 +176,11 @@ const ApiPathDetailDrawer = ({
           </div>
           <div>
             <h5>URL</h5>
-            <PathUrl key={route.Url} route={route} baseUrl={url} />
+            <PathUrl
+              key={`${route.Name}|${route.Url}`}
+              route={route}
+              baseUrl={url}
+            />
           </div>
           {route.DataTokens?.Name && (
             <div>
