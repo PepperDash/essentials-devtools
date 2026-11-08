@@ -22,7 +22,9 @@ const systemPrefersDark = () =>
 // The person's explicit choice, else the operating system's. Keep in step with the inline script
 // in index.html, which sets the attribute before first paint.
 export function resolveTheme(): Theme {
-  return explicitChoice ?? readStored() ?? (systemPrefersDark() ? 'dark' : 'light');
+  return (
+    explicitChoice ?? readStored() ?? (systemPrefersDark() ? 'dark' : 'light')
+  );
 }
 
 const listeners = new Set<() => void>();
@@ -45,20 +47,43 @@ export function setTheme(theme: Theme) {
   apply(theme);
 }
 
-function subscribe(listener: () => void) {
-  listeners.add(listener);
-  // Follow the operating system until the person picks a theme themselves
+// One pair of window listeners for all subscribers, attached with the first and removed with the
+// last, rather than a pair per mounted toggle
+let detach: (() => void) | null = null;
+
+function attach() {
   const mq =
     typeof window.matchMedia === 'function'
       ? window.matchMedia(DARK_QUERY)
       : null;
+  // Follow the operating system until the person picks a theme themselves
   const onSystemChange = () => {
     if (!explicitChoice && !readStored()) apply(resolveTheme());
   };
+  // The choice was changed (or cleared) in another tab: follow it. A null key means storage was
+  // cleared wholesale.
+  const onStorage = (e: StorageEvent) => {
+    if (e.key !== null && e.key !== STORAGE_KEY) return;
+    explicitChoice = readStored();
+    apply(resolveTheme());
+  };
   mq?.addEventListener('change', onSystemChange);
+  window.addEventListener('storage', onStorage);
+  return () => {
+    mq?.removeEventListener('change', onSystemChange);
+    window.removeEventListener('storage', onStorage);
+  };
+}
+
+function subscribe(listener: () => void) {
+  listeners.add(listener);
+  detach ??= attach();
   return () => {
     listeners.delete(listener);
-    mq?.removeEventListener('change', onSystemChange);
+    if (listeners.size === 0) {
+      detach?.();
+      detach = null;
+    }
   };
 }
 
