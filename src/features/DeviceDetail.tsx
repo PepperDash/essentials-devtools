@@ -126,8 +126,9 @@ const DeviceDetail = ({ item }: DeviceDetailProps) => {
   const { data: methods } = useGetDeviceMethodsQuery(args);
   const feedbacksQuery = useGetDeviceFeedbacksQuery(args, polling);
 
-  const properties = propertiesQuery.data;
-  // currentData, not data: data keeps the previous device's result while the new one loads
+  // currentData, not data: data keeps the previous device's result while the new one loads (or
+  // after its request fails), which would show one device's values under another's header
+  const properties = propertiesQuery.currentData;
   const endpointFeedbacks = feedbacksQuery.currentData;
   const feedbacks = useMemo(() => {
     if (!properties) return endpointFeedbacks;
