@@ -1,6 +1,7 @@
 import { skipToken } from '@reduxjs/toolkit/query';
 import { useState } from 'react';
-import { Alert, Button, Form } from 'react-bootstrap';
+import { Button, Form } from 'react-bootstrap';
+import CertificateAlert from '../../shared/components/CertificateAlert';
 import ListFiltersHeader from '../../shared/ListFiltersHeader';
 import useAppParams from '../../shared/hooks/useAppParams';
 import {
@@ -38,12 +39,6 @@ const DebugConsole = ({
     (state: RootState) => state.websocket.failedUrls
   );
   const searchText = useAppSelector(selectSearchText);
-  const certUrls = failedUrls
-    ? failedUrls.map((u: string) =>
-        new URL(u).origin.replace(/^wss:/, 'https:').replace(/^ws:/, 'http:')
-      )
-    : null;
-
   const { data: doNotLoadConfigOnNextBoot } =
     useGetDoNotLoadConfigOnNextBootQuery(appId ? { appId } : skipToken);
 
@@ -170,24 +165,12 @@ const DebugConsole = ({
             }
           />
         </div>
-        {certUrls && certUrls.length > 0 && (
-          <Alert
-            variant="warning"
-            className="py-2 px-3 mb-2"
-            style={{ fontSize: '0.82rem' }}
-          >
-            <strong>Connection failed.</strong> The debug server may have an
-            untrusted certificate.{' '}
-            {certUrls.map((certUrl: string, i: number) => (
-              <span key={certUrl}>
-                {i > 0 && ' or '}
-                <Alert.Link href={certUrl} target="_blank" rel="noreferrer">
-                  Open {certUrl} in a new tab
-                </Alert.Link>
-              </span>
-            ))}
-            {', accept the certificate, then try "Start Debug Session" again.'}
-          </Alert>
+        {failedUrls && failedUrls.length > 0 && (
+          <CertificateAlert
+            failedUrls={failedUrls}
+            subject="The debug console connection"
+            onRetry={() => void join(appId)}
+          />
         )}
         <ConsoleWindow filteredItems={filteredItems} />
       </div>
