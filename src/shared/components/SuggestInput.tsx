@@ -65,7 +65,14 @@ const SuggestInput = ({
       e.preventDefault();
       setOpen(true);
       const step = e.key === 'ArrowDown' ? 1 : -1;
-      setActive((a) => (a + step + shown.length) % shown.length);
+      // From no highlight (-1), Down starts at the first item and Up at the last
+      setActive((a) =>
+        a < 0
+          ? step === 1
+            ? 0
+            : shown.length - 1
+          : (a + step + shown.length) % shown.length
+      );
     } else if (e.key === 'Enter' && isOpen && active >= 0) {
       // Pick the highlighted suggestion rather than submitting the form around the field. The
       // list can shrink under a highlight (new data loaded), so clear a stale index instead.

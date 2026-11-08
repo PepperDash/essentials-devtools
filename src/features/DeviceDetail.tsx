@@ -50,6 +50,9 @@ const PRESS_DELAY_DEFAULT_S = 0.75;
 // A provisional floor; the transport's own floor is one request round trip (sends are sequential)
 const PRESS_DELAY_MIN_S = 0.5;
 const PRESS_DELAY_MAX_S = 30;
+// Each Press & Release request is abandoned after this long, so a hung response can't leave the
+// method held: a timed-out press is still followed by a release attempt
+const PRESS_REQUEST_TIMEOUT_MS = 10_000;
 
 type DetailTab = 'run' | 'properties';
 
@@ -57,7 +60,13 @@ type PropertyColumn = 'name' | 'type' | 'value' | 'access';
 const PROPERTY_SORT: SortAccessors<DeviceProperties, PropertyColumn> = {
   name: (p) => p.Name,
   type: (p) => p.Type,
-  value: (p) => p.Value,
+  // Values arrive as strings; numeric types sort as numbers so -10 comes before -2
+  value: (p) => {
+    if (isIntegerType(p.Type) && /^-?\d+$/.test(p.Value.trim())) {
+      return Number(p.Value);
+    }
+    return p.Value;
+  },
   // Read and write, then read only, then neither
   access: (p) => (p.CanRead ? 2 : 0) + (p.canWrite ? 1 : 0),
 };
@@ -132,7 +141,9 @@ const DeviceDetail = ({ item }: DeviceDetailProps) => {
   // tab is in the background, and stops when this component unmounts.
   const polling = livePolling(liveUpdates ? POLL_INTERVALS_MS.deviceValues : 0);
   const propertiesQuery = useGetDevicePropertiesQuery(args, polling);
-  const { data: methods } = useGetDeviceMethodsQuery(args);
+  // currentData, not data, for the same reason as the properties below: the previous device's
+  // methods must not be offered (and run) against the newly selected device
+  const methods = useGetDeviceMethodsQuery(args).currentData;
   // Only devices implementing IHasFeedback have a feedbacks endpoint; for the rest it answers 404,
   // which is indistinguishable from a real error, so don't ask. An unknown list (no Interfaces) is
   // asked anyway.
@@ -552,13 +563,14 @@ const MethodRow = ({ method, deviceKey }: MethodRowProps) => {
   );
   const busy = isExecuting || isPressing;
 
-  const run = async (params: string[]) => {
+  const run = async (params: string[], timeoutMs?: number) => {
     if (!appId) return false;
     const response = await executeMethod({
       appId,
       deviceKey,
       methodName: method.Name,
       params,
+      timeoutMs,
     });
     return !('error' in response);
   };
@@ -579,10 +591,10 @@ const MethodRow = ({ method, deviceKey }: MethodRowProps) => {
       // Time the delay from when true goes out, so the gap between the two sends is the delay
       // entered (or one round trip, if that is longer)
       const start = performance.now();
-      if (!(await run(['true']))) {
+      if (!(await run(['true'], PRESS_REQUEST_TIMEOUT_MS))) {
         // A failed response doesn't prove the press wasn't applied (the connection may have
         // dropped after the processor acted), so try to release anyway and keep the failure
-        await run(['false']).catch(() => false);
+        await run(['false'], PRESS_REQUEST_TIMEOUT_MS).catch(() => false);
         setResult('failed');
         return;
       }
@@ -590,7 +602,9 @@ const MethodRow = ({ method, deviceKey }: MethodRowProps) => {
       if (remaining > 0) {
         await new Promise((resolve) => setTimeout(resolve, remaining));
       }
-      setResult((await run(['false'])) ? 'sent' : 'failed');
+      setResult(
+        (await run(['false'], PRESS_REQUEST_TIMEOUT_MS)) ? 'sent' : 'failed'
+      );
     } finally {
       setPulse(pulseKey, false);
     }

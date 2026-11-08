@@ -151,12 +151,15 @@ const apiSlice = createApi({
         deviceKey: string;
         methodName: string;
         params?: unknown[];
+        /** Abandon the request after this many milliseconds */
+        timeoutMs?: number;
       }
     >({
-      query: ({ appId, deviceKey, methodName, params }) => ({
+      query: ({ appId, deviceKey, methodName, params, timeoutMs }) => ({
         url: `/${appId}/api/deviceCommands/${deviceKey}`,
         method: 'POST',
         data: { deviceKey, methodName, params },
+        timeout: timeoutMs,
       }),
       // A method usually changes the device's state, so show the result without waiting for the
       // next poll

@@ -22,13 +22,14 @@ export const axiosBaseQuery =
       baseUrl: '',
     }
   ): BaseQueryFn<QueryArgs, unknown, unknown> =>
-  async ({ url, method, data, params }: QueryArgs) => {
+  async ({ url, method, data, params, timeout }: QueryArgs) => {
     try {
       const result = await httpClient({
         url: baseUrl + (mapUrl ? mapUrl(url) : url),
         method,
         data,
         params,
+        timeout,
         headers: headers,
       });
 
@@ -49,4 +50,6 @@ export type QueryArgs = {
   method: AxiosRequestConfig['method'];
   data?: AxiosRequestConfig['data'];
   params?: AxiosRequestConfig['params'];
+  /** Milliseconds before the request is abandoned; none by default */
+  timeout?: number;
 };
