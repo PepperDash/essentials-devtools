@@ -47,7 +47,7 @@
    - You are redirected to the first available app slot
 
 3. **Application selector**
-   - The top navigation bar will show a dropdown with available program slots (e.g. `app01`, `app02`)
+   - The top bar will show a dropdown with available program slots (e.g. `app01`, `app02`)
    - Use this to switch between independently running Essentials instances
    - Switching slots does not require re-authentication
 
@@ -55,7 +55,7 @@
 
 ## Step 3: Exploring the Interface
 
-The application has several main sections accessible from the top navigation:
+The application has several main sections accessible from the **page menu** (the button beside the app selector, grouped into Diagnostics, Runtime and Integrations). The sun/moon switch at the right of the top bar changes between light and dark themes:
 
 ### Versions
 
@@ -127,7 +127,7 @@ Let’s start by checking what’s running on your system:
 The Debug Console is the heart of the application for troubleshooting:
 
 1. **Navigate to "Debug Console"**
-   - Click "Debug Console" in the top navigation
+   - Open the page menu and choose **Debug Console**
 
 2. **Start a debug session**
    - Click the blue **Start Debug Session** button

@@ -20,9 +20,12 @@ const MinimumLogLevelDropdown = () => {
   return (
     <Dropdown>
       <Dropdown.Toggle
-        variant="link"
-        className="d-flex align-items-center gap-1 text-reset text-decoration-none py-0"
+        variant="light"
+        size="sm"
+        className="toolbar-btn"
+        title="Minimum log level"
       >
+        <span className="toolbar-btn-caption">Level</span>
         {currentLogLevel.minimumLevel}
         <IconDarkChevronDown />
       </Dropdown.Toggle>

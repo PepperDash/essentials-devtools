@@ -4,6 +4,7 @@ import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import EyeIcon from '../shared/components/EyeIcon';
 import { getCandidateAppIds } from '../shared/functions/hostPaths';
 import useAppParams from '../shared/hooks/useAppParams';
+import ThemeToggle from '../shared/components/ThemeToggle';
 import { useSetLoginCredentialsMutation } from '../store/apiSlice';
 import {
   selectAvailableApps,
@@ -84,6 +85,7 @@ const LoginForm = () => {
           Help
         </Link>
         <span className="text-muted small">Version: {APP_VERSION}</span>
+        <ThemeToggle />
       </div>
       <h1 className="mb-5 text-center">
         PepperDash Essentials Developer Tools

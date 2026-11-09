@@ -6,77 +6,88 @@ This document provides detailed information about every UI element, its purpose,
 
 ## Navigation Components
 
-### Top Navigation Bar
+### Top Bar
 
-**Component**: `TopNav`
+**Components**: `TopNav`, `NavMenu`, `ThemeToggle`
 **Location**: Top of every page
-**Purpose**: Primary navigation between application sections
+**Purpose**: Switch between program slots and pages, and show connection state
 
-**Elements**:
+**Elements, left to right**:
 
-- **Brand**: "Essentials Debugger" - Always visible, non-clickable
-- **Navigation Links**: Six main sections accessible via top menu
+- **Brand**: "Essentials Dev Tools" - Always visible, non-clickable
+- **App selector** (for example `app01`): Switches between the Essentials program slots found on the processor. Styled like the page menu; its panel is sized to its widest entry, and the current app is highlighted with the accent color
+- **Page menu**: A button showing the current page's icon and name. It opens a grouped panel of every page, so no page can be pushed out of view by a narrow window
+- **Version and connection state**: The Dev Tools version, and a status dot showing whether the Debug Console is connected
+- **Help**: Opens the built-in help (these documents)
+- **Theme switch**: Toggles between light and dark (see [Theme](#theme))
 
-**Navigation Links**:
+**Page menu groups**:
 
-| Link          | Route       | Purpose                                               |
-| ------------- | ----------- | ----------------------------------------------------- |
-| Home          | `/home`     | Welcome page and application starting point           |
-| Debug Console | `/console`  | Real-time system monitoring and debugging             |
-| Versions      | `/versions` | View loaded assemblies and version information        |
-| Secrets       | `/secrets`  | View and manage stored credentials (capability-gated) |
-| Config File   | `/config`   | View complete merged configuration                    |
-| Devices       | `/devices`  | Browse and inspect configured devices                 |
-| Types         | `/types`    | View available device types and descriptions          |
+| Group        | Page                      | Route                       | Purpose                                                          |
+| ------------ | ------------------------- | --------------------------- | ---------------------------------------------------------------- |
+| Diagnostics  | Versions                  | `/versions`                 | View loaded assemblies and version information                   |
+| Diagnostics  | API Paths                 | `/apiPaths`                 | Browse the processor's REST routes and try them                  |
+| Diagnostics  | Initialization Exceptions | `/initializationExceptions` | Errors raised while the program started (Essentials 3.0+)        |
+| Diagnostics  | Plugin Issues             | `/pluginLoadIssues`         | Plugins that failed to load, with a count badge (when supported) |
+| Runtime      | Debug Console             | `/console`                  | Real-time system monitoring and debugging                        |
+| Runtime      | Config File               | `/config`                   | View the complete merged configuration                           |
+| Runtime      | Devices                   | `/devices`                  | Browse, inspect and run methods on configured devices            |
+| Runtime      | Types                     | `/types`                    | View available device types and descriptions                     |
+| Runtime      | Routing                   | `/routing`                  | Routing diagram and route control                                |
+| Integrations | Mobile Control            | `/mobileControl`            | Mobile Control connection and action paths                       |
+| Integrations | Secrets                   | `/secrets`                  | View and manage stored credentials (capability-gated)            |
+
+Initialization Exceptions, Plugin Issues and Secrets appear only on processors whose Essentials version or API supports them. Plugin Issues shows a badge with the issue count, red when any are errors and amber otherwise.
 
 **Visual States**:
 
-- **Active**: Link text shows in secondary color when on that page
-- **Inactive**: Standard link appearance
-- **Hover**: Standard link hover effect
+- **Current page**: Highlighted row with the accent color and icon in the menu; the button shows the current page
+- **Hover**: Row highlight
 
 **Responsive Behavior**:
 
-- Collapses to hamburger menu on mobile devices
-- Maintains horizontal layout on desktop and tablet
+- The page menu replaces the old row of links, so narrow windows never clip a page
+
+### Theme
+
+**Components**: `ThemeToggle`, `useTheme`
+**Purpose**: Let users choose a light or dark appearance
+
+- **Default**: Follows the operating system until a choice is made
+- **Persistence**: The choice is remembered in the browser (`essentials-devtools-theme`) and applied before first paint, so there is no flash of the wrong theme
+- **Scope**: Applies to every page, including the routing diagram. The routing diagram no longer has its own dark-mode switch
+- **Fonts**: Inter is bundled with the app, so it displays correctly without internet access
+
+### Empty States
+
+**Component**: `EmptyState`
+**Purpose**: Replace bare "nothing here" text with a clear card
+
+Used by Plugin Issues and Initialization Exceptions ("nothing to report"), the Devices page ("Select a device") and filtered lists with no matches.
+
+---
 
 ---
 
 ## Debug Console Components
 
-### Session Control Panel
+### Console Toolbar
 
 **Location**: Top of Debug Console page
-**Purpose**: Control debug session state and system operations
+**Purpose**: Control the debug session and program, and filter messages. One toolbar card groups controls by what each acts on: session, log, program
 
-#### Start/Stop Session Buttons
+**Top row**:
 
-- **Start Debug Session**: Initiates WebSocket connection for real-time messages
-- **Stop Debug Session**: Closes WebSocket connection and stops message flow
-- **Visual State**: Blue primary buttons, disabled when appropriate
+- **Start/Stop Debug Session**: Opens or closes the WebSocket connection for real-time messages
+- **Level dropdown**: Minimum severity captured (Verbose, Debug, Information, Warning, Error, Fatal). Updates immediately and affects new messages only
+- **Program controls (far right)**: The **Do Not Load Config on Next Boot** switch, **Load Config** (available only while that switch is on) and **Restart Program** (asks for confirmation) sit together
 
-#### System Control Buttons
+**Second row (filters)**:
 
-- **Load Config**: Manually reload configuration (only available when "Do Not Load Config" is checked)
-- **Restart Program**: Complete system restart with confirmation modal
+- **Search** box, **Devices** filter dropdown and **Clear Filters**
+- **Message Count**, **Clear Console Trace** and **Export Log** sit at the right of this row
 
-#### Configuration Controls
-
-- **Do Not Load Config on Next Boot**: Checkbox to control configuration loading behavior
-- **State**: Checked = don't load config, Unchecked = load config normally
-
-#### Minimum Log Level Dropdown
-
-- **Purpose**: Set minimum severity level for captured messages
-- **Options**: Verbose, Debug, Information, Warning, Error, Fatal
-- **Default**: Information
-- **Behavior**: Dropdown updates immediately, affects new messages only
-
-#### Message Counter
-
-- **Display**: "Message Count: [number]"
-- **Purpose**: Shows total messages received in current session
-- **Updates**: Real-time during active debug session
+**Message table**: The header is a proper bar and stays visible while rows scroll. Log levels are colored, and the Level column no longer truncates.
 
 ### Filtering Components
 
@@ -144,19 +155,20 @@ This document provides detailed information about every UI element, its purpose,
 
 **Layout**:
 
-- **Two columns**: Name and URL
-- **Sortable**: Alphabetically sorted by route name
-- **Striped rows**: Bootstrap `table-striped` styling
+- **Heading with count**: For example "40 paths"
+- **Search box**: Filters by route name or URL, with a result count
+- **Two columns**: Name and URL, with a sticky header
+- **Grouped rows**: Routes are grouped by their leading word (Debug, Dev, Execute, Get...), each group with a count
 
 **Interaction**:
 
-- **Click row**: Selects the route and opens the detail drawer
-- **Selected row**: Highlighted with `table-primary`
+- **Click row**: Selects the route and opens the detail drawer; the selected row stays readable in both themes
+- **Layout**: The table keeps room beside the open drawer so URLs stay visible
 
 ### API Path Detail Drawer
 
 **Component**: `ApiPathDetailDrawer`
-**Purpose**: Show complete detail for a selected API route
+**Purpose**: Show complete detail for a selected API route and build its URL
 
 **Location**: Slides in from right side of screen
 **Trigger**: Click on any route row
@@ -164,12 +176,14 @@ This document provides detailed information about every UI element, its purpose,
 **Content Sections**:
 
 1. **Name**: Route name
-2. **URL**: Full URL as a clickable link (opens in new tab)
-3. **Data Token Name**: Shown only when present
+2. **URL**: Full URL in a code box, with **Copy URL** and **Open in new tab** buttons
+3. **Parameters**: A field for each `{parameter}` in the route; the URL above updates live as you type. Device, bridge and type parameters offer a list to pick from (`SuggestInput`) but accept any text
+4. **Data Token Name**: Shown only when present
 
 **Behavior**:
 
 - No backdrop (main content remains interactive)
+- Up and down arrow keys step through the paths while the drawer is open
 - Close button dismisses the drawer
 
 ---
@@ -223,7 +237,7 @@ A single toolbar strip above the diagram canvas holds all filtering and connecti
   - The dropdown button turns amber/warning-colored whenever at least one device is hidden
 - **Hide unconnected devices** switch: When on, devices with no visible tie line endpoint (after other filters are applied) are removed from the canvas entirely
 - **Hide unconnected ports** switch: When on, each remaining device card only shows the input/output ports that currently have a visible tie line attached, instead of every port the device exposes
-- **Dark mode** switch: Toggles the canvas and device node cards between dark and light styling (on by default)
+- **Theme**: The diagram follows the app-wide light/dark theme; there is no separate dark-mode switch here (use the theme switch in the top bar)
 - **Live/Offline badge**: Green "Live" when the routing feedback WebSocket is connected, gray "Offline" otherwise. Only relevant on PepperDashEssentials.dll 3.0+; earlier versions always show "Offline" since there is no live feedback to connect to
 - **Refresh button** (circular-arrow icon): Re-fetches the routing devices/tie-lines snapshot over HTTP and forces the feedback WebSocket to disconnect and reconnect. Use this if the "Live" badge appears stuck on "Offline" or after the routing feedback server has restarted
 
@@ -504,42 +518,37 @@ the flag that would actually be sent.
 
 ## Device Management Components
 
-### Device List
+### Devices Panel
 
-**Location**: Left side of Devices page
-**Purpose**: Display all configured devices for selection
+**Component**: `DeviceList`, `DeviceDetail`
+**Location**: Devices page (`/:appId/devices`)
+**Purpose**: Browse devices and inspect or operate the selected one in a single master-detail panel
 
-**Layout**:
+**Device list (left rail)**:
 
-- **Header row**: "Key" and "Name" column headers
-- **Device rows**: All configured devices with Key and Name
-- **Fixed width**: Consistent column widths
+- **Heading with count**: "Devices 22", or "2 of 22" while filtered
+- **Filter box**: Narrows the list as you type
+- **Rows**: Name with the device key beneath it in monospace; the selected row is highlighted with the accent color
+- **Selection in the URL**: The selected device is kept as `?device=<key>`, so a link or reload returns to the same device
+- **Empty state**: "Select a device" until one is chosen
 
-**Interaction**:
+**Detail pane (right)**:
 
-- **Click**: Select device to show details
-- **Hover**: Visual feedback on hover
-- **Selection**: Single selection only
+- **Header**: The device name with its key beneath; **Live updates (every 2s)** switch and **Refresh** button
+- **Tabs**: **Methods & Feedbacks** and **Properties**, each with a count badge
 
-**Content**:
+#### Methods & Feedbacks tab
 
-- **Key**: Technical identifier used in configuration
-- **Name**: Human-readable device name
-- **Sorting**: Devices appear in configuration order
+- **Methods table**: One row per method with a fixed, right-aligned **Run** column so rows line up
+  - No parameters: just **Execute**
+  - One simple parameter (text, number, true/false): entered inline, attached to **Execute**. A field shows an error outline until a valid value is entered, and Execute stays disabled
+  - Several parameters, or any object/action parameter: **Execute** opens a dialog
+  - Single Boolean parameter (for example VolumeUp): a **Press & Release** control with a delay field (0.5-30 s) sends `true`, then `false` after the delay. A true/false dropdown with **Execute** sends one value
+- **Feedbacks table**: Key, Type and Value, with values shown in code style and updated live. All feedback tables share one column layout
 
-### Device Detail Panel
+#### Properties tab
 
-**Location**: Right side of Devices page
-**Purpose**: Display detailed information about selected device
-
-**Current State**: Placeholder implementation
-**Planned Content**:
-
-- Device status and connection state
-- Real-time property values
-- Available methods and commands
-- Recent activity log
-- Configuration details
+- Property names and types stay on one line, values are shown in monospace, and an **R/W** badge shows read and write access
 
 ---
 
@@ -561,6 +570,7 @@ the flag that would actually be sent.
 - **Name**: Full assembly name including namespace
 - **Version**: Complete version string with build information
 - **Filtering**: No built-in filtering (use browser search)
+- **Sticky header**: Every table header in the app stays in view while its rows scroll
 
 ### Types List
 
@@ -572,6 +582,7 @@ the flag that would actually be sent.
 - **Three columns**: Type Name, Class Type, Description
 - **Sticky header**: Headers remain visible during scroll
 - **Sortable**: Alphabetically sorted by type name
+- **Search**: Filters by type name, class or description, with a result count and an empty state when nothing matches
 
 **Content**:
 
@@ -620,8 +631,16 @@ the flag that would actually be sent.
 ### Search Inputs
 
 **Usage**: Message filtering and search
-**Features**: Debounced input, placeholder text, clear functionality
-**Styling**: Form control with border styling
+**Features**: Search icon, debounced input (delay set per page), placeholder text, clear functionality, result count where a list is filtered
+**Styling**: Visible border in dark mode as well as light
+
+Also on: Devices, Types, API Paths and the Mobile Control action paths (filter by messenger key or path).
+
+### Suggest Inputs
+
+**Component**: `SuggestInput`
+**Purpose**: A text field with a filterable suggestion list
+**Features**: Keyboard selection, clear button, accepts any text even when it is not in the list. Used for the API Paths drawer parameters.
 
 ---
 
@@ -658,23 +677,24 @@ the flag that would actually be sent.
 
 ### Color Scheme
 
-**Primary Colors**:
+The app uses design tokens in `styles.scss` with a light theme and a dark theme (Bootstrap's `data-bs-theme`).
 
-- Primary: #4466a2 (Blue)
-- Secondary: #7f7f7f (Gray)
-- Success: #00b5aa (Teal)
-- Warning: #ff9400 (Orange)
+**Brand and status colors (both themes)**:
+
+- Primary: #005294 (Essentials brand blue)
+- Secondary / muted: #64748b (Slate)
+- Success: #00a39a (Teal)
+- Warning: #f59e0b (Amber)
 - Danger: #d90169 (Red)
 
-**Background Colors**:
+**Light theme**: page background #f1f4f9, body text #334155, white panels
+**Dark theme**: page background #0b1220, body text #cbd5e1, panels #162033
 
-- Body: #e9edf3 (Light Gray)
-- White: #ffffff
-- Very Light: #f5f5f5
+Panels use soft shadows, rounded corners and a translucent "glass" surface.
 
 ### Typography
 
-**Base Font**: Roboto, 'Helvetica Neue', sans-serif
+**Base Font**: Inter (bundled with the app), with system sans-serif fallbacks
 **Base Size**: 0.875rem (14px)
 **Line Height**: Default browser settings
 **Monospace**: For code/configuration display

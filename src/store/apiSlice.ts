@@ -132,6 +132,9 @@ const apiSlice = createApi({
       DeviceFeedbacks,
       { appId: string; key: string }
     >({
+      // A device that doesn't implement IHasFeedback answers 404 with an empty body, the same as an
+      // unknown key or a missing route, so a 404 can't be read as "none" here. Callers skip this
+      // request for those devices (see DeviceDetail) and a 404 is left to surface as an error.
       query: ({ appId, key }) => ({
         url: `/${appId}/api/deviceFeedbacks/${key}`,
         method: 'GET',
@@ -148,12 +151,15 @@ const apiSlice = createApi({
         deviceKey: string;
         methodName: string;
         params?: unknown[];
+        /** Abandon the request after this many milliseconds */
+        timeoutMs?: number;
       }
     >({
-      query: ({ appId, deviceKey, methodName, params }) => ({
+      query: ({ appId, deviceKey, methodName, params, timeoutMs }) => ({
         url: `/${appId}/api/deviceCommands/${deviceKey}`,
         method: 'POST',
         data: { deviceKey, methodName, params },
+        timeout: timeoutMs,
       }),
       // A method usually changes the device's state, so show the result without waiting for the
       // next poll
@@ -561,6 +567,8 @@ export interface Version {
 export interface IKeyed {
   Key: string;
   Name: string;
+  /** The interfaces the device implements; present on entries from the device list */
+  Interfaces?: string[];
 }
 
 export interface DeviceProperties {
@@ -587,7 +595,7 @@ interface Feedback {
   Value: string;
 }
 
-interface MethodParam {
+export interface MethodParam {
   Name: string;
   Type: string;
 }

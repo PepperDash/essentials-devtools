@@ -1,7 +1,11 @@
 import { skipToken } from '@reduxjs/toolkit/query';
-import { Fragment, useState } from 'react';
+import { Fragment, useMemo, useState } from 'react';
 import { Badge } from 'react-bootstrap';
+import EmptyState from '../shared/components/EmptyState';
+import { FilterSearchText } from '../shared/FilterSearchText';
 import useAppParams from '../shared/hooks/useAppParams';
+import { SortableTh } from '../shared/SortableTh';
+import { SortAccessors, useSort } from '../shared/sorting';
 import {
   PluginLoadReport,
   useGetPluginLoadIssuesQuery,
@@ -14,13 +18,86 @@ import {
   statusVariant,
 } from '../store/pluginLoadIssuesContract';
 
-const COLUMNS = 4;
+type PluginIssue = PluginLoadReport['Issues'][number];
 
-const builtAgainstText = (report: PluginLoadReport) => {
-  const entries = Object.entries(report.BuiltAgainst ?? {});
-  if (entries.length === 0) return null;
-  return entries.map(([pkg, version]) => `${pkg} ${version}`).join(', ');
+// One table row per issue. A plugin that reports no issues still gets a row (issue is null) so a
+// plugin that failed to load can't disappear from the list.
+interface IssueRow {
+  key: string;
+  report: PluginLoadReport;
+  issue: PluginIssue | null;
+  builtAgainst: string;
+  searchText: string;
+}
+
+type IssueColumn =
+  | 'severity'
+  | 'plugin'
+  | 'version'
+  | 'status'
+  | 'category'
+  | 'message'
+  | 'triggeredBy'
+  | 'builtAgainst';
+
+const ISSUE_SORT: SortAccessors<IssueRow, IssueColumn> = {
+  // Errors before warnings when ascending
+  severity: ({ issue }) => (issue ? (issue.Severity === 'Error' ? 0 : 1) : 2),
+  plugin: ({ report }) => report.FileName,
+  version: ({ report }) => report.Version,
+  status: ({ report }) => statusLabel(report.Status),
+  category: ({ issue }) => (issue ? categoryLabel(issue.Category) : ''),
+  message: ({ issue }) => issue?.Message,
+  triggeredBy: ({ issue }) => issue?.TriggeredBy,
+  builtAgainst: ({ builtAgainst }) => builtAgainst,
 };
+
+const builtAgainstText = (report: PluginLoadReport) =>
+  Object.entries(report.BuiltAgainst ?? {})
+    .map(([pkg, version]) => `${pkg} ${version}`)
+    .join(', ');
+
+// Lets a long file name wrap after a dot instead of in the middle of a word
+const fileNameParts = (fileName: string) =>
+  fileName.split('.').map((part, i, parts) => (
+    <Fragment key={i}>
+      {part}
+      {i < parts.length - 1 && (
+        <>
+          .<wbr />
+        </>
+      )}
+    </Fragment>
+  ));
+
+const toRows = (plugins: PluginLoadReport[]): IssueRow[] =>
+  plugins.flatMap((report, reportIndex) => {
+    const builtAgainst = builtAgainstText(report);
+    const make = (issue: PluginIssue | null, index: number): IssueRow => ({
+      key: `${reportIndex}-${report.FileName}-${index}`,
+      report,
+      issue,
+      builtAgainst,
+      searchText: [
+        report.FileName,
+        report.AssemblyName,
+        report.Version,
+        statusLabel(report.Status),
+        builtAgainst,
+        issue?.Severity,
+        issue && categoryLabel(issue.Category),
+        issue?.Message,
+        issue?.Detail,
+        issue?.TriggeredBy,
+      ]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase(),
+    });
+    return report.Issues.length === 0
+      ? [make(null, 0)]
+      : report.Issues.map((issue, index) => make(issue, index));
+  });
 
 const PluginLoadIssues = () => {
   const { appId } = useAppParams();
@@ -32,7 +109,18 @@ const PluginLoadIssues = () => {
     { refetchOnMountOrArgChange: true }
   );
 
-  const [expandedKey, setExpandedKey] = useState<string | null>(null);
+  const [search, setSearch] = useState('');
+  const sorter = useSort(ISSUE_SORT);
+
+  const allRows = useMemo(() => toRows(data?.Plugins ?? []), [data]);
+  const visible = useMemo(() => {
+    const terms = search.toLowerCase().split(/\s+/).filter(Boolean);
+    if (terms.length === 0) return allRows;
+    return allRows.filter((row) =>
+      terms.every((term) => row.searchText.includes(term))
+    );
+  }, [allRows, search]);
+  const rows = useMemo(() => sorter.apply(visible), [sorter, visible]);
 
   if (isLoading) return <div className="p-3">Loading…</div>;
   if (isError)
@@ -42,16 +130,16 @@ const PluginLoadIssues = () => {
 
   if (!data || data.Plugins.length === 0) {
     return (
-      <div className="p-3">
-        <div className="text-success">No plugin load issues reported.</div>
-        {data && (
-          <div className="text-muted small mt-1">
-            Running Essentials {data.EssentialsVersion}
-          </div>
-        )}
-      </div>
+      <EmptyState
+        title="No plugin load issues reported."
+        description="Every plugin loaded and is compatible with this version of Essentials."
+        meta={data ? `Running Essentials ${data.EssentialsVersion}` : undefined}
+      />
     );
   }
+
+  const showBuiltAgainst = allRows.some((row) => row.builtAgainst);
+  const filtered = visible.length !== allRows.length;
 
   return (
     <div className="d-flex flex-column overflow-hidden h-100 page-scroll-sm">
@@ -71,111 +159,133 @@ const PluginLoadIssues = () => {
         {data.Plugins.length === 1 ? 'file' : 'files'}. Warnings do not stop a
         plugin loading.
       </div>
+      <div className="d-flex align-items-center gap-2 mb-2">
+        <FilterSearchText
+          value={search}
+          onChangeValue={setSearch}
+          debounceMs={150}
+          placeholder="Search plugin, category, message, status…"
+        />
+        {filtered && (
+          <span className="console-count">
+            Showing {visible.length} of {allRows.length}
+          </span>
+        )}
+      </div>
       <div className="overflow-auto flex-grow-1 pane-scroll-sm">
-        <table className="table table-hover align-middle mb-0">
-          <thead className="table-light sticky-top">
-            <tr>
-              <th style={{ width: '6rem' }}>Severity</th>
-              <th className="d-none d-md-table-cell" style={{ width: '14rem' }}>
-                Category
-              </th>
-              <th>Message</th>
-              <th style={{ width: '7rem' }}>Detail</th>
-            </tr>
-          </thead>
-          <tbody>
-            {data.Plugins.map((report) => {
-              const builtAgainst = builtAgainstText(report);
-              return (
-                <Fragment key={report.FileName}>
-                  <tr className="table-secondary">
-                    <td colSpan={COLUMNS}>
-                      <span className="fw-semibold me-2">
-                        {report.FileName}
-                      </span>
-                      {report.Version && (
-                        <span className="text-muted me-2">
-                          v{report.Version}
-                        </span>
-                      )}
+        {visible.length === 0 ? (
+          <EmptyState
+            tone="neutral"
+            title="No issues match your search."
+            description="Try part of a plugin name, category, status or message."
+          />
+        ) : (
+          <table className="table table-hover align-top mb-0 plugin-issues-table">
+            <thead>
+              <tr>
+                <SortableTh
+                  sorter={sorter}
+                  column="severity"
+                  label="Severity"
+                  style={{ width: '6rem' }}
+                />
+                <SortableTh
+                  sorter={sorter}
+                  column="plugin"
+                  label="Plugin"
+                  style={{ width: '22rem' }}
+                />
+                <SortableTh
+                  sorter={sorter}
+                  column="version"
+                  label="Version"
+                  style={{ width: '7rem' }}
+                />
+                <SortableTh
+                  sorter={sorter}
+                  column="status"
+                  label="Status"
+                  style={{ width: '8rem' }}
+                />
+                <SortableTh
+                  sorter={sorter}
+                  column="category"
+                  label="Category"
+                  style={{ width: '12rem' }}
+                />
+                <SortableTh sorter={sorter} column="message" label="Message" />
+                <SortableTh
+                  sorter={sorter}
+                  column="triggeredBy"
+                  label="Triggered by"
+                  style={{ width: '9rem' }}
+                />
+                {showBuiltAgainst && (
+                  <SortableTh
+                    sorter={sorter}
+                    column="builtAgainst"
+                    label="Built against"
+                    style={{ width: '14rem' }}
+                  />
+                )}
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map(({ key, report, issue, builtAgainst }) => (
+                <tr key={key}>
+                  <td>
+                    {issue && (
                       <Badge
-                        bg={statusVariant(report.Status)}
-                        text={badgeText(statusVariant(report.Status))}
-                        className="me-2"
+                        bg={severityVariant(issue.Severity)}
+                        text={badgeText(severityVariant(issue.Severity))}
                       >
-                        {statusLabel(report.Status)}
+                        {issue.Severity}
                       </Badge>
-                      {builtAgainst && (
-                        <span className="text-muted small">
-                          Built against {builtAgainst}
-                        </span>
-                      )}
-                    </td>
-                  </tr>
-                  {report.Issues.map((issue, idx) => {
-                    const key = `${report.FileName}-${idx}`;
-                    const isExpanded = expandedKey === key;
-                    return (
-                      <Fragment key={key}>
-                        <tr>
-                          <td>
-                            <Badge
-                              bg={severityVariant(issue.Severity)}
-                              text={badgeText(severityVariant(issue.Severity))}
-                            >
-                              {issue.Severity}
-                            </Badge>
-                          </td>
-                          <td className="d-none d-md-table-cell">
-                            {categoryLabel(issue.Category)}
-                          </td>
-                          <td className="text-break">
-                            <div className="d-md-none small fw-semibold">
-                              {categoryLabel(issue.Category)}
-                            </div>
-                            {issue.Message}
-                            {issue.TriggeredBy !== 'Direct load' && (
-                              <span className="text-muted small ms-1">
-                                (required by {issue.TriggeredBy})
-                              </span>
-                            )}
-                          </td>
-                          <td>
-                            {issue.Detail && (
-                              <button
-                                className="btn btn-sm btn-outline-secondary"
-                                onClick={() =>
-                                  setExpandedKey(isExpanded ? null : key)
-                                }
-                              >
-                                {isExpanded ? 'Hide' : 'Show'}
-                              </button>
-                            )}
-                          </td>
-                        </tr>
-                        {isExpanded && issue.Detail && (
-                          <tr>
-                            <td colSpan={COLUMNS} className="p-0">
-                              <pre
-                                className="m-0 p-3 bg-light text-muted"
-                                style={{
-                                  fontSize: '0.75rem',
-                                  whiteSpace: 'pre-wrap',
-                                }}
-                              >
-                                {issue.Detail}
-                              </pre>
-                            </td>
-                          </tr>
+                    )}
+                  </td>
+                  <td className="fw-semibold plugin-file-name">
+                    {fileNameParts(report.FileName)}
+                  </td>
+                  <td className="text-nowrap">{report.Version}</td>
+                  <td>
+                    <Badge
+                      bg={statusVariant(report.Status)}
+                      text={badgeText(statusVariant(report.Status))}
+                    >
+                      {statusLabel(report.Status)}
+                    </Badge>
+                  </td>
+                  <td>{issue && categoryLabel(issue.Category)}</td>
+                  <td className="text-break">
+                    {issue ? (
+                      <>
+                        {issue.Message}
+                        {issue.Detail && (
+                          <div className="text-muted small mt-1">
+                            {issue.Detail}
+                          </div>
                         )}
-                      </Fragment>
-                    );
-                  })}
-                </Fragment>
-              );
-            })}
-          </tbody>
-        </table>
+                      </>
+                    ) : (
+                      <span className="text-muted">No issues reported</span>
+                    )}
+                  </td>
+                  <td className="text-break">
+                    {issue &&
+                      (issue.TriggeredBy === 'Direct load' ? (
+                        <span className="text-muted">Direct load</span>
+                      ) : (
+                        issue.TriggeredBy
+                      ))}
+                  </td>
+                  {showBuiltAgainst && (
+                    <td className="text-break small">{builtAgainst}</td>
+                  )}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
     </div>
   );
