@@ -24,6 +24,9 @@ let power = false;
 let requests: string[] = [];
 // The request bodies POSTed to the command endpoint, in order
 let commands: { methodName: string; params: unknown[] }[] = [];
+// Command requests still to reject, and the timeout each command request carried
+let failCommands = 0;
+let commandTimeouts: (number | undefined)[] = [];
 let methods: { Name: string; Params: { Name: string; Type: string }[] }[] = [];
 
 const respond = (config: InternalAxiosRequestConfig, data: unknown) =>
@@ -50,9 +53,14 @@ const adapter: AxiosAdapter = (config) => {
       SerialValues: [{ FeedbackKey: 'currentInput', Value: 'hdmi1' }],
     });
   if (url.includes('/deviceCommands/')) {
+    commandTimeouts.push(config.timeout);
     commands.push(
       typeof config.data === 'string' ? JSON.parse(config.data) : config.data
     );
+    if (failCommands > 0) {
+      failCommands--;
+      return Promise.reject(new Error('Network Error'));
+    }
     power = true;
     return respond(config, undefined);
   }
@@ -94,6 +102,8 @@ describe('DeviceDetail live updates', () => {
     power = false;
     requests = [];
     commands = [];
+    failCommands = 0;
+    commandTimeouts = [];
     methods = [{ Name: 'PowerOn', Params: [] }];
     originalAdapter = httpClient.defaults.adapter;
     httpClient.defaults.adapter = adapter;
@@ -249,6 +259,30 @@ describe('DeviceDetail live updates', () => {
     await act(() => vi.advanceTimersByTimeAsync(600));
     await waitFor(() => expect(commands).toHaveLength(2));
     expect(commands[1].params).toEqual(['false']);
+  });
+
+  it('still attempts the release when the press fails, and keeps the failure visible', async () => {
+    methods = [
+      { Name: 'VolumeUp', Params: [{ Name: 'pressRelease', Type: 'Boolean' }] },
+    ];
+    renderDetail();
+    await screen.findByText('powerIsOn');
+
+    // The press is rejected (it may still have been applied before the connection dropped)
+    failCommands = 1;
+    const press = screen.getByRole('button', { name: 'Press & Release' });
+    fireEvent.click(press);
+
+    await waitFor(() => expect(commands).toHaveLength(2));
+    expect(commands.map((c) => c.params)).toEqual([['true'], ['false']]);
+    // Both requests are bounded, so a hung response can't leave the method held
+    expect(commandTimeouts).toHaveLength(2);
+    expect(commandTimeouts.every((t) => typeof t === 'number' && t > 0)).toBe(
+      true
+    );
+    // The row shows the failure and is free to press again once the release has settled
+    expect(await screen.findByText('Failed')).toBeInTheDocument();
+    await waitFor(() => expect(press).toBeEnabled());
   });
 
   it('does not offer Press & Release when a method has other parameters', async () => {
