@@ -100,4 +100,26 @@ describe('useRouteCandidates', () => {
 
     spy.mockRestore();
   });
+
+  // The popover asks for candidates while it renders (useMemo). A lookup made in the first render
+  // after the wiring changes must see the new wiring, not traversals cached from the old one.
+  it('uses the new wiring in the same render the index changes', () => {
+    const rewired = system();
+    rewired.tieLines = [];
+    const original = buildRouteIndex(system());
+    const { result, rerender } = renderHook(
+      ({ index }) => {
+        const getCandidates = useRouteCandidates(index);
+        return getCandidates('display', 'hdmi1', 'Video').map((c) => c.deviceKey);
+      },
+      { initialProps: { index: original } }
+    );
+    // Re-render with the same index, as the popover does while it's open, so the cache holds the
+    // original wiring's traversal when the wiring changes.
+    rerender({ index: original });
+    expect(result.current).toEqual(['laptop']);
+
+    rerender({ index: buildRouteIndex(rewired) });
+    expect(result.current).toEqual([]);
+  });
 });

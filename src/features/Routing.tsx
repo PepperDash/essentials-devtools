@@ -19,6 +19,7 @@ import { Alert, Dropdown } from 'react-bootstrap';
 
 import { meetsMinVersion } from '../shared/functions/meetsMinimumVersion';
 import useAppParams from '../shared/hooks/useAppParams';
+import useContentStable from '../shared/hooks/useContentStable';
 import {
   MidpointRoute,
   RoutingDevice,
@@ -1002,18 +1003,53 @@ const Routing = () => {
     [routeIndex, routeEdit]
   );
 
-  // Re-run dagre layout only when the source data or filters change.
+  // The layout only depends on sink routes for the dashed "live-only" edges: routes with no tie
+  // line behind them (e.g. a dynamic multiview layout). Passing just those, kept stable by content,
+  // means an ordinary route doesn't re-run dagre - which would snap dragged nodes back, clear the
+  // selection and drop each node's pending markers.
+  const liveOnlySinkRoutes = useContentStable(
+    useMemo(() => {
+      const wired = new Set(
+        (data?.tieLines ?? []).map(
+          (tl) => `${tl.destinationDeviceKey}:${tl.destinationPortKey}`
+        )
+      );
+      const result: Record<string, SinkRoute[]> = {};
+      for (const [deviceKey, routes] of Object.entries(
+        sinkRoutes as Record<string, SinkRoute[]>
+      )) {
+        const liveOnly = routes.filter(
+          (r) => !wired.has(`${deviceKey}:${r.inputPortKey}`)
+        );
+        if (liveOnly.length > 0) result[deviceKey] = liveOnly;
+      }
+      return result;
+    }, [data, sinkRoutes])
+  );
+
+  // Read by the layout effect, so nodes it rebuilds keep their pending markers and active outline.
+  const portStatusByDeviceRef = useRef(portStatusByDevice);
+  useEffect(() => {
+    portStatusByDeviceRef.current = portStatusByDevice;
+  }, [portStatusByDevice]);
+  const routeEditRef = useRef(routeEdit);
+  useEffect(() => {
+    routeEditRef.current = routeEdit;
+  }, [routeEdit]);
+
+  // Re-run dagre layout only when the source data, filters or live-only edges change.
   // Using useEffect (not useMemo) means React Flow owns the node array
   // between renders, so drag positions are preserved.
   useEffect(() => {
     if (!data) return;
+    const editing = routeEditRef.current?.target;
     const { nodes: layoutNodes, edges: layoutEdges } = buildGraph(
       data,
       hiddenTypes,
       hideUnconnected,
       hiddenDevices,
       hideUnconnectedPorts,
-      sinkRoutes
+      liveOnlySinkRoutes
     );
     setNodes(
       layoutNodes.map((n) => {
@@ -1026,8 +1062,9 @@ const Routing = () => {
             currentRoutes: midpointRoutesRef.current[n.id],
             hasLayout: Boolean(layoutsRef.current[n.id]),
             onToggleLayoutPanel: () => toggleLayoutPanel(n.id),
-            // Only the stable edit fields go in here; pending/editing state is injected by the
-            // cheap effect below so feedback ticks never re-run dagre.
+            // The edit fields, plus the current pending/editing state so a re-layout doesn't drop
+            // it. Changes to that state are applied by the cheap effect below without re-running
+            // dagre.
             onPortClick: canEditRoutes
               ? (port: RoutingPort, kind: 'input' | 'output', rect: DOMRect) =>
                   handlePortClick(n.id, port, kind, rect)
@@ -1036,6 +1073,12 @@ const Routing = () => {
             // report hasInputs && hasOutputs without being midpoints.
             canEditInputs: canEditRoutes && isRouteDestination(device),
             canEditOutputs: canEditRoutes && isMidpoint(device),
+            // Carried over so a re-layout doesn't drop them; the effect below only runs when they
+            // change.
+            portStatus:
+              portStatusByDeviceRef.current.get(n.id) ?? EMPTY_PORT_STATUS,
+            editingPortKey:
+              editing?.deviceKey === n.id ? editing.port.key : null,
             onHide: () =>
               setHiddenDevices((prev) => {
                 const next = new Set(prev);
@@ -1058,7 +1101,7 @@ const Routing = () => {
     hiddenDevices,
     hideUnconnectedPorts,
     darkMode,
-    sinkRoutes,
+    liveOnlySinkRoutes,
     resolveSourceName,
     handleTileClick,
     canEditRoutes,

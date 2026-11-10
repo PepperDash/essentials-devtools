@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback } from 'react';
 
 import {
   CandidateSource,
@@ -6,6 +6,20 @@ import {
   findReachableUpstreamDevices,
   RouteIndex,
 } from './routeGraph';
+
+// One traversal cache per route index. Keyed by the index itself, so a lookup always uses the
+// current graph's cache (clearing a shared cache in an effect left the first render after a change
+// reading traversals from the old graph), and an old cache is dropped with its index.
+const cachesByIndex = new WeakMap<RouteIndex, Map<string, ReadonlySet<string>>>();
+
+function cacheFor(index: RouteIndex): Map<string, ReadonlySet<string>> {
+  let cache = cachesByIndex.get(index);
+  if (!cache) {
+    cache = new Map();
+    cachesByIndex.set(index, cache);
+  }
+  return cache;
+}
 
 /**
  * Memoized candidate-source lookup for the route popover.
@@ -25,16 +39,10 @@ function useRouteCandidates(
   destPortKey: string | null,
   signalType: string
 ) => CandidateSource[] {
-  const cache = useRef(new Map<string, ReadonlySet<string>>());
-
-  // Index identity changes only when the query data does.
-  useEffect(() => {
-    cache.current.clear();
-  }, [index]);
-
   return useCallback(
     (destDeviceKey: string, destPortKey: string | null, signalType: string) => {
       if (!index) return [];
+      const cache = cacheFor(index);
       return findCandidateSources(
         index,
         destDeviceKey,
@@ -42,10 +50,10 @@ function useRouteCandidates(
         signalType,
         (d, p, atom) => {
           const cacheKey = `${d}\u0000${p ?? '*'}\u0000${atom}`;
-          let reachable = cache.current.get(cacheKey);
+          let reachable = cache.get(cacheKey);
           if (!reachable) {
             reachable = findReachableUpstreamDevices(index, d, p, atom);
-            cache.current.set(cacheKey, reachable);
+            cache.set(cacheKey, reachable);
           }
           return reachable;
         }
