@@ -2273,8 +2273,11 @@ $elastic: linear(
 }
 
 .device-items {
+  --device-pointer-width: 0.75rem;
+
   margin: 0;
-  padding: 0.375rem;
+  // The right padding is exactly the pointer's width, so its tip lands on the pane's divider
+  padding: 0.375rem var(--device-pointer-width) 0.375rem 0.375rem;
   list-style: none;
 }
 
@@ -2301,8 +2304,24 @@ $elastic: linear(
   }
 
   &.selected {
+    position: relative;
     background-color: var(--app-accent-soft);
     box-shadow: inset 3px 0 0 var(--app-accent);
+    // Square the right corners so the pointer joins the row cleanly
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+
+    // An arrow on the right edge, pointing across to the device's details
+    &::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: 100%;
+      width: var(--device-pointer-width);
+      background-color: var(--app-accent-soft);
+      clip-path: polygon(0 0, 100% 50%, 0 100%);
+    }
 
     .device-item-name {
       color: var(--app-accent);
