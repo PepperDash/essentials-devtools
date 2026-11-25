@@ -73,16 +73,14 @@ const TopNav = ({ isConnected }: { isConnected: boolean }) => {
 
   return (
     <Navbar ref={navRef} className="top-nav user-select-none shadow-sm px-0 flex-shrink-0">
-      <div className="w-100 px-2 d-flex flex-wrap align-items-center gap-2">
+      <div className="w-100 px-2 d-flex flex-wrap align-items-center row-gap-2 column-gap-4">
         <Navbar.Brand className="me-0">
           <img
-            src={`${import.meta.env.BASE_URL}essentials-icon.svg`}
-            alt=""
+            src={`${import.meta.env.BASE_URL}essentials-name-white.png`}
+            alt="PepperDash Essentials"
             className="top-nav-logo"
           />
-          <span>
-            <span className="d-none d-sm-inline">Essentials </span>Dev Tools
-          </span>
+          <span>Developer Tools</span>
         </Navbar.Brand>
         {/* display a message indicating that there are no loaded applications if the appIdOptions array is empty, otherwise display the dropdown */}
         {appIdOptions.length === 0 ? (

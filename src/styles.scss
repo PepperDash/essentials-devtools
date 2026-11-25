@@ -1181,7 +1181,7 @@ $noise: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width=
 .top-nav .navbar-brand {
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 1rem;
   font-weight: 700;
   letter-spacing: -0.01em;
   color: var(--bs-emphasis-color);
@@ -1207,14 +1207,15 @@ $noise: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width=
 }
 
 .top-nav-logo {
-  // The artwork is brand blue, which disappears on the dark bar: flatten it to near-white there
-  [data-bs-theme='dark'] & {
-    filter: brightness(0) invert(1) opacity(0.92);
-  }
-
-  width: 1.5rem;
-  height: 1.5rem;
+  // The artwork is white: darken it on the light theme, leave it as-is on the dark bar
+  height: 2.5rem;
+  width: auto;
   flex-shrink: 0;
+  filter: brightness(0) opacity(0.85);
+
+  [data-bs-theme='dark'] & {
+    filter: none;
+  }
 }
 
 .top-nav-help {
