@@ -7,6 +7,7 @@ import {
   useSyncExternalStore,
 } from 'react';
 import { Button, Form, InputGroup, Modal, Nav, Spinner } from 'react-bootstrap';
+import { getCwsRoot, toCwsPath } from '../shared/functions/hostPaths';
 import useAppParams from '../shared/hooks/useAppParams';
 import { SortableTh } from '../shared/SortableTh';
 import { SortAccessors, useSort } from '../shared/sorting';
@@ -514,11 +515,52 @@ const FeedbackTable = ({ feedbacks }: { feedbacks: DeviceFeedbacks }) => {
 // then sends false.
 // Press & Release timers outlive the row: switching tabs unmounts the rows, but the release must
 // still go out, and the method must stay busy until it has. Keyed by app/device/method.
-const activePulses = new Set<string>();
+// Each active hold remembers the request that releases it, for when the page itself goes away.
+interface PendingRelease {
+  appId: string;
+  deviceKey: string;
+  methodName: string;
+}
+const activePulses = new Map<string, PendingRelease>();
 const pulseListeners = new Set<() => void>();
-const setPulse = (key: string, active: boolean) => {
-  if (active) activePulses.add(key);
+
+// Closing or reloading the tab destroys the hold timer, which would leave the method held. So
+// while any hold is active, ask before leaving, and as the page goes away send each release
+// (keepalive lets the request outlive the page).
+const warnBeforeLeaving = (e: BeforeUnloadEvent) => {
+  e.preventDefault();
+  // Some browsers only show the prompt when returnValue is set
+  e.returnValue = '';
+};
+const releaseHeldMethods = () => {
+  activePulses.forEach(({ appId, deviceKey, methodName }) => {
+    try {
+      void fetch(
+        getCwsRoot() + toCwsPath(`/${appId}/api/deviceCommands/${deviceKey}`),
+        {
+          method: 'POST',
+          keepalive: true,
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ deviceKey, methodName, params: ['false'] }),
+        }
+      ).catch(() => undefined);
+    } catch {
+      // Nothing more can be done as the page closes
+    }
+  });
+};
+
+const setPulse = (key: string, release: PendingRelease | null) => {
+  const wasIdle = activePulses.size === 0;
+  if (release) activePulses.set(key, release);
   else activePulses.delete(key);
+  if (wasIdle && activePulses.size > 0) {
+    window.addEventListener('beforeunload', warnBeforeLeaving);
+    window.addEventListener('pagehide', releaseHeldMethods);
+  } else if (!wasIdle && activePulses.size === 0) {
+    window.removeEventListener('beforeunload', warnBeforeLeaving);
+    window.removeEventListener('pagehide', releaseHeldMethods);
+  }
   pulseListeners.forEach((l) => l());
 };
 const subscribePulses = (l: () => void) => {
@@ -589,7 +631,11 @@ const MethodRow = ({ method, deviceKey }: MethodRowProps) => {
   const handlePressRelease = async () => {
     if (!isPressable || !pressDelayValid || activePulses.has(pulseKey)) return;
     setResult(null);
-    setPulse(pulseKey, true);
+    setPulse(pulseKey, {
+      appId: appId ?? '',
+      deviceKey,
+      methodName: method.Name,
+    });
     try {
       // Time the delay from when true goes out, so the gap between the two sends is the delay
       // entered (or one round trip, if that is longer)
@@ -609,7 +655,7 @@ const MethodRow = ({ method, deviceKey }: MethodRowProps) => {
         (await run(['false'], PRESS_REQUEST_TIMEOUT_MS)) ? 'sent' : 'failed'
       );
     } finally {
-      setPulse(pulseKey, false);
+      setPulse(pulseKey, null);
     }
   };
 

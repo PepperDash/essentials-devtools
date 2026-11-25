@@ -23,7 +23,11 @@ const api = oneSliceToRuleThemAll.apiSlice;
 let power = false;
 let requests: string[] = [];
 // The request bodies POSTed to the command endpoint, in order
-let commands: { methodName: string; params: unknown[] }[] = [];
+let commands: { deviceKey?: string; methodName: string; params: unknown[] }[] =
+  [];
+// While set, command requests stay unresolved until released
+let holdCommands = false;
+let heldCommands: (() => void)[] = [];
 // Command requests still to reject, and the timeout each command request carried
 let failCommands = 0;
 let commandTimeouts: (number | undefined)[] = [];
@@ -62,6 +66,11 @@ const adapter: AxiosAdapter = (config) => {
       return Promise.reject(new Error('Network Error'));
     }
     power = true;
+    if (holdCommands) {
+      return new Promise((resolve) =>
+        heldCommands.push(() => resolve(respond(config, undefined)))
+      );
+    }
     return respond(config, undefined);
   }
   return Promise.reject(new Error(`Unexpected request ${url}`));
@@ -103,6 +112,8 @@ describe('DeviceDetail live updates', () => {
     requests = [];
     commands = [];
     failCommands = 0;
+    holdCommands = false;
+    heldCommands = [];
     commandTimeouts = [];
     methods = [{ Name: 'PowerOn', Params: [] }];
     originalAdapter = httpClient.defaults.adapter;
@@ -161,9 +172,8 @@ describe('DeviceDetail live updates', () => {
     expect(feedbackValue()).toBe('false');
 
     fireEvent.click(screen.getByRole('button', { name: 'Refresh' }));
-    await act(() => vi.advanceTimersByTimeAsync(0));
-
-    expect(feedbackValue()).toBe('true');
+    // Wait for the response rather than assuming it has landed: how long that takes varies with load
+    await waitFor(() => expect(feedbackValue()).toBe('true'));
   });
 
   it('refetches straight after executing a method', async () => {
@@ -347,6 +357,114 @@ describe('DeviceDetail live updates', () => {
 
     fireEvent.click(screen.getByRole('tab', { name: /Methods & Feedbacks/ }));
     expect(await screen.findByText('powerIsOn')).toBeTruthy();
+  });
+
+  it('keeps Execute disabled across a tab switch while the request is unresolved', async () => {
+    renderDetail();
+    await screen.findByText('powerIsOn');
+
+    holdCommands = true;
+    fireEvent.click(screen.getByRole('button', { name: 'Execute' }));
+    await waitFor(() => expect(commands).toHaveLength(1));
+
+    fireEvent.click(screen.getByRole('tab', { name: /Properties/ }));
+    await screen.findByText('Power');
+    fireEvent.click(screen.getByRole('tab', { name: /Methods & Feedbacks/ }));
+
+    // The row remounted, but the first request is still out: no second send
+    const busy = await screen.findByRole('button', { name: 'Executing…' });
+    expect(busy).toBeDisabled();
+    fireEvent.click(busy);
+    expect(commands).toHaveLength(1);
+
+    await act(async () => heldCommands.forEach((release) => release()));
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: 'Execute' })).toBeEnabled()
+    );
+    expect(commands).toHaveLength(1);
+  });
+
+  it('still releases the original device after a tab switch during the Press & Release delay', async () => {
+    methods = [
+      { Name: 'VolumeUp', Params: [{ Name: 'pressRelease', Type: 'Boolean' }] },
+    ];
+    renderDetail();
+    await screen.findByText('powerIsOn');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Press & Release' }));
+    await waitFor(() => expect(commands).toHaveLength(1));
+
+    fireEvent.click(screen.getByRole('tab', { name: /Properties/ }));
+    await screen.findByText('Power');
+    fireEvent.click(screen.getByRole('tab', { name: /Methods & Feedbacks/ }));
+
+    // Mid-hold the remounted row is still busy and can't be pressed again
+    const pressing = await screen.findByRole('button', { name: 'Pressing…' });
+    expect(pressing).toBeDisabled();
+    fireEvent.click(pressing);
+    expect(commands).toHaveLength(1);
+
+    await act(() => vi.advanceTimersByTimeAsync(1000));
+    await waitFor(() => expect(commands).toHaveLength(2));
+    expect(commands[1]).toMatchObject({
+      deviceKey: 'pdu-1',
+      methodName: 'VolumeUp',
+      params: ['false'],
+    });
+    await waitFor(() =>
+      expect(
+        screen.getByRole('button', { name: 'Press & Release' })
+      ).toBeEnabled()
+    );
+  });
+
+  it('warns before the page closes mid-hold, and releases the method as it goes', async () => {
+    methods = [
+      { Name: 'VolumeUp', Params: [{ Name: 'pressRelease', Type: 'Boolean' }] },
+    ];
+    const fetchMock = vi.fn(() => Promise.resolve(new Response()));
+    vi.stubGlobal('fetch', fetchMock);
+    renderDetail();
+    await screen.findByText('powerIsOn');
+
+    // Idle: leaving the page is not interrupted
+    const idle = new Event('beforeunload', { cancelable: true });
+    window.dispatchEvent(idle);
+    expect(idle.defaultPrevented).toBe(false);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Press & Release' }));
+    await waitFor(() => expect(commands).toHaveLength(1));
+
+    const held = new Event('beforeunload', { cancelable: true });
+    window.dispatchEvent(held);
+    expect(held.defaultPrevented).toBe(true);
+
+    window.dispatchEvent(new Event('pagehide'));
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const [url, init] = fetchMock.mock.calls[0] as unknown as [
+      string,
+      RequestInit,
+    ];
+    expect(url).toContain('/deviceCommands/pdu-1');
+    expect(init).toMatchObject({ method: 'POST', keepalive: true });
+    expect(JSON.parse(init.body as string)).toEqual({
+      deviceKey: 'pdu-1',
+      methodName: 'VolumeUp',
+      params: ['false'],
+    });
+
+    // Once the hold finishes normally, nothing is left to warn about or release
+    await act(() => vi.advanceTimersByTimeAsync(1000));
+    await waitFor(() => expect(commands).toHaveLength(2));
+    await waitFor(() =>
+      expect(
+        screen.getByRole('button', { name: 'Press & Release' })
+      ).toBeEnabled()
+    );
+    const after = new Event('beforeunload', { cancelable: true });
+    window.dispatchEvent(after);
+    expect(after.defaultPrevented).toBe(false);
+    vi.unstubAllGlobals();
   });
 
   it('resizes the methods and feedbacks split from the keyboard, within limits', async () => {
