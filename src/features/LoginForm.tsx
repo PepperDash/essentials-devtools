@@ -87,8 +87,13 @@ const LoginForm = () => {
         <span className="text-muted small">Version: {APP_VERSION}</span>
         <ThemeToggle />
       </div>
-      <h1 className="mb-5 text-center">
-        PepperDash Essentials Developer Tools
+      <h1 className="mb-5 d-flex flex-column align-items-center">
+        <img
+          src={`${import.meta.env.BASE_URL}essentials-lockup-white.png`}
+          alt="PepperDash Essentials"
+          className="login-logo"
+        />
+        <span className="login-subtitle"> Developer Tools</span>
       </h1>
       <div className="w-100" style={{ maxWidth: '360px' }}>
         <h2 className="mb-4">Sign In</h2>
