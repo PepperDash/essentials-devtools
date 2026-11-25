@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
 
-export type SortValue = string | number | boolean | null | undefined;
+export type SortValue = string | number | bigint | boolean | null | undefined;
 
 export interface SortState<C extends string> {
   column: C;
@@ -22,9 +22,11 @@ const collator = new Intl.Collator(undefined, {
  * no case. Splitting by kind keeps the order transitive when a column mixes the two.
  */
 export const compareValues = (a: SortValue, b: SortValue) => {
-  const aNum = typeof a === 'number';
-  const bNum = typeof b === 'number';
-  if (aNum && bNum) return a - b;
+  const aNum = typeof a === 'number' || typeof a === 'bigint';
+  const bNum = typeof b === 'number' || typeof b === 'bigint';
+  // Compared with < and > rather than subtracted: that works across number and bigint, and a
+  // bigint keeps the exact value a number would round
+  if (aNum && bNum) return a < b ? -1 : a > b ? 1 : 0;
   if (aNum !== bNum) return aNum ? -1 : 1;
   return collator.compare(String(a ?? ''), String(b ?? ''));
 };

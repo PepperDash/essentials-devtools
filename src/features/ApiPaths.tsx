@@ -91,8 +91,16 @@ export const ApiPaths = () => {
     if (!showDrawer) return;
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
+      // Something else (a dropdown, say) already used this key
+      if (e.defaultPrevented) return;
       const target = e.target as HTMLElement;
-      if (target.closest('input, textarea, select, [role="menu"]')) return;
+      if (
+        target.closest(
+          'input, textarea, select, [role="menu"], .dropdown, .dropdown-menu'
+        )
+      ) {
+        return;
+      }
       const index = selectedRoute ? ordered.indexOf(selectedRoute) : -1;
       const next = ordered[index + (e.key === 'ArrowDown' ? 1 : -1)];
       if (!next) return;

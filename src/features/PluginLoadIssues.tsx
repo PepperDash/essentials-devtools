@@ -213,7 +213,12 @@ const PluginLoadIssues = () => {
                   label="Category"
                   style={{ width: '12rem' }}
                 />
-                <SortableTh sorter={sorter} column="message" label="Message" />
+                <SortableTh
+                  sorter={sorter}
+                  column="message"
+                  label="Message"
+                  style={{ width: '24rem' }}
+                />
                 <SortableTh
                   sorter={sorter}
                   column="triggeredBy"

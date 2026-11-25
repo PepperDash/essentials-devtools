@@ -26,6 +26,18 @@ describe('compareValues', () => {
     expect(compareValues('alpha', 'Beta')).toBeLessThan(0);
     expect(compareValues(undefined, 'a')).toBeLessThan(0);
   });
+
+  it('keeps 64-bit integers exact, which a number would round together', () => {
+    const a = 638712864000000000n;
+    const b = 638712864000000001n;
+    expect(Number(a)).toBe(Number(b));
+    expect(compareValues(a, b)).toBeLessThan(0);
+    expect(compareValues(b, a)).toBeGreaterThan(0);
+    expect(compareValues(a, a)).toBe(0);
+    // Mixed with plain numbers, and still ahead of text
+    expect(compareValues(2n, 10)).toBeLessThan(0);
+    expect(compareValues(10n, 'abc')).toBeLessThan(0);
+  });
 });
 
 describe('sortRows', () => {

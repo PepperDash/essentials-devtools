@@ -72,7 +72,10 @@ const TopNav = ({ isConnected }: { isConnected: boolean }) => {
   const connectionText = `Debug Console ${isConnected ? 'Connected' : 'Disconnected'}`;
 
   return (
-    <Navbar ref={navRef} className="top-nav user-select-none shadow-sm px-0 flex-shrink-0">
+    <Navbar
+      ref={navRef}
+      className="top-nav user-select-none shadow-sm px-0 flex-shrink-0"
+    >
       <div className="w-100 px-2 d-flex flex-wrap align-items-center row-gap-2 column-gap-4">
         <Navbar.Brand className="me-0">
           <img

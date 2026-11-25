@@ -60,10 +60,11 @@ type PropertyColumn = 'name' | 'type' | 'value' | 'access';
 const PROPERTY_SORT: SortAccessors<DeviceProperties, PropertyColumn> = {
   name: (p) => p.Name,
   type: (p) => p.Type,
-  // Values arrive as strings; numeric types sort as numbers so -10 comes before -2
+  // Values arrive as strings; integer types sort as numbers so -10 comes before -2. A bigint, so
+  // 64-bit values that differ only in their last digits still compare exactly.
   value: (p) => {
     if (isIntegerType(p.Type) && /^-?\d+$/.test(p.Value.trim())) {
-      return Number(p.Value);
+      return BigInt(p.Value.trim());
     }
     return p.Value;
   },
@@ -529,14 +530,16 @@ const subscribePulses = (l: () => void) => {
 
 const MethodRow = ({ method, deviceKey }: MethodRowProps) => {
   const { appId } = useAppParams();
+  // The same key as the press timers, so a request still in flight when the tab is switched keeps
+  // the method busy after the row remounts, rather than allowing a second send
+  const pulseKey = `${appId}|${deviceKey}|${method.Name}`;
   const [executeMethod, { isLoading: isExecuting }] =
-    useSetDeviceJsonCommandMutation();
+    useSetDeviceJsonCommandMutation({ fixedCacheKey: pulseKey });
   const [values, setValues] = useState<Record<string, string>>(() =>
     Object.fromEntries(
       method.Params.map((p) => [p.Name, defaultParamValue(p.Type)])
     )
   );
-  const pulseKey = `${appId}|${deviceKey}|${method.Name}`;
   const isPressing = useSyncExternalStore(subscribePulses, () =>
     activePulses.has(pulseKey)
   );
@@ -685,7 +688,7 @@ const MethodRow = ({ method, deviceKey }: MethodRowProps) => {
           <div className="method-status">
             {result && (
               <span
-                className={`small ${result === 'sent' ? 'text-success' : 'text-danger'}`}
+                className={`small ${result === 'sent' ? 'text-success-emphasis' : 'text-danger-emphasis'}`}
                 role="status"
               >
                 {result === 'sent' ? 'Sent' : 'Failed'}

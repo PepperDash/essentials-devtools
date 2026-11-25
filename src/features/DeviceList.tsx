@@ -13,7 +13,10 @@ const DEVICE_PARAM = 'device';
 
 const DeviceList = () => {
   const { appId } = useAppParams();
-  const { data: devices } = useGetDevicesQuery(appId ? { appId } : skipToken);
+  // currentData, not data: data keeps the previous application's devices while the new list loads
+  const { currentData: devices } = useGetDevicesQuery(
+    appId ? { appId } : skipToken
+  );
   const [searchParams, setSearchParams] = useSearchParams();
   const [search, setSearch] = useState('');
 
