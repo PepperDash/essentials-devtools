@@ -5,6 +5,7 @@ import { useSearchParams } from 'react-router-dom';
 export const FilterSearchText = ({
   disabled,
   placeholder,
+  debounceMs = 1000,
   value: controlledValue,
   onChangeValue,
 }: FilterSearchTextProps) => {
@@ -20,7 +21,7 @@ export const FilterSearchText = ({
   const [syncedText, setSyncedText] = useState(externalText);
 
   /* FUNCTIONS *******************************************************/
-  /** Handles search text change, after 1s debounce */
+  /** Handles search text change, after the debounce (1s unless a page asks for less) */
   function searchTextChange(change: ChangeEvent<HTMLInputElement>) {
     setSearchText(change.target.value);
 
@@ -39,7 +40,7 @@ export const FilterSearchText = ({
         if (val.length) tokens.forEach((t) => searchParams.append(PARAM, t));
         setSearchParams(searchParams);
       }
-    }, 1000);
+    }, debounceMs);
   }
 
   /* EFFECTS *********************************************************/
@@ -59,14 +60,29 @@ export const FilterSearchText = ({
 
   /* RENDER **********************************************************/
   return (
-    <div className="d-flex justify-content-between align-items-center bg-white border border-secondary border-0 rounded pe-1">
+    <div className="filter-search">
+      <svg
+        className="filter-search-icon"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth={1.75}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden="true"
+      >
+        <circle cx="11" cy="11" r="7" />
+        <path d="m20 20-3.5-3.5" />
+      </svg>
       <FormControl
-        className="border-0"
+        className="filter-search-input"
         size="sm"
+        type="search"
         value={searchText}
         onChange={searchTextChange}
         disabled={disabled}
-        placeholder={placeholder}
+        placeholder={placeholder ?? 'Search'}
+        aria-label={placeholder ?? 'Search'}
       />
     </div>
   );
@@ -75,6 +91,9 @@ export const FilterSearchText = ({
 type FilterSearchTextBaseProps = {
   disabled?: boolean;
   placeholder?: string;
+  /** How long typing must pause before the change is applied. Lower it for filtering that is
+   *  done in the browser; the default suits searches that hit the network. */
+  debounceMs?: number;
 };
 type FilterSearchTextControlledProps = FilterSearchTextBaseProps & {
   /** Controlled value (Redux mode). */

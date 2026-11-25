@@ -1,6 +1,7 @@
 import { skipToken } from '@reduxjs/toolkit/query';
 import { useState } from 'react';
-import { Alert, Button, Form } from 'react-bootstrap';
+import { Button, Form } from 'react-bootstrap';
+import CertificateAlert from '../../shared/components/CertificateAlert';
 import ListFiltersHeader from '../../shared/ListFiltersHeader';
 import useAppParams from '../../shared/hooks/useAppParams';
 import {
@@ -38,12 +39,6 @@ const DebugConsole = ({
     (state: RootState) => state.websocket.failedUrls
   );
   const searchText = useAppSelector(selectSearchText);
-  const certUrls = failedUrls
-    ? failedUrls.map((u: string) =>
-        new URL(u).origin.replace(/^wss:/, 'https:').replace(/^ws:/, 'http:')
-      )
-    : null;
-
   const { data: doNotLoadConfigOnNextBoot } =
     useGetDoNotLoadConfigOnNextBootQuery(appId ? { appId } : skipToken);
 
@@ -86,90 +81,97 @@ const DebugConsole = ({
         <div className="d-flex align-items-center justify-content-start mb-2">
           <h2>Debug Console</h2>
         </div>
-        <div className="d-flex flex-wrap align-items-center justify-content-start gap-2 mb-2">
-          {!isConnected ? (
-            <Button
-              variant="success"
-              size="sm"
-              disabled={isConnecting}
-              onClick={() => void join(appId)}
-            >
-              {isConnecting ? 'Connecting...' : 'Start Debug Session'}
-            </Button>
-          ) : (
-            <Button variant="danger" size="sm" onClick={() => stop(appId)}>
-              Stop Debug Session
-            </Button>
-          )}
-          <MinimumLogLevelDropdown />
-          <Form.Check
-            type="checkbox"
-            label="Do Not Load Config on Next Boot"
-            name="doNotLoadConfig"
-            id="doNotLoadConfig"
-            checked={doNotLoadConfigOnNextBoot?.doNotLoadConfigOnNextBoot}
-            onChange={() => {
-              if (!appId) return;
-              void setDoNotLoadConfig({
-                appId,
-                doNotLoadConfigOnNextBoot:
-                  !doNotLoadConfigOnNextBoot?.doNotLoadConfigOnNextBoot,
-              });
-            }}
+        <div className="console-toolbar mb-2">
+          <div className="console-toolbar-row">
+            {/* Session: the live connection and how much it logs */}
+            <div className="console-toolbar-group">
+              {!isConnected ? (
+                <Button
+                  variant="success"
+                  size="sm"
+                  disabled={isConnecting}
+                  onClick={() => void join(appId)}
+                >
+                  {isConnecting ? 'Connecting...' : 'Start Debug Session'}
+                </Button>
+              ) : (
+                <Button variant="danger" size="sm" onClick={() => stop(appId)}>
+                  Stop Debug Session
+                </Button>
+              )}
+              <MinimumLogLevelDropdown />
+            </div>
+
+            {/* Program: the boot setting and the controls it affects, kept together at the far
+                right. Restart is what makes the setting take effect. */}
+            <div className="console-toolbar-group console-toolbar-group-program ms-auto">
+              <Form.Check
+                type="switch"
+                label="Do Not Load Config on Next Boot"
+                name="doNotLoadConfig"
+                id="doNotLoadConfig"
+                className="mb-0"
+                checked={doNotLoadConfigOnNextBoot?.doNotLoadConfigOnNextBoot}
+                onChange={() => {
+                  if (!appId) return;
+                  void setDoNotLoadConfig({
+                    appId,
+                    doNotLoadConfigOnNextBoot:
+                      !doNotLoadConfigOnNextBoot?.doNotLoadConfigOnNextBoot,
+                  });
+                }}
+              />
+              {doNotLoadConfigOnNextBoot?.doNotLoadConfigOnNextBoot && (
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={clickLoadConfig}
+                  disabled={
+                    !doNotLoadConfigOnNextBoot.doNotLoadConfigOnNextBoot
+                  }
+                >
+                  Load Config
+                </Button>
+              )}
+              <Button variant="outline-danger" size="sm" onClick={clickRestart}>
+                Restart Program
+              </Button>
+            </div>
+          </div>
+          <ListFiltersHeader
+            showSearch
+            searchValue={searchText}
+            onSearchChange={(val) =>
+              dispatch(debugConsoleActions.setSearchText(val))
+            }
+            filters={<DebugFilters />}
+            rightContent={
+              <div className="console-toolbar-group">
+                <span className="console-count">
+                  Message Count: {messages.length}
+                </span>
+                <Button variant="outline-secondary" size="sm" onClick={clear}>
+                  Clear Console Trace
+                </Button>
+                <Button
+                  variant="outline-secondary"
+                  size="sm"
+                  onClick={exportFilteredItems}
+                  disabled={filteredItems.length === 0}
+                >
+                  Export Log
+                </Button>
+              </div>
+            }
           />
-          {doNotLoadConfigOnNextBoot?.doNotLoadConfigOnNextBoot && (
-            <Button
-              variant="primary"
-              size="sm"
-              onClick={clickLoadConfig}
-              disabled={!doNotLoadConfigOnNextBoot.doNotLoadConfigOnNextBoot}
-            >
-              Load Config
-            </Button>
-          )}
-          <Button variant="primary" size="sm" onClick={clear}>
-            Clear Console Trace
-          </Button>
-          <Button
-            variant="primary"
-            size="sm"
-            onClick={exportFilteredItems}
-            disabled={filteredItems.length === 0}
-          >
-            Export Log
-          </Button>
-          <Button variant="primary" size="sm" onClick={clickRestart}>
-            Restart Program
-          </Button>
-          <span className="small">Message Count: {messages.length}</span>
         </div>
-        {certUrls && certUrls.length > 0 && (
-          <Alert
-            variant="warning"
-            className="py-2 px-3 mb-2"
-            style={{ fontSize: '0.82rem' }}
-          >
-            <strong>Connection failed.</strong> The debug server may have an
-            untrusted certificate.{' '}
-            {certUrls.map((certUrl: string, i: number) => (
-              <span key={certUrl}>
-                {i > 0 && ' or '}
-                <Alert.Link href={certUrl} target="_blank" rel="noreferrer">
-                  Open {certUrl} in a new tab
-                </Alert.Link>
-              </span>
-            ))}
-            {', accept the certificate, then try "Start Debug Session" again.'}
-          </Alert>
+        {failedUrls && failedUrls.length > 0 && (
+          <CertificateAlert
+            failedUrls={failedUrls}
+            subject="The debug console connection"
+            onRetry={() => void join(appId)}
+          />
         )}
-        <ListFiltersHeader
-          showSearch
-          searchValue={searchText}
-          onSearchChange={(val) =>
-            dispatch(debugConsoleActions.setSearchText(val))
-          }
-          filters={<DebugFilters />}
-        />
         <ConsoleWindow filteredItems={filteredItems} />
       </div>
 

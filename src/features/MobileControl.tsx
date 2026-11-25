@@ -1,7 +1,11 @@
 import { skipToken } from '@reduxjs/toolkit/query';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Button, Modal } from 'react-bootstrap';
+import EmptyState from '../shared/components/EmptyState';
+import { FilterSearchText } from '../shared/FilterSearchText';
 import useAppParams from '../shared/hooks/useAppParams';
+import { SortableTh } from '../shared/SortableTh';
+import { SortAccessors, useSort } from '../shared/sorting';
 import {
   ActionPath,
   ClientRequest,
@@ -14,6 +18,21 @@ import {
   useGetMobileControlInfoQuery,
 } from '../store/apiSlice';
 import { livePolling, POLL_INTERVALS_MS } from '../store/polling';
+
+type ClientColumn = 'number' | 'room' | 'touchpanel' | 'token' | 'url';
+const CLIENT_SORT: SortAccessors<MobileControlClient, ClientColumn> = {
+  number: (c) => c.clientNumber,
+  room: (c) => c.roomKey,
+  touchpanel: (c) => c.touchpanelKey,
+  token: (c) => c.token,
+  url: (c) => c.url,
+};
+
+type PathColumn = 'messengerKey' | 'path';
+const PATH_SORT: SortAccessors<ActionPath, PathColumn> = {
+  messengerKey: (p) => p.messengerKey,
+  path: (p) => p.path,
+};
 
 const MobileControl = () => {
   const { appId } = useAppParams();
@@ -36,6 +55,30 @@ const MobileControl = () => {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [newRoomKey, setNewRoomKey] = useState('');
   const [newGrantCode, setNewGrantCode] = useState('');
+  const [pathSearch, setPathSearch] = useState('');
+  const clientSorter = useSort(CLIENT_SORT);
+  const pathSorter = useSort(PATH_SORT);
+  const allClients = info?.directServer?.clients;
+  const clients = useMemo(
+    () => clientSorter.apply(allClients ?? []),
+    [clientSorter, allClients]
+  );
+
+  // Every whitespace-separated term must appear (case-insensitive) in the messenger key or path
+  const allPaths = actionPaths?.actionPaths;
+  const visiblePaths = useMemo(() => {
+    const paths = allPaths ?? [];
+    const terms = pathSearch.toLowerCase().split(/\s+/).filter(Boolean);
+    if (terms.length === 0) return paths;
+    return paths.filter((ap) => {
+      const haystack = `${ap.messengerKey} ${ap.path}`.toLowerCase();
+      return terms.every((t) => haystack.includes(t));
+    });
+  }, [allPaths, pathSearch]);
+  const sortedPaths = useMemo(
+    () => pathSorter.apply(visiblePaths),
+    [pathSorter, visiblePaths]
+  );
 
   const handleConfirmDelete = async () => {
     if (!appId || !pendingDelete) return;
@@ -113,13 +156,25 @@ const MobileControl = () => {
         <h5>Clients</h5>
         <div className="overflow-auto flex-grow-1">
           <table className="table table-striped table-bordered">
-            <thead className="table-light sticky-top">
+            <thead>
               <tr>
-                <th>#</th>
-                <th>Room Key</th>
-                <th>Touchpanel Key</th>
-                <th>Token</th>
-                <th>URL</th>
+                <SortableTh sorter={clientSorter} column="number" label="#" />
+                <SortableTh
+                  sorter={clientSorter}
+                  column="room"
+                  label="Room Key"
+                />
+                <SortableTh
+                  sorter={clientSorter}
+                  column="touchpanel"
+                  label="Touchpanel Key"
+                />
+                <SortableTh
+                  sorter={clientSorter}
+                  column="token"
+                  label="Token"
+                />
+                <SortableTh sorter={clientSorter} column="url" label="URL" />
                 <th>
                   <div className="d-flex justify-content-end gap-1">
                     <Button
@@ -143,7 +198,7 @@ const MobileControl = () => {
               </tr>
             </thead>
             <tbody>
-              {ds.clients.map((client) => (
+              {clients.map((client) => (
                 <tr key={client.clientNumber}>
                   <td>{client.clientNumber}</td>
                   <td>{client.roomKey}</td>
@@ -173,26 +228,55 @@ const MobileControl = () => {
       </div>
 
       <div className="d-flex flex-column h-100">
-        <h5>Action Paths</h5>
+        <div className="d-flex align-items-baseline gap-2 mb-2">
+          <h5 className="mb-0">Action Paths</h5>
+          <span className="console-count">
+            {visiblePaths.length !== actionPaths.actionPaths.length
+              ? `Showing ${visiblePaths.length} of ${actionPaths.actionPaths.length}`
+              : `${actionPaths.actionPaths.length} paths`}
+          </span>
+        </div>
+        <div className="mb-2">
+          <FilterSearchText
+            value={pathSearch}
+            onChangeValue={setPathSearch}
+            debounceMs={150}
+            placeholder="Search messenger key or path"
+          />
+        </div>
         <div className="overflow-auto flex-grow-1">
-          <table className="table table-striped table-bordered mb-0">
-            <thead className="table-light sticky-top">
-              <tr>
-                <th>Messenger Key</th>
-                <th>Path</th>
-              </tr>
-            </thead>
-            <tbody>
-              {actionPaths.actionPaths.map((ap: ActionPath) => (
-                <tr key={ap.messengerKey}>
-                  <td>{ap.messengerKey}</td>
-                  <td>
-                    <code>{ap.path}</code>
-                  </td>
+          {visiblePaths.length === 0 ? (
+            <EmptyState
+              tone="neutral"
+              title="No action paths match your search."
+              description="Try part of a messenger key or a piece of the path."
+            />
+          ) : (
+            <table className="table table-striped table-bordered mb-0">
+              <thead>
+                <tr>
+                  <SortableTh
+                    sorter={pathSorter}
+                    column="messengerKey"
+                    label="Messenger Key"
+                  />
+                  <SortableTh sorter={pathSorter} column="path" label="Path" />
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {sortedPaths.map((ap: ActionPath, index) => (
+                  // Messenger keys repeat (one messenger can register several paths), and a
+                  // duplicate key leaves stale rows on screen when the list is filtered
+                  <tr key={`${ap.messengerKey}|${ap.path}|${index}`}>
+                    <td>{ap.messengerKey}</td>
+                    <td>
+                      <code>{ap.path}</code>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
         </div>
       </div>
 

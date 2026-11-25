@@ -319,7 +319,7 @@ const RoutingDeviceNode = ({ data }: NodeProps) => {
                 <path
                   key={`route-${idx}`}
                   d={`M ${x1} ${inY} C ${cx1} ${inY}, ${cx2} ${outY}, ${x2} ${outY}`}
-                  stroke={isHighlighted ? color : '#ccc'}
+                  stroke={isHighlighted ? color : '#cbd5e1'}
                   strokeWidth={
                     isHighlighted && highlightedRouteKeys != null ? 3 : 2
                   }

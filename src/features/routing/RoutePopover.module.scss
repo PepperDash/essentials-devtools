@@ -67,7 +67,7 @@
   cursor: pointer;
 
   &:hover {
-    color: #dc3545;
+    color: var(--bs-danger);
   }
 }
 
@@ -129,7 +129,7 @@
 }
 
 .optionClear {
-  color: #dc3545;
+  color: var(--bs-danger);
   font-style: italic;
   border-bottom: 1px solid #f0f0f0;
 
@@ -147,7 +147,7 @@
 .optionCheck {
   flex-shrink: 0;
   width: 12px;
-  color: #0d6efd;
+  color: var(--app-accent);
 }
 
 .optionLabel {

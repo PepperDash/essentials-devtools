@@ -4,6 +4,8 @@ import { Button, Form } from 'react-bootstrap';
 
 import RefreshIcon from '../shared/components/RefreshIcon';
 import useAppParams from '../shared/hooks/useAppParams';
+import { SortableTh } from '../shared/SortableTh';
+import { SortAccessors, useSort } from '../shared/sorting';
 import {
   downloadJson,
   timestampedFilename,
@@ -51,6 +53,20 @@ const DEFAULT_PROVIDER = 'default';
  * Values are write-only throughout: the API never returns one, so this page can show which secrets
  * exist and replace them, but never reveal them.
  */
+type ManagedColumn = 'key' | 'description' | 'updated';
+const MANAGED_SORT: SortAccessors<SecretEntry, ManagedColumn> = {
+  key: (e) => e.key,
+  description: (e) => e.description,
+  updated: (e) => e.updatedUtc ?? e.lastModifiedUtc ?? '',
+};
+
+type UnmanagedColumn = 'key' | 'owner' | 'modified';
+const UNMANAGED_SORT: SortAccessors<SecretEntry, UnmanagedColumn> = {
+  key: (e) => e.key,
+  owner: (e) => e.owner,
+  modified: (e) => e.lastModifiedUtc,
+};
+
 const Secrets = () => {
   const { appId } = useAppParams();
 
@@ -137,6 +153,17 @@ const Secrets = () => {
       ),
     };
   }, [secrets, filter, programName, appId]);
+
+  const managedSorter = useSort(MANAGED_SORT);
+  const unmanagedSorter = useSort(UNMANAGED_SORT);
+  const sortedManaged = useMemo(
+    () => managedSorter.apply(managed),
+    [managedSorter, managed]
+  );
+  const sortedUnmanaged = useMemo(
+    () => unmanagedSorter.apply(unmanaged),
+    [unmanagedSorter, unmanaged]
+  );
 
   // ── Actions ───────────────────────────────────────────────────────────────
 
@@ -439,11 +466,20 @@ const Secrets = () => {
       <div className="overflow-auto flex-grow-1 pane-scroll-sm">
         <h5 className="mb-2">Managed secrets</h5>
         <table className="table table-striped table-bordered">
-          <thead className="table-light sticky-top">
+          <thead>
             <tr>
-              <th>Key</th>
-              <th>Description</th>
-              <th className="d-none d-md-table-cell">Updated</th>
+              <SortableTh sorter={managedSorter} column="key" label="Key" />
+              <SortableTh
+                sorter={managedSorter}
+                column="description"
+                label="Description"
+              />
+              <SortableTh
+                sorter={managedSorter}
+                column="updated"
+                label="Updated"
+                className="d-none d-md-table-cell"
+              />
               <th className="text-end">
                 <Button
                   size="sm"
@@ -460,7 +496,7 @@ const Secrets = () => {
           </thead>
           <tbody>
             {managed.length > 0 ? (
-              renderRows(managed, true)
+              renderRows(sortedManaged, true)
             ) : (
               <tr>
                 <td colSpan={4} className="text-muted small">
@@ -483,16 +519,29 @@ const Secrets = () => {
               something unrelated.
             </p>
             <table className="table table-striped table-bordered">
-              <thead className="table-light sticky-top">
+              <thead>
                 <tr>
-                  <th>Key</th>
-                  <th>Owner</th>
-                  <th className="d-none d-md-table-cell">Modified</th>
+                  <SortableTh
+                    sorter={unmanagedSorter}
+                    column="key"
+                    label="Key"
+                  />
+                  <SortableTh
+                    sorter={unmanagedSorter}
+                    column="owner"
+                    label="Owner"
+                  />
+                  <SortableTh
+                    sorter={unmanagedSorter}
+                    column="modified"
+                    label="Modified"
+                    className="d-none d-md-table-cell"
+                  />
                   <th className="text-end">&nbsp;</th>
                 </tr>
               </thead>
               <tbody>
-                {unmanaged.map((entry) => (
+                {sortedUnmanaged.map((entry) => (
                   <tr key={entry.key}>
                     <td className="text-break">
                       {entry.key}{' '}

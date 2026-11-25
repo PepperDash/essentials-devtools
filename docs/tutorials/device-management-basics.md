@@ -22,10 +22,14 @@
 
 ### Step 1: Navigate to the Devices Section
 
-1. **Click "Devices"** in the top navigation
-2. **Observe the two-column layout**:
-   - **Left side**: List of all devices with Key and Name
-   - **Right side**: Device detail panel (initially empty)
+1. **Open the page menu** (beside the app selector) and choose **Devices**
+2. **Observe the master-detail layout**:
+   - **Left side**: List of all devices, each showing the name with its key beneath, plus a **Filter devices** box and a count
+   - **Right side**: Device detail panel, which shows "Select a device" until you pick one
+3. **Type in the filter box** (for example `disp`) to narrow the list; the count changes to "2 of 22"
+4. **Click a device**. Its name and key appear in the detail header, and the selection is kept in the URL (`?device=<key>`) so you can bookmark or share it
+5. **Use the two tabs**: **Methods & Feedbacks** lists what you can run and the live feedback values; **Properties** lists the configured properties with an R/W badge for each
+6. **Run a method**: methods with no or one simple parameter run from the table (type the value next to **Execute**); methods that take several parameters open a dialog. Methods with a single true/false parameter also offer **Press & Release**, which sends true, then false after the delay you set (0.5-30 s)
 
 ### Step 2: Understand Device Identification
 
@@ -51,7 +55,7 @@ Each device has two important identifiers:
 
 ### Step 3: Explore Device Types
 
-1. **Click "Types"** in the navigation to see all available device types
+1. **Choose "Types"** from the page menu to see all available device types
 2. **Study the three columns**:
    - **Type Name**: The configuration identifier (e.g., "samsungMDC")
    - **Class Type**: The .NET class that implements the device

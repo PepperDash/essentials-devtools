@@ -26,7 +26,7 @@
 | Devices dropdown         | Search devices, then check/uncheck individual devices, or use Select all / Deselect all  |
 | Hide unconnected devices | Removes any device with no visible tie line endpoint from the canvas                     |
 | Hide unconnected ports   | Shows only the ports on each device that currently have a visible tie line               |
-| Dark mode                | Switches the canvas between dark and light styling                                       |
+| Theme                    | The diagram follows the app's light/dark theme; change it with the switch in the top bar |
 | Live / Offline badge     | Green "Live" means the routing feedback WebSocket is connected and route data is current |
 | Refresh button           | Reloads the device/tie-line snapshot and reconnects the feedback WebSocket               |
 

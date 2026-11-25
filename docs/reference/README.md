@@ -155,14 +155,12 @@ Fatal (5) > Error (4) > Warning (3) > Information (2) > Debug (1) > Verbose (0)
 
 ### UI Components Quick Reference
 
-**Main Navigation**:
+**Page menu** (grouped, beside the app selector):
 
-- Home (`/home`) - Welcome and starting point
-- Debug Console (`/console`) - Real-time monitoring
-- Versions (`/versions`) - Assembly information
-- Config File (`/config`) - Configuration viewer
-- Devices (`/devices`) - Device management
-- Types (`/types`) - Available device types
+- Diagnostics: Versions (`/versions`), API Paths (`/apiPaths`), Initialization Exceptions (`/initializationExceptions`), Plugin Issues (`/pluginLoadIssues`)
+- Runtime: Debug Console (`/console`), Config File (`/config`), Devices (`/devices`), Types (`/types`), Routing (`/routing`)
+- Integrations: Mobile Control (`/mobileControl`), Secrets (`/secrets`)
+- Top bar: Help, and a light/dark theme switch
 
 **Debug Console Controls**:
 

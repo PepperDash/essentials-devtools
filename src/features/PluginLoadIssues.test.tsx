@@ -115,47 +115,51 @@ afterEach(() => {
 });
 
 describe('Plugin Load Issues page', () => {
-  it('lists each plugin with its status, build version and issues', async () => {
+  it('lists one row per issue with the plugin, status and build version in columns', async () => {
     renderPage();
-
     await screen.findByText('Plugin Load Issues');
     expect(screen.getByText(/Running Essentials 3\.0\.0-rc\.11/)).toBeTruthy();
 
-    expect(screen.getByText('KpmgRoom.dll')).toBeTruthy();
-    expect(screen.getByText('Loaded')).toBeTruthy();
-    expect(
-      screen.getByText('Built against PepperDashEssentials 3.0.0-rc.16')
-    ).toBeTruthy();
-    expect(
-      screen.getByText(/References Crestron\.SimplSharpPro\.UI 2\.21\.274\.0/)
-    ).toBeTruthy();
-
+    // KpmgRoom has two issues, so its file name appears in two rows
+    expect(screen.getAllByText('KpmgRoom.dll')).toHaveLength(2);
     expect(screen.getByText('OldPlugin.dll')).toBeTruthy();
+    expect(screen.getAllByText('Loaded')).toHaveLength(2);
     expect(screen.getByText('Skipped')).toBeTruthy();
-    // Once in the Category column and once under the message, where phones show it; CSS hides
-    // one of the two at each screen size
-    expect(screen.getAllByText('Minimum version not met')).toHaveLength(2);
+    expect(screen.getByText('Minimum version not met')).toBeTruthy();
     expect(screen.getAllByText('Warning')).toHaveLength(2);
     expect(screen.getAllByText('Error')).toHaveLength(1);
+    expect(
+      screen.getAllByText('PepperDashEssentials 3.0.0-rc.16').length
+    ).toBeGreaterThan(0);
   });
 
-  it('shows an issue detail on request', async () => {
+  it('shows an issue detail inline, with no toggle', async () => {
     renderPage();
     await screen.findByText('Plugin Load Issues');
-
-    expect(
-      screen.queryByText('This assembly is part of the Crestron SDK.')
-    ).toBeNull();
-
-    // Only issues with detail get a toggle; the minimum-version error has none
-    const toggles = screen.getAllByRole('button', { name: 'Show' });
-    expect(toggles).toHaveLength(2);
-    fireEvent.click(toggles[1]);
 
     expect(
       screen.getByText('This assembly is part of the Crestron SDK.')
     ).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Hide' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Show' })).toBeNull();
+  });
+
+  it('filters the issues by search text', async () => {
+    renderPage();
+    await screen.findByText('Plugin Load Issues');
+
+    const box = screen.getByRole('searchbox');
+    fireEvent.change(box, { target: { value: 'oldplugin' } });
+    expect(await screen.findByText('Showing 1 of 3')).toBeTruthy();
+    expect(screen.queryByText('KpmgRoom.dll')).toBeNull();
+
+    // Every term must match, across columns
+    fireEvent.change(box, { target: { value: 'kpmg newer dependency' } });
+    expect(await screen.findByText('Showing 1 of 3')).toBeTruthy();
+
+    fireEvent.change(box, { target: { value: 'nothing matches this' } });
+    expect(
+      await screen.findByText('No issues match your search.')
+    ).toBeTruthy();
   });
 
   it('says so when there are no issues', async () => {
@@ -217,7 +221,7 @@ describe('after a program restart', () => {
     await navBadge;
 
     const first = renderPage(store);
-    await screen.findByText('KpmgRoom.dll');
+    await screen.findAllByText('KpmgRoom.dll');
     first.unmount();
 
     // The program restarts with the plugins fixed
@@ -250,7 +254,7 @@ describe('badge contrast', () => {
     renderPage();
     await screen.findByText('Plugin Load Issues');
 
-    expect(screen.getByText('Loaded').className).toContain('text-dark');
+    expect(screen.getAllByText('Loaded')[0].className).toContain('text-dark');
     expect(screen.getByText('Skipped').className).toContain('text-dark');
     expect(screen.getAllByText('Error')[0].className).not.toContain(
       'text-dark'

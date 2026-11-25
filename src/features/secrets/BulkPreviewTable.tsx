@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { Form } from 'react-bootstrap';
 
 import {
@@ -5,6 +6,8 @@ import {
   BulkSecretAction,
   BulkSummary,
 } from '../../store/secretsContract';
+import { SortableTh } from '../../shared/SortableTh';
+import { SortAccessors, useSort } from '../../shared/sorting';
 import { SecretsFileIssue } from './secretsFile';
 
 export interface BulkPreviewTableProps {
@@ -38,6 +41,14 @@ const ACTION_LABEL: Record<BulkSecretAction, string> = {
   failed: 'Failed',
 };
 
+type PreviewColumn = 'key' | 'provider' | 'action' | 'note';
+const PREVIEW_SORT: SortAccessors<BulkEntryResult, PreviewColumn> = {
+  key: (r) => r.key,
+  provider: (r) => r.provider,
+  action: (r) => ACTION_LABEL[r.action],
+  note: (r) => r.message,
+};
+
 /**
  * Shows what a bulk apply will do, before it does it.
  *
@@ -54,6 +65,8 @@ const BulkPreviewTable = ({
   readOnly = false,
 }: BulkPreviewTableProps) => {
   const applicable = summary.create + summary.overwrite;
+  const sorter = useSort(PREVIEW_SORT);
+  const rows = useMemo(() => sorter.apply(results), [sorter, results]);
 
   return (
     <div>
@@ -109,16 +122,16 @@ const BulkPreviewTable = ({
 
       <div className="overflow-auto" style={{ maxHeight: 320 }}>
         <table className="table table-sm table-striped table-bordered mb-0">
-          <thead className="table-light sticky-top">
+          <thead>
             <tr>
-              <th>Key</th>
-              <th>Provider</th>
-              <th>Action</th>
-              <th>Note</th>
+              <SortableTh sorter={sorter} column="key" label="Key" />
+              <SortableTh sorter={sorter} column="provider" label="Provider" />
+              <SortableTh sorter={sorter} column="action" label="Action" />
+              <SortableTh sorter={sorter} column="note" label="Note" />
             </tr>
           </thead>
           <tbody>
-            {results.map((result) => {
+            {rows.map((result) => {
               const unmanaged = unmanagedIndices.has(result.index);
 
               return (

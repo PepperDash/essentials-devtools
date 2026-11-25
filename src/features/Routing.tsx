@@ -19,6 +19,7 @@ import { Alert, Dropdown } from 'react-bootstrap';
 
 import { meetsMinVersion } from '../shared/functions/meetsMinimumVersion';
 import useAppParams from '../shared/hooks/useAppParams';
+import useTheme from '../shared/hooks/useTheme';
 import {
   MidpointRoute,
   RoutingDevice,
@@ -471,7 +472,8 @@ const Routing = () => {
   const [selectedEdgeIds, setSelectedEdgeIds] = useState<Set<string>>(
     new Set()
   );
-  const [darkMode, setDarkMode] = useState(true);
+  // The diagram follows the app theme rather than carrying a switch of its own
+  const darkMode = useTheme().theme === 'dark';
 
   // ── Route editing ──────────────────────────────────────────────────────────
   const [routeEdit, setRouteEdit] = useState<{
@@ -1130,7 +1132,7 @@ const Routing = () => {
           ...e,
           data: { ...e.data, selected: isSelected },
           style: {
-            stroke: isSelected ? baseColor : '#ccc',
+            stroke: isSelected ? baseColor : '#cbd5e1',
             strokeWidth: isSelected ? 3.5 : 1.5,
             opacity: isSelected ? 1 : 0.35,
             ...dash,
@@ -1498,24 +1500,6 @@ const Routing = () => {
               Hide unconnected ports
             </label>
           </div>
-          <div
-            className={`form-check form-switch mb-0 d-flex align-items-center gap-1 ${styles.hideUnconnectedSwitch}`}
-          >
-            <input
-              className="form-check-input"
-              type="checkbox"
-              role="switch"
-              id="darkModeSwitch"
-              checked={darkMode}
-              onChange={(e) => setDarkMode(e.target.checked)}
-            />
-            <label
-              className="form-check-label text-nowrap"
-              htmlFor="darkModeSwitch"
-            >
-              Dark mode
-            </label>
-          </div>
           <span
             className={`badge ${routingWsConnected ? 'bg-success' : 'bg-secondary'}`}
             title={
@@ -1547,7 +1531,7 @@ const Routing = () => {
 
       {/* React Flow canvas */}
       <div
-        className={`flex-grow-1 position-relative${darkMode ? ' bg-dark' : ''}`}
+        className={`flex-grow-1 position-relative routing-canvas${darkMode ? ' bg-dark' : ' routing-canvas-light'}`}
       >
         <ReactFlow
           nodes={nodes}
@@ -1573,7 +1557,12 @@ const Routing = () => {
           maxZoom={2}
           proOptions={{ hideAttribution: false }}
         >
-          <Background />
+          {/* The same dotted grid in both themes; light mode needs darker dots to show on a pale
+              canvas */}
+          <Background
+            color={darkMode ? undefined : '#a5b3c8'}
+            size={darkMode ? undefined : 1.6}
+          />
           <Controls showInteractive={false} />
           <MiniMap nodeStrokeWidth={3} zoomable pannable />
         </ReactFlow>

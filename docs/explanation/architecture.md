@@ -227,7 +227,7 @@ The web app implements its own credential-based authentication flow on top of th
 - **Route Protection**: A `RequireAuth` layout route wraps all `/:appId/*` sub-routes; unauthenticated requests are redirected to `/:appId/login`
 
 **App Slot Discovery**:
-After credentials are validated, the application probes all 10 possible slots (`app01`–`app10`) in parallel using `Promise.allSettled`. Slots that respond successfully are stored as `availableApps` and populate the app selector dropdown in the top navigation bar.
+After credentials are validated, the application probes all 10 possible slots (`app01`–`app10`) in parallel using `Promise.allSettled`. Slots that respond successfully are stored as `availableApps` and populate the app selector dropdown in the top bar.
 
 **No Independent Authentication**: Web app doesn't implement its own persistent user system
 

@@ -6,6 +6,10 @@ import App from './App';
 import { getRouterBasename } from './shared/functions/hostPaths';
 import reportWebVitals from './reportWebVitals';
 import { store } from './store/store';
+// Bundled rather than loaded from a CDN: this app is served from processors with no internet access
+import '@fontsource/inter/latin-400.css';
+import '@fontsource/inter/latin-500.css';
+import '@fontsource/inter/latin-600.css';
 import './styles.scss';
 
 // const router = createBrowserRouter(

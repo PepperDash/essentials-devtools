@@ -43,17 +43,18 @@ export const DeviceFilterDropdown = ({ items }: DeviceFilterDropdownProps) => {
   return (
     <Dropdown className="d-inline-block">
       <Dropdown.Toggle
-        variant="outline"
-        className="py-1"
+        variant="light"
+        size="sm"
+        className="toolbar-btn"
         id="device-filter-dropdown"
       >
         Devices
         {checkedDevices.length > 0 && (
-          <Badge pill bg="primary" className="ms-1">
+          <Badge pill bg="primary">
             {checkedDevices.length}
           </Badge>
         )}
-        <IconDarkChevronDown className="ms-1" />
+        <IconDarkChevronDown />
       </Dropdown.Toggle>
 
       <Dropdown.Menu className="scroll-dropdown shadow">
